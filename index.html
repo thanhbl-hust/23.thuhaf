@@ -769,11 +769,11 @@
 
 <body>
     <div class="container">
-        <header>
+        <!-- <header>
             <div class="heart-row">💕 ✨ 💕</div>
             <h1>Our <em>Couple</em> Bucket List</h1>
             <p class="subtitle">Our moments</p>
-        </header>
+        </header> -->
 
         <!-- LOVE COUNTER -->
         <div class="love-counter">
@@ -801,7 +801,7 @@
             <div class="lc-since">💕 Since 06/02/2026</div>
         </div>
 
-        <div class="stats">
+        <!-- <div class="stats">
             <div class="stat-card">
                 <div class="stat-num" id="totalCount">0</div>
                 <div class="stat-label">Total</div>
@@ -814,9 +814,9 @@
                 <div class="stat-num" id="todoCount">0</div>
                 <div class="stat-label">Not yet 🌙</div>
             </div>
-        </div>
+        </div> -->
 
-        <div class="progress-wrap">
+        <!-- <div class="progress-wrap">
             <div class="progress-label"><span>Our process</span><span id="progressPct">0%</span></div>
             <div class="progress-bar-bg">
                 <div class="progress-bar-fill" id="progressFill"></div>
@@ -851,7 +851,7 @@
                 <div class="empty-icon">🌸</div>
                 <div>No Activity matched</div>
             </div>
-        </div>
+        </div> -->
 
         <footer>
             Made with 💕 &nbsp;·&nbsp; Click to <strong>Done activites</strong> to see pictures 📷
@@ -859,7 +859,7 @@
     </div>
 
     <!-- Lightbox -->
-    <div class="lb-overlay" id="lbOverlay">
+    <!-- <div class="lb-overlay" id="lbOverlay">
         <div class="lb-box">
             <div class="lb-header">
                 <div>
@@ -880,286 +880,154 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- Full viewer -->
-    <div class="lb-viewer" id="lbViewer">
+    <!-- <div class="lb-viewer" id="lbViewer">
         <button class="lb-viewer-close" onclick="closeViewer()">✕</button>
         <button class="lb-nav lb-nav-prev" id="lbPrev" onclick="navViewer(-1)">&#8249;</button>
         <img id="lbViewerImg" src="" alt="" />
         <div class="lb-viewer-caption" id="lbViewerCaption"></div>
         <button class="lb-nav lb-nav-next" id="lbNext" onclick="navViewer(1)">&#8250;</button>
-    </div>
+    </div> -->
 
     <script>
-        // ============================================================
-        //  DATA — Chỉnh sửa tại đây để thêm/sửa hoạt động và ảnh
-        //
-        //  Cấu trúc thư mục gợi ý:
-        //    /index.html
-        //    /images/
-        //      ten-hoat-dong-1/
-        //        1.jpg
-        //        2.jpg
-        //      ten-hoat-dong-2/
-        //        1.jpg
-        //
-        //  Mỗi item có:
-        //    id        — số nguyên duy nhất
-        //    name      — tên hoạt động
-        //    note      — ghi chú nhỏ (để trống "" nếu không cần)
-        //    date      — ngày hoàn thành "YYYY-MM-DD" (để trống "" nếu chưa làm)
-        //    done      — true / false
-        //    photos    — mảng { src, caption }
-        //               src: đường dẫn tương đối từ gốc repo
-        //               caption: chú thích (để trống "" nếu không cần)
-        // ============================================================
         const items = [
-            {
-                id: 1,
-                name: 'Xem hoàng hôn ở biển cùng nhau',
-                note: 'Nha Trang',
-                date: '2024-06-15',
-                done: true,
-                photos: [
-                    { src: 'images/xem-hoang-hon/1.jpg', caption: 'Hoàng hôn Nha Trang 🌅' },
-                    { src: 'images/xem-hoang-hon/2.jpg', caption: '' },
-                    { src: 'images/xem-hoang-hon/3.jpg', caption: '' },
-                ]
-            },
-            {
-                id: 2,
-                name: 'Nấu một bữa ăn đặc biệt cho nhau',
-                note: 'Pasta tự làm',
-                date: '2024-09-10',
-                done: true,
-                photos: [
-                    { src: 'images/nau-an/1.jpg', caption: 'Pasta homemade 🍝' },
-                    { src: 'images/nau-an/2.jpg', caption: '' },
-                ]
-            },
-            {
-                id: 3,
-                name: 'Vẽ chân dung của nhau',
-                note: 'Lớp học vẽ cùng nhau',
-                date: '2024-12-01',
-                done: true,
-                photos: [
-                    { src: 'images/ve-tranh/1.jpg', caption: 'Tác phẩm của chúng mình 🎨' },
-                ]
-            },
-            {
-                id: 4,
-                name: 'Kỷ niệm ngày đầu gặp nhau',
-                note: 'Tái hiện buổi hẹn đầu tiên',
-                date: '2024-03-20',
-                done: true,
-                photos: [
-                    { src: 'images/ky-niem/1.jpg', caption: '' },
-                    { src: 'images/ky-niem/2.jpg', caption: '' },
-                    { src: 'images/ky-niem/3.jpg', caption: '' },
-                    { src: 'images/ky-niem/4.jpg', caption: '' },
-                ]
-            },
-            {
-                id: 5,
-                name: 'Cùng đọc một cuốn sách rồi thảo luận',
-                note: 'Chọn sách yêu thích của nhau',
-                date: '2024-11-05',
-                done: true,
-                photos: []
-            },
-            {
-                id: 6,
-                name: 'Cùng xem phim dưới bầu trời sao',
-                note: 'Outdoor cinema',
-                date: '',
-                done: false,
-                photos: []
-            },
-            {
-                id: 7,
-                name: 'Leo núi và cắm trại qua đêm',
-                note: 'Ba Vì hoặc Fansipan',
-                date: '',
-                done: false,
-                photos: []
-            },
-            {
-                id: 8,
-                name: 'Đi spa và thư giãn cả ngày',
-                note: 'Chỉ hai đứa mình',
-                date: '',
-                done: false,
-                photos: []
-            },
-            {
-                id: 9,
-                name: 'Học khiêu vũ cùng nhau',
-                note: 'Salsa hoặc Waltz',
-                date: '',
-                done: false,
-                photos: []
-            },
-            {
-                id: 10,
-                name: 'Đi chợ phiên và ăn đồ ăn đường phố',
-                note: 'Hội An hoặc Đà Lạt',
-                date: '',
-                done: false,
-                photos: []
-            },
-            {
-                id: 11,
-                name: 'Chụp bộ ảnh cưới thử',
-                note: 'Áo dài truyền thống',
-                date: '',
-                done: false,
-                photos: []
-            },
-            {
-                id: 12,
-                name: 'Đi Đà Lạt cuối tuần',
-                note: 'Săn mây buổi sáng sớm',
-                date: '',
-                done: false,
-                photos: []
-            },
         ];
 
         // ============================================================
-        let filter = 'all';
-        let currentPhotos = [];
-        let viewerIndex = 0;
+        // let filter = 'all';
+        // let currentPhotos = [];
+        // let viewerIndex = 0;
 
-        function setFilter(f, btn) {
-            filter = f;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderTable();
-        }
+        // function setFilter(f, btn) {
+        //     filter = f;
+        //     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        //     btn.classList.add('active');
+        //     renderTable();
+        // }
 
-        function renderTable() {
-            const q = document.getElementById('searchInput').value.toLowerCase();
-            const body = document.getElementById('tableBody');
-            const empty = document.getElementById('emptyState');
-            let filtered = items.filter(it => {
-                if (filter === 'done' && !it.done) return false;
-                if (filter === 'todo' && it.done) return false;
-                if (q && !it.name.toLowerCase().includes(q) && !(it.note || '').toLowerCase().includes(q)) return false;
-                return true;
-            });
-            updateStats();
-            if (filtered.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
-            empty.style.display = 'none';
-            body.innerHTML = filtered.map((it, idx) => {
-                const dateStr = it.date ? new Date(it.date).toLocaleDateString('vi-VN') : '—';
-                const cnt = (it.photos || []).length;
-                return `
-        <tr class="${it.done ? 'done-row' : 'todo-row'}"
-          ${it.done ? `onclick="openLb(${it.id})" title="Xem ảnh kỷ niệm 📷"` : ''}>
-          <td class="td-num">${String(idx + 1).padStart(2, '0')}</td>
-          <td class="td-activity">
-            <div class="activity-name">${it.name}</div>
-            ${it.note ? `<div class="activity-note">${it.note}</div>` : ''}
-            ${it.done ? `<div class="photo-hint">📷 ${cnt > 0 ? cnt + ' ảnh · bấm để xem' : 'Bấm để xem ảnh'}</div>` : ''}
-          </td>
-          <td class="td-date">${dateStr}</td>
-          <td class="td-status">
-            <span class="status-badge ${it.done ? 'status-done' : 'status-todo'}">
-              ${it.done ? '✅ Đã làm' : '🌙 Chưa làm'}
-            </span>
-          </td>
-          <td class="td-toggle" onclick="event.stopPropagation()">
-            <button class="toggle-btn ${it.done ? 'btn-done' : 'btn-todo'}"
-              onclick="toggleDone(${it.id})"
-              title="${it.done ? 'Đánh dấu chưa làm' : 'Đánh dấu đã làm'}">
-              ${it.done ? '✅' : '○'}
-            </button>
-          </td>
-        </tr>`;
-            }).join('');
-        }
+        // function renderTable() {
+        //     const q = document.getElementById('searchInput').value.toLowerCase();
+        //     const body = document.getElementById('tableBody');
+        //     const empty = document.getElementById('emptyState');
+        //     let filtered = items.filter(it => {
+        //         if (filter === 'done' && !it.done) return false;
+        //         if (filter === 'todo' && it.done) return false;
+        //         if (q && !it.name.toLowerCase().includes(q) && !(it.note || '').toLowerCase().includes(q)) return false;
+        //         return true;
+        //     });
+        //     updateStats();
+        //     if (filtered.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+        //     empty.style.display = 'none';
+        //     body.innerHTML = filtered.map((it, idx) => {
+        //         const dateStr = it.date ? new Date(it.date).toLocaleDateString('vi-VN') : '—';
+        //         const cnt = (it.photos || []).length;
+        //         return `
+        // <tr class="${it.done ? 'done-row' : 'todo-row'}"
+        //   ${it.done ? `onclick="openLb(${it.id})" title="Xem ảnh kỷ niệm 📷"` : ''}>
+        //   <td class="td-num">${String(idx + 1).padStart(2, '0')}</td>
+        //   <td class="td-activity">
+        //     <div class="activity-name">${it.name}</div>
+        //     ${it.note ? `<div class="activity-note">${it.note}</div>` : ''}
+        //     ${it.done ? `<div class="photo-hint">📷 ${cnt > 0 ? cnt + ' ảnh · bấm để xem' : 'Bấm để xem ảnh'}</div>` : ''}
+        //   </td>
+        //   <td class="td-date">${dateStr}</td>
+        //   <td class="td-status">
+        //     <span class="status-badge ${it.done ? 'status-done' : 'status-todo'}">
+        //       ${it.done ? '✅ Đã làm' : '🌙 Chưa làm'}
+        //     </span>
+        //   </td>
+        //   <td class="td-toggle" onclick="event.stopPropagation()">
+        //     <button class="toggle-btn ${it.done ? 'btn-done' : 'btn-todo'}"
+        //       onclick="toggleDone(${it.id})"
+        //       title="${it.done ? 'Đánh dấu chưa làm' : 'Đánh dấu đã làm'}">
+        //       ${it.done ? '✅' : '○'}
+        //     </button>
+        //   </td>
+        // </tr>`;
+        //     }).join('');
+        // }
 
-        function updateStats() {
-            const total = items.length;
-            const done = items.filter(i => i.done).length;
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('doneCount').textContent = done;
-            document.getElementById('todoCount').textContent = total - done;
-            const pct = total ? Math.round((done / total) * 100) : 0;
-            document.getElementById('progressPct').textContent = pct + '%';
-            document.getElementById('progressFill').style.width = pct + '%';
-        }
+        // function updateStats() {
+        //     const total = items.length;
+        //     const done = items.filter(i => i.done).length;
+        //     document.getElementById('totalCount').textContent = total;
+        //     document.getElementById('doneCount').textContent = done;
+        //     document.getElementById('todoCount').textContent = total - done;
+        //     const pct = total ? Math.round((done / total) * 100) : 0;
+        //     document.getElementById('progressPct').textContent = pct + '%';
+        //     document.getElementById('progressFill').style.width = pct + '%';
+        // }
 
-        function toggleDone(id) {
-            const it = items.find(i => i.id === id);
-            if (it) { it.done = !it.done; if (it.done && !it.date) it.date = new Date().toISOString().split('T')[0]; }
-            renderTable();
-        }
+        // function toggleDone(id) {
+        //     const it = items.find(i => i.id === id);
+        //     if (it) { it.done = !it.done; if (it.done && !it.date) it.date = new Date().toISOString().split('T')[0]; }
+        //     renderTable();
+        // }
 
         // Lightbox
-        function openLb(id) {
-            const it = items.find(i => i.id === id);
-            if (!it) return;
-            document.getElementById('lbTitle').textContent = it.name;
-            document.getElementById('lbDate').textContent = it.date ? '📅 ' + new Date(it.date).toLocaleDateString('vi-VN') : '';
-            const photos = it.photos || [];
-            const grid = document.getElementById('lbGrid');
-            const lbEmpty = document.getElementById('lbEmpty');
-            if (photos.length === 0) {
-                grid.innerHTML = '';
-                lbEmpty.style.display = 'block';
-            } else {
-                lbEmpty.style.display = 'none';
-                grid.innerHTML = photos.map((p, i) => `
-        <div class="lb-grid-item" onclick="openViewer(${id}, ${i})">
-          <img src="${p.src}" alt="${p.caption || ''}" loading="lazy"
-            onerror="this.style.display='none';this.parentElement.innerHTML+='<div style=\'display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.8rem;padding:10px;text-align:center\'>Ảnh chưa được thêm vào</div>'" />
-          ${p.caption ? `<div class="img-caption">${p.caption}</div>` : ''}
-        </div>`).join('');
-            }
-            document.getElementById('lbOverlay').classList.add('open');
-        }
+        // function openLb(id) {
+        //     const it = items.find(i => i.id === id);
+        //     if (!it) return;
+        //     document.getElementById('lbTitle').textContent = it.name;
+        //     document.getElementById('lbDate').textContent = it.date ? '📅 ' + new Date(it.date).toLocaleDateString('vi-VN') : '';
+        //     const photos = it.photos || [];
+        //     const grid = document.getElementById('lbGrid');
+        //     const lbEmpty = document.getElementById('lbEmpty');
+        //     if (photos.length === 0) {
+        //         grid.innerHTML = '';
+        //         lbEmpty.style.display = 'block';
+        //     } else {
+        //         lbEmpty.style.display = 'none';
+        //         grid.innerHTML = photos.map((p, i) => `
+        // <div class="lb-grid-item" onclick="openViewer(${id}, ${i})">
+        //   <img src="${p.src}" alt="${p.caption || ''}" loading="lazy"
+        //     onerror="this.style.display='none';this.parentElement.innerHTML+='<div style=\'display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.8rem;padding:10px;text-align:center\'>Ảnh chưa được thêm vào</div>'" />
+        //   ${p.caption ? `<div class="img-caption">${p.caption}</div>` : ''}
+        // </div>`).join('');
+        //     }
+        //     document.getElementById('lbOverlay').classList.add('open');
+        // }
 
-        function closeLb() { document.getElementById('lbOverlay').classList.remove('open'); }
+        // function closeLb() { document.getElementById('lbOverlay').classList.remove('open'); }
 
-        function openViewer(itemId, photoIndex) {
-            const it = items.find(i => i.id === itemId);
-            if (!it) return;
-            currentPhotos = it.photos || [];
-            viewerIndex = photoIndex;
-            updateViewer();
-            document.getElementById('lbViewer').classList.add('open');
-        }
+        // function openViewer(itemId, photoIndex) {
+        //     const it = items.find(i => i.id === itemId);
+        //     if (!it) return;
+        //     currentPhotos = it.photos || [];
+        //     viewerIndex = photoIndex;
+        //     updateViewer();
+        //     document.getElementById('lbViewer').classList.add('open');
+        // }
 
-        function updateViewer() {
-            const p = currentPhotos[viewerIndex];
-            document.getElementById('lbViewerImg').src = p.src;
-            document.getElementById('lbViewerCaption').textContent = p.caption || (viewerIndex + 1) + ' / ' + currentPhotos.length;
-            document.getElementById('lbPrev').style.display = viewerIndex > 0 ? 'flex' : 'none';
-            document.getElementById('lbNext').style.display = viewerIndex < currentPhotos.length - 1 ? 'flex' : 'none';
-        }
+        // function updateViewer() {
+        //     const p = currentPhotos[viewerIndex];
+        //     document.getElementById('lbViewerImg').src = p.src;
+        //     document.getElementById('lbViewerCaption').textContent = p.caption || (viewerIndex + 1) + ' / ' + currentPhotos.length;
+        //     document.getElementById('lbPrev').style.display = viewerIndex > 0 ? 'flex' : 'none';
+        //     document.getElementById('lbNext').style.display = viewerIndex < currentPhotos.length - 1 ? 'flex' : 'none';
+        // }
 
-        function navViewer(dir) {
-            viewerIndex = Math.max(0, Math.min(currentPhotos.length - 1, viewerIndex + dir));
-            updateViewer();
-        }
+        // function navViewer(dir) {
+        //     viewerIndex = Math.max(0, Math.min(currentPhotos.length - 1, viewerIndex + dir));
+        //     updateViewer();
+        // }
 
-        function closeViewer() { document.getElementById('lbViewer').classList.remove('open'); }
+        // function closeViewer() { document.getElementById('lbViewer').classList.remove('open'); }
 
-        document.addEventListener('keydown', e => {
-            if (document.getElementById('lbViewer').classList.contains('open')) {
-                if (e.key === 'ArrowLeft') navViewer(-1);
-                if (e.key === 'ArrowRight') navViewer(1);
-                if (e.key === 'Escape') closeViewer();
-            } else if (document.getElementById('lbOverlay').classList.contains('open')) {
-                if (e.key === 'Escape') closeLb();
-            }
-        });
+        // document.addEventListener('keydown', e => {
+        //     if (document.getElementById('lbViewer').classList.contains('open')) {
+        //         if (e.key === 'ArrowLeft') navViewer(-1);
+        //         if (e.key === 'ArrowRight') navViewer(1);
+        //         if (e.key === 'Escape') closeViewer();
+        //     } else if (document.getElementById('lbOverlay').classList.contains('open')) {
+        //         if (e.key === 'Escape') closeLb();
+        //     }
+        // });
 
-        document.getElementById('lbOverlay').addEventListener('click', e => { if (e.target === document.getElementById('lbOverlay')) closeLb(); });
-        document.getElementById('lbViewer').addEventListener('click', e => { if (e.target === document.getElementById('lbViewer')) closeViewer(); });
+        // document.getElementById('lbOverlay').addEventListener('click', e => { if (e.target === document.getElementById('lbOverlay')) closeLb(); });
+        // document.getElementById('lbViewer').addEventListener('click', e => { if (e.target === document.getElementById('lbViewer')) closeViewer(); });
 
 
         // Love counter
