@@ -119,506 +119,6 @@
             letter-spacing: 0.04em;
         }
 
-        .stats {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 40px;
-            animation: fadeUp 0.7s 0.15s ease both;
-        }
-
-        .stat-card {
-            background: var(--card);
-            border-radius: 14px;
-            padding: 18px 30px;
-            box-shadow: var(--shadow);
-            text-align: center;
-            min-width: 130px;
-        }
-
-        .stat-num {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.4rem;
-            font-weight: 700;
-            color: var(--accent);
-            line-height: 1;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .progress-wrap {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 20px 28px;
-            box-shadow: var(--shadow);
-            margin-bottom: 40px;
-            animation: fadeUp 0.7s 0.25s ease both;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 10px;
-        }
-
-        .progress-bar-bg {
-            background: var(--soft);
-            border-radius: 999px;
-            height: 10px;
-            overflow: hidden;
-        }
-
-        .progress-bar-fill {
-            background: linear-gradient(90deg, var(--accent2), var(--accent));
-            height: 100%;
-            border-radius: 999px;
-            transition: width 1.2s cubic-bezier(.4, 0, .2, 1);
-            width: 0%;
-        }
-
-        .controls {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 28px;
-            animation: fadeUp 0.7s 0.3s ease both;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 200px;
-            position: relative;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 11px 16px 11px 40px;
-            border: 1.5px solid #ecddd5;
-            border-radius: 10px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.92rem;
-            background: var(--card);
-            color: var(--text);
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .search-box input:focus {
-            border-color: var(--accent);
-        }
-
-        .search-box::before {
-            content: '🔍';
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.9rem;
-            pointer-events: none;
-        }
-
-        .filter-btns {
-            display: flex;
-            gap: 8px;
-        }
-
-        .filter-btn {
-            padding: 10px 18px;
-            border: 1.5px solid #ecddd5;
-            border-radius: 10px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.85rem;
-            cursor: pointer;
-            background: var(--card);
-            color: var(--muted);
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .filter-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .filter-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
-
-        .table-wrap {
-            background: var(--card);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            animation: fadeUp 0.7s 0.35s ease both;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead th {
-            background: var(--text);
-            color: #fff;
-            padding: 16px 20px;
-            text-align: left;
-            font-size: 0.8rem;
-            font-weight: 500;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        thead th:last-child {
-            text-align: center;
-        }
-
-        tbody tr {
-            border-bottom: 1px solid #f3e8e0;
-            transition: background 0.15s;
-        }
-
-        tbody tr:last-child {
-            border-bottom: none;
-        }
-
-        td {
-            padding: 15px 20px;
-            font-size: 0.93rem;
-            vertical-align: middle;
-        }
-
-        .td-num {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.1rem;
-            color: var(--accent2);
-            font-weight: 700;
-            width: 40px;
-        }
-
-        .td-activity {
-            min-width: 200px;
-        }
-
-        .activity-name {
-            font-weight: 500;
-            color: var(--text);
-        }
-
-        .activity-note {
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-top: 2px;
-        }
-
-        .photo-hint {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.75rem;
-            color: var(--accent);
-            margin-top: 5px;
-            font-weight: 500;
-        }
-
-        .td-date {
-            width: 120px;
-            font-size: 0.85rem;
-            color: var(--muted);
-        }
-
-        .td-status {
-            width: 110px;
-            text-align: center;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 500;
-        }
-
-        .td-toggle {
-            width: 56px;
-            text-align: center;
-        }
-
-        .toggle-btn {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.15s;
-        }
-
-        .toggle-btn:hover {
-            transform: scale(1.15);
-        }
-
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--muted);
-            display: none;
-        }
-
-        .empty-state .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 12px;
-        }
-
-        /* ===== LIGHTBOX ===== */
-        .lb-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(20, 10, 8, 0.88);
-            z-index: 200;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            backdrop-filter: blur(6px);
-        }
-
-        .lb-overlay.open {
-            display: flex;
-        }
-
-        .lb-box {
-            background: var(--card);
-            border-radius: 24px;
-            max-width: 780px;
-            width: 100%;
-            max-height: 90vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            animation: popIn 0.35s cubic-bezier(.34, 1.56, .64, 1) both;
-            box-shadow: 0 32px 100px rgba(232, 101, 74, 0.25);
-        }
-
-        @keyframes popIn {
-            from {
-                transform: scale(0.82);
-                opacity: 0
-            }
-
-            to {
-                transform: scale(1);
-                opacity: 1
-            }
-        }
-
-        .lb-header {
-            padding: 20px 24px 16px;
-            border-bottom: 1px solid #f3e8e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-shrink: 0;
-        }
-
-        .lb-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.25rem;
-            color: var(--text);
-            line-height: 1.3;
-        }
-
-        .lb-date {
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-top: 3px;
-        }
-
-        .lb-close {
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: var(--muted);
-            line-height: 1;
-            padding: 2px 8px;
-            border-radius: 6px;
-            transition: background 0.15s;
-        }
-
-        .lb-close:hover {
-            background: var(--soft);
-        }
-
-        .lb-body {
-            overflow-y: auto;
-            padding: 20px 24px 24px;
-            flex: 1;
-        }
-
-        .lb-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-            gap: 12px;
-        }
-
-        .lb-grid-item {
-            border-radius: 12px;
-            overflow: hidden;
-            aspect-ratio: 1/1;
-            background: var(--soft);
-            cursor: zoom-in;
-            position: relative;
-        }
-
-        .lb-grid-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-            display: block;
-        }
-
-        .lb-grid-item:hover img {
-            transform: scale(1.06);
-        }
-
-        .lb-grid-item .img-caption {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(transparent, rgba(42, 26, 20, 0.72));
-            color: #fff;
-            font-size: 0.75rem;
-            padding: 22px 10px 8px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .lb-grid-item:hover .img-caption {
-            opacity: 1;
-        }
-
-        .lb-empty {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--muted);
-        }
-
-        .lb-empty .lb-empty-icon {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .lb-empty code {
-            background: var(--soft);
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 0.82rem;
-            color: var(--accent);
-        }
-
-        /* Full viewer */
-        .lb-viewer {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 5, 4, 0.96);
-            z-index: 300;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-
-        .lb-viewer.open {
-            display: flex;
-        }
-
-        .lb-viewer img {
-            max-width: 92vw;
-            max-height: 82vh;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            object-fit: contain;
-        }
-
-        .lb-viewer-close {
-            position: absolute;
-            top: 20px;
-            right: 24px;
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            color: #fff;
-            font-size: 1.6rem;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-
-        .lb-viewer-close:hover {
-            background: rgba(255, 255, 255, 0.28);
-        }
-
-        .lb-viewer-caption {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.85rem;
-            margin-top: 14px;
-        }
-
-        .lb-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            color: #fff;
-            font-size: 1.6rem;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-
-        .lb-nav:hover {
-            background: rgba(255, 255, 255, 0.28);
-        }
-
-        .lb-nav-prev {
-            left: 20px;
-        }
-
-        .lb-nav-next {
-            right: 20px;
-        }
-
         /* Love counter */
         .love-counter {
             background: var(--card);
@@ -689,32 +189,66 @@
             margin-top: 14px;
         }
 
-        footer {
-            text-align: center;
-            margin-top: 52px;
-            font-size: 0.82rem;
+        /* ===== TAB TOGGLE ===== */
+        .view-toggle {
+            display: flex;
+            gap: 0;
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 6px;
+            margin-bottom: 24px;
+            animation: fadeUp 0.7s 0.2s ease both;
+            width: fit-content;
+        }
+
+        .view-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 24px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: transparent;
             color: var(--muted);
-            animation: fadeUp 0.7s 0.6s ease both;
+            transition: all 0.25s cubic-bezier(.4, 0, .2, 1);
+            white-space: nowrap;
         }
 
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(22px)
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0)
-            }
+        .view-toggle-btn .btn-icon {
+            font-size: 1.05rem;
+            transition: transform 0.25s;
         }
 
-        /* ===== HANOI MAP ===== */
-        .map-section {
-            margin-bottom: 40px;
-            animation: fadeUp 0.7s 0.4s ease both;
+        .view-toggle-btn:hover {
+            color: var(--accent);
         }
 
+        .view-toggle-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(15, 98, 149, 0.30);
+        }
+
+        .view-toggle-btn.active .btn-icon {
+            transform: scale(1.15);
+        }
+
+        /* ===== VIEW PANELS ===== */
+        .view-panel {
+            display: none;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .view-panel.active {
+            display: block;
+        }
+
+        /* ===== MAP SECTION ===== */
         .map-section-title {
             font-family: 'Playfair Display', serif;
             font-size: 1.5rem;
@@ -746,6 +280,125 @@
             height: 460px;
         }
 
+        /* ===== CHECK-IN LIST ===== */
+        .checkin-header {
+            margin-bottom: 18px;
+        }
+
+        .checkin-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .checkin-title em {
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .checkin-sub {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .checkin-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkin-item {
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: transform 0.18s, box-shadow 0.18s;
+            border: 2px solid transparent;
+        }
+
+        .checkin-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 40px rgba(15, 98, 149, 0.14);
+            border-color: var(--accent2);
+        }
+
+        .checkin-item-icon {
+            font-size: 1.8rem;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: var(--soft);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .checkin-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .checkin-item-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .checkin-item-desc {
+            font-size: 0.82rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .checkin-item-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .checkin-photo-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            color: var(--accent);
+            font-weight: 500;
+            background: rgba(15, 98, 149, 0.08);
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+
+        .checkin-arrow {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .checkin-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .checkin-empty .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
         /* Map popup */
         .map-popup-overlay {
             display: none;
@@ -774,6 +427,18 @@
             flex-direction: column;
             animation: popIn 0.35s cubic-bezier(.34, 1.56, .64, 1) both;
             box-shadow: 0 32px 100px rgba(232, 101, 74, 0.28);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.82);
+                opacity: 0
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1
+            }
         }
 
         .map-popup-header {
@@ -951,22 +616,38 @@
             line-height: 1;
         }
 
+        footer {
+            text-align: center;
+            margin-top: 52px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            animation: fadeUp 0.7s 0.6s ease both;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(22px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
         @media (max-width: 640px) {
-            .td-date {
-                display: none;
-            }
-
-            td,
-            th {
-                padding: 12px 12px;
-            }
-
-            .lb-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
             #hanoi-map {
                 height: 320px;
+            }
+
+            .view-toggle {
+                width: 100%;
+            }
+
+            .view-toggle-btn {
+                flex: 1;
+                justify-content: center;
             }
         }
     </style>
@@ -1001,13 +682,32 @@
             <div class="lc-since">💕 Since 06/02/2026</div>
         </div>
 
-        <!-- HANOI MAP -->
-        <div class="map-section">
+        <!-- TAB TOGGLE BUTTONS -->
+        <div class="view-toggle">
+            <button class="view-toggle-btn active" id="btnMap" onclick="switchView('map')">
+                <span class="btn-icon">🗺️</span> Our Map
+            </button>
+            <button class="view-toggle-btn" id="btnList" onclick="switchView('list')">
+                <span class="btn-icon">📋</span> Check-in List
+            </button>
+        </div>
+
+        <!-- MAP VIEW -->
+        <div class="view-panel active" id="panelMap">
             <div class="map-section-title">📍 Our <em>Hanoi</em> Map</div>
             <div class="map-section-sub">Tap a pin to see our photos at that spot 💕</div>
             <div class="map-wrapper">
                 <div id="hanoi-map"></div>
             </div>
+        </div>
+
+        <!-- CHECK-IN LIST VIEW -->
+        <div class="view-panel" id="panelList">
+            <div class="checkin-header">
+                <div class="checkin-title">📋 Our <em>Check-ins</em></div>
+                <div class="checkin-sub">Every place we've been together 💕 — tap to see photos</div>
+            </div>
+            <div class="checkin-list" id="checkinList"></div>
         </div>
 
         <!-- Map photo popup -->
@@ -1058,10 +758,7 @@
         loveTick();
         setInterval(loveTick, 50);
 
-        // ===== HANOI MAP =====
-        // HOW TO ADD PHOTOS:
-        // 1. Put your images in an "images/" folder next to index.html
-        // 2. Uncomment lines below and fill in the filename, e.g.: { src: "images/hoankiem1.jpg", caption: "Evening stroll 🌅" }
+        // ===== PLACES DATA =====
         const mapPlaces = [
             {
                 name: "Phu Sa Phin",
@@ -1071,7 +768,6 @@
                 photos: [
                     { src: "images/IMG_2820.PNG", caption: "Us" },
                     { src: "images/IMG_1994.png", caption: "Sunrise" },
-                    // { src: "images/hoankiem2.jpg", caption: "Turtle Tower 🐢" },
                 ]
             },
             {
@@ -1079,59 +775,93 @@
                 icon: "🏞️",
                 desc: "The heart of the Old Quarter",
                 lat: 21.0285, lng: 105.8524,
-                photos: [
-                    // { src: "images/hoankiem1.jpg", caption: "Evening stroll 🌅" },
-                    // { src: "images/hoankiem2.jpg", caption: "Turtle Tower 🐢" },
-                ]
+                photos: []
             },
             {
                 name: "Old Quarter",
                 icon: "🏮",
                 desc: "36 streets full of charm",
                 lat: 21.0340, lng: 105.8500,
-                photos: [
-                    // { src: "images/oldquarter1.jpg", caption: "Weekend market 🛍️" },
-                ]
+                photos: []
             },
             {
                 name: "Temple of Literature",
                 icon: "🏛️",
                 desc: "Vietnam's first university",
                 lat: 21.0267, lng: 105.8355,
-                photos: [
-                    // { src: "images/literature1.jpg", caption: "Cherry blossoms 🌸" },
-                ]
+                photos: []
             },
             {
                 name: "West Lake (Tây Hồ)",
                 icon: "🌸",
                 desc: "Sunset lotus tea & floating light",
                 lat: 21.0600, lng: 105.8300,
-                photos: [
-                    // { src: "images/westlake1.jpg", caption: "Lotus cafe 🪷" },
-                ]
+                photos: []
             },
             {
                 name: "Long Bien Bridge",
                 icon: "🌉",
                 desc: "The iconic 1902 railway bridge",
                 lat: 21.0445, lng: 105.8600,
-                photos: [
-                    // { src: "images/longbien1.jpg", caption: "Sunset view 🌇" },
-                ]
+                photos: []
             },
             {
                 name: "Dong Xuan Market",
                 icon: "🛒",
                 desc: "Hanoi's largest indoor market",
                 lat: 21.0370, lng: 105.8490,
-                photos: [
-                    // { src: "images/dongxuan1.jpg", caption: "Street snacks 🍜" },
-                ]
+                photos: []
             }
         ];
 
-        // Init map
+        // ===== VIEW TOGGLE =====
+        function switchView(view) {
+            const panels = { map: 'panelMap', list: 'panelList' };
+            const btns = { map: 'btnMap', list: 'btnList' };
+
+            Object.keys(panels).forEach(k => {
+                document.getElementById(panels[k]).classList.toggle('active', k === view);
+                document.getElementById(btns[k]).classList.toggle('active', k === view);
+            });
+
+            if (view === 'map') {
+                // Re-trigger map resize in case it was hidden on load
+                setTimeout(() => map.invalidateSize(), 50);
+            }
+        }
+
+        // ===== BUILD CHECK-IN LIST =====
+        function buildCheckinList() {
+            const list = document.getElementById('checkinList');
+            list.innerHTML = '';
+
+            if (mapPlaces.length === 0) {
+                list.innerHTML = `<div class="checkin-empty"><div class="empty-icon">📍</div><div>No check-ins yet!</div></div>`;
+                return;
+            }
+
+            mapPlaces.forEach(place => {
+                const realPhotos = place.photos.filter(p => p && p.src);
+                const item = document.createElement('div');
+                item.className = 'checkin-item';
+                item.innerHTML = `
+                    <div class="checkin-item-icon">${place.icon}</div>
+                    <div class="checkin-item-info">
+                        <div class="checkin-item-name">${place.name}</div>
+                        <div class="checkin-item-desc">${place.desc}</div>
+                    </div>
+                    <div class="checkin-item-right">
+                        <div class="checkin-photo-count">📷 ${realPhotos.length} photo${realPhotos.length !== 1 ? 's' : ''}</div>
+                        <div class="checkin-arrow">→</div>
+                    </div>
+                `;
+                item.addEventListener('click', () => openMapPopup(place));
+                list.appendChild(item);
+            });
+        }
+        buildCheckinList();
+
+        // ===== HANOI MAP =====
         const map = L.map('hanoi-map', {
             center: [21.0340, 105.8480],
             zoom: 14
@@ -1142,7 +872,6 @@
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
-        // Force map to re-check its size after page renders
         setTimeout(() => map.invalidateSize(), 300);
 
         mapPlaces.forEach(place => {
@@ -1162,6 +891,7 @@
             });
         });
 
+        // ===== PHOTO POPUP =====
         function openMapPopup(place) {
             document.getElementById('mapPopupIcon').textContent = place.icon;
             document.getElementById('mapPopupName').textContent = place.name;
