@@ -4,26 +4,20 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Our Couple Bucket List 💕</title>
+    <title>Our Journey</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
-            --bg: #fdf6f0;
+            --bg: #b4e1ee;
             --card: #ffffff;
-            --accent: #e8654a;
-            --accent2: #f5a58c;
+            --accent: #0f6295;
+            --accent2: #85b2d7;
             --soft: #fde8e0;
             --text: #2a1a14;
-            --muted: #a08070;
-            --done-bg: #f0faf4;
-            --done-border: #a8d5b5;
-            --done-text: #2d7a4f;
-            --todo-bg: #fff5f0;
-            --todo-border: #f5c0a8;
-            --todo-text: #c0532a;
+            --muted: #87b0d6;
             --shadow: 0 8px 40px rgba(232, 101, 74, 0.10);
             --radius: 18px;
         }
@@ -299,18 +293,6 @@
             border-bottom: none;
         }
 
-        tbody tr.done-row {
-            cursor: pointer;
-        }
-
-        tbody tr.done-row:hover {
-            background: #fdf0ea;
-        }
-
-        tbody tr.todo-row:hover {
-            background: #fffaf8;
-        }
-
         td {
             padding: 15px 20px;
             font-size: 0.93rem;
@@ -332,11 +314,6 @@
         .activity-name {
             font-weight: 500;
             color: var(--text);
-        }
-
-        .done-row .activity-name {
-            text-decoration: line-through;
-            color: var(--muted);
         }
 
         .activity-note {
@@ -376,18 +353,6 @@
             font-weight: 500;
         }
 
-        .status-done {
-            background: var(--done-bg);
-            color: var(--done-text);
-            border: 1px solid var(--done-border);
-        }
-
-        .status-todo {
-            background: var(--todo-bg);
-            color: var(--todo-text);
-            border: 1px solid var(--todo-border);
-        }
-
         .td-toggle {
             width: 56px;
             text-align: center;
@@ -410,13 +375,6 @@
             transform: scale(1.15);
         }
 
-        .toggle-btn.btn-done {
-            background: var(--done-bg);
-        }
-
-        .toggle-btn.btn-todo {
-            background: var(--todo-bg);
-        }
 
         .empty-state {
             text-align: center;
@@ -1077,7 +1035,7 @@
         </div>
 
         <footer>
-            Made with 💕 &nbsp;·&nbsp; Click <strong>Done activities</strong> to see pictures 📷
+            Made with 💕 &nbsp;·&nbsp;
         </footer>
     </div>
 
