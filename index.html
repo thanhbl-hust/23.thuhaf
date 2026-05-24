@@ -1,14 +1,1189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Our Couple Bucket List 💕</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #fdf6f0;
+            --card: #ffffff;
+            --accent: #e8654a;
+            --accent2: #f5a58c;
+            --soft: #fde8e0;
+            --text: #2a1a14;
+            --muted: #a08070;
+            --done-bg: #f0faf4;
+            --done-border: #a8d5b5;
+            --done-text: #2d7a4f;
+            --todo-bg: #fff5f0;
+            --todo-border: #f5c0a8;
+            --todo-text: #c0532a;
+            --shadow: 0 8px 40px rgba(232, 101, 74, 0.10);
+            --radius: 18px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 48px 16px 80px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::before {
+            width: 520px;
+            height: 520px;
+            background: var(--accent);
+            top: -120px;
+            right: -160px;
+        }
+
+        body::after {
+            width: 400px;
+            height: 400px;
+            background: #f5c0a8;
+            bottom: -100px;
+            left: -100px;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 52px;
+            animation: fadeUp 0.7s ease both;
+        }
+
+        .heart-row {
+            font-size: 1.8rem;
+            letter-spacing: 8px;
+            margin-bottom: 12px;
+            animation: pulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1)
+            }
+
+            50% {
+                transform: scale(1.08)
+            }
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 6vw, 3.4rem);
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 10px;
+        }
+
+        h1 em {
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: var(--muted);
+            font-weight: 300;
+            letter-spacing: 0.04em;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+            animation: fadeUp 0.7s 0.15s ease both;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 18px 30px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            min-width: 130px;
+        }
+
+        .stat-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .progress-wrap {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px 28px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+            animation: fadeUp 0.7s 0.25s ease both;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-bg {
+            background: var(--soft);
+            border-radius: 999px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(90deg, var(--accent2), var(--accent));
+            height: 100%;
+            border-radius: 999px;
+            transition: width 1.2s cubic-bezier(.4, 0, .2, 1);
+            width: 0%;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 28px;
+            animation: fadeUp 0.7s 0.3s ease both;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 11px 16px 11px 40px;
+            border: 1.5px solid #ecddd5;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.92rem;
+            background: var(--card);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .filter-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 10px 18px;
+            border: 1.5px solid #ecddd5;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            background: var(--card);
+            color: var(--muted);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .table-wrap {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            animation: fadeUp 0.7s 0.35s ease both;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--text);
+            color: #fff;
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        thead th:last-child {
+            text-align: center;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f3e8e0;
+            transition: background 0.15s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr.done-row {
+            cursor: pointer;
+        }
+
+        tbody tr.done-row:hover {
+            background: #fdf0ea;
+        }
+
+        tbody tr.todo-row:hover {
+            background: #fffaf8;
+        }
+
+        td {
+            padding: 15px 20px;
+            font-size: 0.93rem;
+            vertical-align: middle;
+        }
+
+        .td-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--accent2);
+            font-weight: 700;
+            width: 40px;
+        }
+
+        .td-activity {
+            min-width: 200px;
+        }
+
+        .activity-name {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .done-row .activity-name {
+            text-decoration: line-through;
+            color: var(--muted);
+        }
+
+        .activity-note {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .photo-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            color: var(--accent);
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .td-date {
+            width: 120px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .td-status {
+            width: 110px;
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        .status-done {
+            background: var(--done-bg);
+            color: var(--done-text);
+            border: 1px solid var(--done-border);
+        }
+
+        .status-todo {
+            background: var(--todo-bg);
+            color: var(--todo-text);
+            border: 1px solid var(--todo-border);
+        }
+
+        .td-toggle {
+            width: 56px;
+            text-align: center;
+        }
+
+        .toggle-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s;
+        }
+
+        .toggle-btn:hover {
+            transform: scale(1.15);
+        }
+
+        .toggle-btn.btn-done {
+            background: var(--done-bg);
+        }
+
+        .toggle-btn.btn-todo {
+            background: var(--todo-bg);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            display: none;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lb-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(20, 10, 8, 0.88);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(6px);
+        }
+
+        .lb-overlay.open {
+            display: flex;
+        }
+
+        .lb-box {
+            background: var(--card);
+            border-radius: 24px;
+            max-width: 780px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: popIn 0.35s cubic-bezier(.34, 1.56, .64, 1) both;
+            box-shadow: 0 32px 100px rgba(232, 101, 74, 0.25);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.82);
+                opacity: 0
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1
+            }
+        }
+
+        .lb-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid #f3e8e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-shrink: 0;
+        }
+
+        .lb-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        .lb-date {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .lb-close {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: var(--muted);
+            line-height: 1;
+            padding: 2px 8px;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+
+        .lb-close:hover {
+            background: var(--soft);
+        }
+
+        .lb-body {
+            overflow-y: auto;
+            padding: 20px 24px 24px;
+            flex: 1;
+        }
+
+        .lb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 12px;
+        }
+
+        .lb-grid-item {
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1/1;
+            background: var(--soft);
+            cursor: zoom-in;
+            position: relative;
+        }
+
+        .lb-grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+            display: block;
+        }
+
+        .lb-grid-item:hover img {
+            transform: scale(1.06);
+        }
+
+        .lb-grid-item .img-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(42, 26, 20, 0.72));
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 22px 10px 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .lb-grid-item:hover .img-caption {
+            opacity: 1;
+        }
+
+        .lb-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+
+        .lb-empty .lb-empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .lb-empty code {
+            background: var(--soft);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            color: var(--accent);
+        }
+
+        /* Full viewer */
+        .lb-viewer {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 5, 4, 0.96);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .lb-viewer.open {
+            display: flex;
+        }
+
+        .lb-viewer img {
+            max-width: 92vw;
+            max-height: 82vh;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            object-fit: contain;
+        }
+
+        .lb-viewer-close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            font-size: 1.6rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .lb-viewer-close:hover {
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .lb-viewer-caption {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            margin-top: 14px;
+        }
+
+        .lb-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            font-size: 1.6rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .lb-nav:hover {
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .lb-nav-prev {
+            left: 20px;
+        }
+
+        .lb-nav-next {
+            right: 20px;
+        }
+
+        /* Love counter */
+        .love-counter {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px 24px;
+            margin-bottom: 40px;
+            text-align: center;
+            animation: fadeUp 0.7s 0.12s ease both;
+        }
+
+        .lc-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        .lc-days {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.8rem, 8vw, 4.2rem);
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .lc-days-unit {
+            font-size: 1rem;
+            color: var(--muted);
+            margin: 2px 0 16px;
+        }
+
+        .lc-grid {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .lc-unit {
+            background: var(--soft);
+            border-radius: 12px;
+            padding: 12px 18px;
+            min-width: 72px;
+        }
+
+        .lc-num {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        .lc-unit-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 4px;
+        }
+
+        .lc-since {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 14px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 52px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            animation: fadeUp 0.7s 0.6s ease both;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(22px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @media (max-width: 640px) {
+            .td-date {
+                display: none;
+            }
+
+            td,
+            th {
+                padding: 12px 12px;
+            }
+
+            .lb-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
 </head>
 
 <body>
-    hello nguoi yeu
+    <div class="container">
+        <header>
+            <div class="heart-row">💕 ✨ 💕</div>
+            <h1>Our <em>Couple</em> Bucket List</h1>
+            <p class="subtitle">Những khoảnh khắc chúng mình cùng nhau tạo nên</p>
+        </header>
+
+        <!-- LOVE COUNTER -->
+        <div class="love-counter">
+            <div class="lc-label">Chúng mình đã bên nhau</div>
+            <div class="lc-days" id="lcDays">0</div>
+            <div class="lc-days-unit">ngày</div>
+            <div class="lc-grid">
+                <div class="lc-unit">
+                    <div class="lc-num" id="lcH">00</div>
+                    <div class="lc-unit-label">Giờ</div>
+                </div>
+                <div class="lc-unit">
+                    <div class="lc-num" id="lcM">00</div>
+                    <div class="lc-unit-label">Phút</div>
+                </div>
+                <div class="lc-unit">
+                    <div class="lc-num" id="lcS">00</div>
+                    <div class="lc-unit-label">Giây</div>
+                </div>
+                <div class="lc-unit">
+                    <div class="lc-num" id="lcMs">00</div>
+                    <div class="lc-unit-label">Milli</div>
+                </div>
+            </div>
+            <div class="lc-since">💕 Kể từ ngày 06/02/2026</div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-num" id="totalCount">0</div>
+                <div class="stat-label">Tổng cộng</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="doneCount">0</div>
+                <div class="stat-label">Đã làm ✅</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="todoCount">0</div>
+                <div class="stat-label">Sắp làm 🌙</div>
+            </div>
+        </div>
+
+        <div class="progress-wrap">
+            <div class="progress-label"><span>Tiến độ của chúng mình</span><span id="progressPct">0%</span></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm hoạt động..." oninput="renderTable()" />
+            </div>
+            <div class="filter-btns">
+                <button class="filter-btn active" onclick="setFilter('all',this)">Tất cả</button>
+                <button class="filter-btn" onclick="setFilter('done',this)">✅ Đã làm</button>
+                <button class="filter-btn" onclick="setFilter('todo',this)">🌙 Chưa làm</button>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Hoạt động</th>
+                        <th>Ngày</th>
+                        <th>Trạng thái</th>
+                        <th>✔</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">🌸</div>
+                <div>Không có hoạt động nào phù hợp</div>
+            </div>
+        </div>
+
+        <footer>
+            Made with 💕 &nbsp;·&nbsp; Bấm vào hoạt động <strong>đã làm</strong> để xem ảnh kỷ niệm 📷
+        </footer>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lb-overlay" id="lbOverlay">
+        <div class="lb-box">
+            <div class="lb-header">
+                <div>
+                    <div class="lb-title" id="lbTitle"></div>
+                    <div class="lb-date" id="lbDate"></div>
+                </div>
+                <button class="lb-close" onclick="closeLb()">✕</button>
+            </div>
+            <div class="lb-body">
+                <div class="lb-grid" id="lbGrid"></div>
+                <div class="lb-empty" id="lbEmpty" style="display:none">
+                    <div class="lb-empty-icon">📷</div>
+                    <div>Chưa có ảnh nào cho hoạt động này.</div>
+                    <div style="margin-top:10px;font-size:0.82rem;line-height:1.7">
+                        Thêm đường dẫn ảnh vào mảng <code>photos</code> trong phần DATA của file HTML.<br>
+                        Ví dụ: <code>"images/ten-hoat-dong/anh1.jpg"</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full viewer -->
+    <div class="lb-viewer" id="lbViewer">
+        <button class="lb-viewer-close" onclick="closeViewer()">✕</button>
+        <button class="lb-nav lb-nav-prev" id="lbPrev" onclick="navViewer(-1)">&#8249;</button>
+        <img id="lbViewerImg" src="" alt="" />
+        <div class="lb-viewer-caption" id="lbViewerCaption"></div>
+        <button class="lb-nav lb-nav-next" id="lbNext" onclick="navViewer(1)">&#8250;</button>
+    </div>
+
+    <script>
+        // ============================================================
+        //  DATA — Chỉnh sửa tại đây để thêm/sửa hoạt động và ảnh
+        //
+        //  Cấu trúc thư mục gợi ý:
+        //    /index.html
+        //    /images/
+        //      ten-hoat-dong-1/
+        //        1.jpg
+        //        2.jpg
+        //      ten-hoat-dong-2/
+        //        1.jpg
+        //
+        //  Mỗi item có:
+        //    id        — số nguyên duy nhất
+        //    name      — tên hoạt động
+        //    note      — ghi chú nhỏ (để trống "" nếu không cần)
+        //    date      — ngày hoàn thành "YYYY-MM-DD" (để trống "" nếu chưa làm)
+        //    done      — true / false
+        //    photos    — mảng { src, caption }
+        //               src: đường dẫn tương đối từ gốc repo
+        //               caption: chú thích (để trống "" nếu không cần)
+        // ============================================================
+        const items = [
+            {
+                id: 1,
+                name: 'Xem hoàng hôn ở biển cùng nhau',
+                note: 'Nha Trang',
+                date: '2024-06-15',
+                done: true,
+                photos: [
+                    { src: 'images/xem-hoang-hon/1.jpg', caption: 'Hoàng hôn Nha Trang 🌅' },
+                    { src: 'images/xem-hoang-hon/2.jpg', caption: '' },
+                    { src: 'images/xem-hoang-hon/3.jpg', caption: '' },
+                ]
+            },
+            {
+                id: 2,
+                name: 'Nấu một bữa ăn đặc biệt cho nhau',
+                note: 'Pasta tự làm',
+                date: '2024-09-10',
+                done: true,
+                photos: [
+                    { src: 'images/nau-an/1.jpg', caption: 'Pasta homemade 🍝' },
+                    { src: 'images/nau-an/2.jpg', caption: '' },
+                ]
+            },
+            {
+                id: 3,
+                name: 'Vẽ chân dung của nhau',
+                note: 'Lớp học vẽ cùng nhau',
+                date: '2024-12-01',
+                done: true,
+                photos: [
+                    { src: 'images/ve-tranh/1.jpg', caption: 'Tác phẩm của chúng mình 🎨' },
+                ]
+            },
+            {
+                id: 4,
+                name: 'Kỷ niệm ngày đầu gặp nhau',
+                note: 'Tái hiện buổi hẹn đầu tiên',
+                date: '2024-03-20',
+                done: true,
+                photos: [
+                    { src: 'images/ky-niem/1.jpg', caption: '' },
+                    { src: 'images/ky-niem/2.jpg', caption: '' },
+                    { src: 'images/ky-niem/3.jpg', caption: '' },
+                    { src: 'images/ky-niem/4.jpg', caption: '' },
+                ]
+            },
+            {
+                id: 5,
+                name: 'Cùng đọc một cuốn sách rồi thảo luận',
+                note: 'Chọn sách yêu thích của nhau',
+                date: '2024-11-05',
+                done: true,
+                photos: []
+            },
+            {
+                id: 6,
+                name: 'Cùng xem phim dưới bầu trời sao',
+                note: 'Outdoor cinema',
+                date: '',
+                done: false,
+                photos: []
+            },
+            {
+                id: 7,
+                name: 'Leo núi và cắm trại qua đêm',
+                note: 'Ba Vì hoặc Fansipan',
+                date: '',
+                done: false,
+                photos: []
+            },
+            {
+                id: 8,
+                name: 'Đi spa và thư giãn cả ngày',
+                note: 'Chỉ hai đứa mình',
+                date: '',
+                done: false,
+                photos: []
+            },
+            {
+                id: 9,
+                name: 'Học khiêu vũ cùng nhau',
+                note: 'Salsa hoặc Waltz',
+                date: '',
+                done: false,
+                photos: []
+            },
+            {
+                id: 10,
+                name: 'Đi chợ phiên và ăn đồ ăn đường phố',
+                note: 'Hội An hoặc Đà Lạt',
+                date: '',
+                done: false,
+                photos: []
+            },
+            {
+                id: 11,
+                name: 'Chụp bộ ảnh cưới thử',
+                note: 'Áo dài truyền thống',
+                date: '',
+                done: false,
+                photos: []
+            },
+            {
+                id: 12,
+                name: 'Đi Đà Lạt cuối tuần',
+                note: 'Săn mây buổi sáng sớm',
+                date: '',
+                done: false,
+                photos: []
+            },
+        ];
+
+        // ============================================================
+        let filter = 'all';
+        let currentPhotos = [];
+        let viewerIndex = 0;
+
+        function setFilter(f, btn) {
+            filter = f;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderTable();
+        }
+
+        function renderTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const body = document.getElementById('tableBody');
+            const empty = document.getElementById('emptyState');
+            let filtered = items.filter(it => {
+                if (filter === 'done' && !it.done) return false;
+                if (filter === 'todo' && it.done) return false;
+                if (q && !it.name.toLowerCase().includes(q) && !(it.note || '').toLowerCase().includes(q)) return false;
+                return true;
+            });
+            updateStats();
+            if (filtered.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            body.innerHTML = filtered.map((it, idx) => {
+                const dateStr = it.date ? new Date(it.date).toLocaleDateString('vi-VN') : '—';
+                const cnt = (it.photos || []).length;
+                return `
+        <tr class="${it.done ? 'done-row' : 'todo-row'}"
+          ${it.done ? `onclick="openLb(${it.id})" title="Xem ảnh kỷ niệm 📷"` : ''}>
+          <td class="td-num">${String(idx + 1).padStart(2, '0')}</td>
+          <td class="td-activity">
+            <div class="activity-name">${it.name}</div>
+            ${it.note ? `<div class="activity-note">${it.note}</div>` : ''}
+            ${it.done ? `<div class="photo-hint">📷 ${cnt > 0 ? cnt + ' ảnh · bấm để xem' : 'Bấm để xem ảnh'}</div>` : ''}
+          </td>
+          <td class="td-date">${dateStr}</td>
+          <td class="td-status">
+            <span class="status-badge ${it.done ? 'status-done' : 'status-todo'}">
+              ${it.done ? '✅ Đã làm' : '🌙 Chưa làm'}
+            </span>
+          </td>
+          <td class="td-toggle" onclick="event.stopPropagation()">
+            <button class="toggle-btn ${it.done ? 'btn-done' : 'btn-todo'}"
+              onclick="toggleDone(${it.id})"
+              title="${it.done ? 'Đánh dấu chưa làm' : 'Đánh dấu đã làm'}">
+              ${it.done ? '✅' : '○'}
+            </button>
+          </td>
+        </tr>`;
+            }).join('');
+        }
+
+        function updateStats() {
+            const total = items.length;
+            const done = items.filter(i => i.done).length;
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('doneCount').textContent = done;
+            document.getElementById('todoCount').textContent = total - done;
+            const pct = total ? Math.round((done / total) * 100) : 0;
+            document.getElementById('progressPct').textContent = pct + '%';
+            document.getElementById('progressFill').style.width = pct + '%';
+        }
+
+        function toggleDone(id) {
+            const it = items.find(i => i.id === id);
+            if (it) { it.done = !it.done; if (it.done && !it.date) it.date = new Date().toISOString().split('T')[0]; }
+            renderTable();
+        }
+
+        // Lightbox
+        function openLb(id) {
+            const it = items.find(i => i.id === id);
+            if (!it) return;
+            document.getElementById('lbTitle').textContent = it.name;
+            document.getElementById('lbDate').textContent = it.date ? '📅 ' + new Date(it.date).toLocaleDateString('vi-VN') : '';
+            const photos = it.photos || [];
+            const grid = document.getElementById('lbGrid');
+            const lbEmpty = document.getElementById('lbEmpty');
+            if (photos.length === 0) {
+                grid.innerHTML = '';
+                lbEmpty.style.display = 'block';
+            } else {
+                lbEmpty.style.display = 'none';
+                grid.innerHTML = photos.map((p, i) => `
+        <div class="lb-grid-item" onclick="openViewer(${id}, ${i})">
+          <img src="${p.src}" alt="${p.caption || ''}" loading="lazy"
+            onerror="this.style.display='none';this.parentElement.innerHTML+='<div style=\'display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.8rem;padding:10px;text-align:center\'>Ảnh chưa được thêm vào</div>'" />
+          ${p.caption ? `<div class="img-caption">${p.caption}</div>` : ''}
+        </div>`).join('');
+            }
+            document.getElementById('lbOverlay').classList.add('open');
+        }
+
+        function closeLb() { document.getElementById('lbOverlay').classList.remove('open'); }
+
+        function openViewer(itemId, photoIndex) {
+            const it = items.find(i => i.id === itemId);
+            if (!it) return;
+            currentPhotos = it.photos || [];
+            viewerIndex = photoIndex;
+            updateViewer();
+            document.getElementById('lbViewer').classList.add('open');
+        }
+
+        function updateViewer() {
+            const p = currentPhotos[viewerIndex];
+            document.getElementById('lbViewerImg').src = p.src;
+            document.getElementById('lbViewerCaption').textContent = p.caption || (viewerIndex + 1) + ' / ' + currentPhotos.length;
+            document.getElementById('lbPrev').style.display = viewerIndex > 0 ? 'flex' : 'none';
+            document.getElementById('lbNext').style.display = viewerIndex < currentPhotos.length - 1 ? 'flex' : 'none';
+        }
+
+        function navViewer(dir) {
+            viewerIndex = Math.max(0, Math.min(currentPhotos.length - 1, viewerIndex + dir));
+            updateViewer();
+        }
+
+        function closeViewer() { document.getElementById('lbViewer').classList.remove('open'); }
+
+        document.addEventListener('keydown', e => {
+            if (document.getElementById('lbViewer').classList.contains('open')) {
+                if (e.key === 'ArrowLeft') navViewer(-1);
+                if (e.key === 'ArrowRight') navViewer(1);
+                if (e.key === 'Escape') closeViewer();
+            } else if (document.getElementById('lbOverlay').classList.contains('open')) {
+                if (e.key === 'Escape') closeLb();
+            }
+        });
+
+        document.getElementById('lbOverlay').addEventListener('click', e => { if (e.target === document.getElementById('lbOverlay')) closeLb(); });
+        document.getElementById('lbViewer').addEventListener('click', e => { if (e.target === document.getElementById('lbViewer')) closeViewer(); });
+
+
+        // Love counter
+        const LOVE_START = new Date('2026-02-06T00:00:00');
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function loveTick() {
+            const diff = Date.now() - LOVE_START.getTime();
+            if (diff < 0) return;
+            const days = Math.floor(diff / 86400000);
+            const rem = diff % 86400000;
+            document.getElementById('lcDays').textContent = days.toLocaleString('vi-VN');
+            document.getElementById('lcH').textContent = pad2(Math.floor(rem / 3600000));
+            document.getElementById('lcM').textContent = pad2(Math.floor((rem % 3600000) / 60000));
+            document.getElementById('lcS').textContent = pad2(Math.floor((rem % 60000) / 1000));
+            document.getElementById('lcMs').textContent = pad2(Math.floor((rem % 1000) / 10));
+        }
+        loveTick();
+        setInterval(loveTick, 50);
+        renderTable();
+        setTimeout(() => {
+            const pct = items.filter(i => i.done).length / items.length * 100;
+            document.getElementById('progressFill').style.width = Math.round(pct) + '%';
+        }, 300);
+    </script>
 </body>
 
 </html>
