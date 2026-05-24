@@ -74,19 +74,6 @@
             z-index: 1;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 52px;
-            animation: fadeUp 0.7s ease both;
-        }
-
-        .heart-row {
-            font-size: 1.8rem;
-            letter-spacing: 8px;
-            margin-bottom: 12px;
-            animation: pulse 2.5s ease-in-out infinite;
-        }
-
         @keyframes pulse {
 
             0%,
@@ -110,13 +97,6 @@
         h1 em {
             font-style: italic;
             color: var(--accent);
-        }
-
-        .subtitle {
-            font-size: 1rem;
-            color: var(--muted);
-            font-weight: 300;
-            letter-spacing: 0.04em;
         }
 
         /* Love counter */
@@ -188,10 +168,9 @@
             margin-top: 14px;
         }
 
-        /* ===== TAB TOGGLE ===== */
+        /* Tab toggle */
         .view-toggle {
             display: flex;
-            gap: 0;
             background: var(--card);
             border-radius: 14px;
             box-shadow: var(--shadow);
@@ -237,7 +216,7 @@
             transform: scale(1.15);
         }
 
-        /* ===== VIEW PANELS ===== */
+        /* View panels */
         .view-panel {
             display: none;
             animation: fadeUp 0.4s ease both;
@@ -247,7 +226,7 @@
             display: block;
         }
 
-        /* ===== MAP SECTION ===== */
+        /* Map section */
         .map-section-title {
             font-family: 'Playfair Display', serif;
             font-size: 1.5rem;
@@ -279,9 +258,9 @@
             height: 460px;
         }
 
-        /* ===== CHECK-IN LIST ===== */
+        /* Check-in list */
         .checkin-header {
-            margin-bottom: 18px;
+            margin-bottom: 14px;
         }
 
         .checkin-title {
@@ -300,6 +279,56 @@
         .checkin-sub {
             font-size: 0.85rem;
             color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        /* Sort bar */
+        .sort-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .sort-label {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-weight: 500;
+            margin-right: 2px;
+        }
+
+        .sort-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 999px;
+            border: 1.5px solid #c8d8e8;
+            background: var(--card);
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.18s;
+            box-shadow: var(--shadow);
+        }
+
+        .sort-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .sort-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(15, 98, 149, 0.25);
+        }
+
+        .sort-btn .sort-icon {
+            font-size: 0.95rem;
         }
 
         .checkin-list {
@@ -670,7 +699,7 @@
             line-height: 1;
         }
 
-        /* Heart pin markers for special locations */
+        /* Heart pin markers */
         .heart-pin {
             cursor: pointer;
             filter: drop-shadow(0 4px 6px rgba(232, 69, 90, 0.55));
@@ -685,23 +714,23 @@
 
             0%,
             100% {
-                transform: scale(1);
+                transform: scale(1)
             }
 
             14% {
-                transform: scale(1.18);
+                transform: scale(1.18)
             }
 
             28% {
-                transform: scale(1);
+                transform: scale(1)
             }
 
             42% {
-                transform: scale(1.12);
+                transform: scale(1.12)
             }
 
             56% {
-                transform: scale(1);
+                transform: scale(1)
             }
         }
 
@@ -771,7 +800,7 @@
             <div class="lc-since">💕 Since 06/02/2026</div>
         </div>
 
-        <!-- TAB TOGGLE BUTTONS -->
+        <!-- TAB TOGGLE -->
         <div class="view-toggle">
             <button class="view-toggle-btn active" id="btnMap" onclick="switchView('map')">
                 <span class="btn-icon">🗺️</span> Our Map
@@ -783,8 +812,7 @@
 
         <!-- MAP VIEW -->
         <div class="view-panel active" id="panelMap">
-            <div class="map-section-title">📍 Our <em>Hanoi</em> Map</div>
-            <div class="map-section-sub">Tap a pin to see our photos at that spot 💕</div>
+            <div class="map-section-title">📍 Our <em>City</em> Map</div>
             <div class="map-wrapper">
                 <div id="hanoi-map"></div>
             </div>
@@ -794,8 +822,19 @@
         <div class="view-panel" id="panelList">
             <div class="checkin-header">
                 <div class="checkin-title">📋 Our <em>Check-ins</em></div>
-                <div class="checkin-sub">Every place we've been together 💕 — tap to see photos</div>
             </div>
+
+            <!-- Sort bar -->
+            <div class="sort-bar">
+                <span class="sort-label">Sort by:</span>
+                <button class="sort-btn active" id="sortAZ" onclick="setSort('az')">
+                    <span class="sort-icon">🔤</span> A → Z
+                </button>
+                <button class="sort-btn" id="sortVisits" onclick="setSort('visits')">
+                    <span class="sort-icon">🗓</span> Most visited
+                </button>
+            </div>
+
             <div class="checkin-list" id="checkinList"></div>
         </div>
 
@@ -821,9 +860,7 @@
             <img id="mapViewerImg" src="" alt="" />
         </div>
 
-        <footer>
-            Made with 💕 &nbsp;·&nbsp;
-        </footer>
+        <footer>Made with 💕 &nbsp;·&nbsp;</footer>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -846,8 +883,6 @@
         setInterval(loveTick, 50);
 
         // ===== PLACES DATA =====
-        // Each place has a `visits` array. Every visit has a `date` (YYYY-MM-DD) and its own `photos`.
-        // To add a second visit to a place, just push another { date, photos } object into its visits array.
         const mapPlaces = [
             {
                 name: "Phu Sa Phin",
@@ -862,24 +897,53 @@
                             { src: "images/IMG_1994.png", caption: "Sunrise" },
                         ]
                     }
-                    // Example second visit — uncomment and fill in to use:
-                    // {
-                    //     date: "2026-04-10",
-                    //     photos: [
-                    //         { src: "images/IMG_3000.jpg", caption: "Trail" },
-                    //     ]
-                    // }
+                ]
+            },
+            {
+                name: "Su Ming - Pho Duc Chinh",
+                icon: "🍹",
+                desc: "Chua biet mo ta gii",
+                lat: 21.04620088796732, lng: 105.84292809455606,
+                visits: [
+                    {
+                        date: "2025-12-28",
+                        photos: []
+                    },
+                    {
+                        date: "2026-05-09",
+                        photos: []
+                    }
                 ]
             }
-            //,
-            // {
-            //     name: "Hoan Kiem Lake",
-            //     icon: "🏞️",
-            //     desc: "The heart of the Old Quarter",
-            //     lat: 21.0285, lng: 105.8524,
-            //     visits: []
-            // }
         ];
+
+        // ===== SORT STATE =====
+        let currentSort = 'az';
+
+        function setSort(mode) {
+            currentSort = mode;
+            document.getElementById('sortAZ').classList.toggle('active', mode === 'az');
+            document.getElementById('sortVisits').classList.toggle('active', mode === 'visits');
+            buildCheckinList();
+        }
+
+        function getSortedPlaces() {
+            const copy = [...mapPlaces];
+            if (currentSort === 'az') {
+                copy.sort((a, b) => {
+                    const nameCompare = a.name.localeCompare(b.name);
+                    if (nameCompare !== 0) return nameCompare;
+                    return b.visits.length - a.visits.length; // tiebreaker: most visited first
+                });
+            } else if (currentSort === 'visits') {
+                copy.sort((a, b) => {
+                    const visitCompare = b.visits.length - a.visits.length;
+                    if (visitCompare !== 0) return visitCompare;
+                    return a.name.localeCompare(b.name); // tiebreaker: A → Z
+                });
+            }
+            return copy;
+        }
 
         // ===== VIEW TOGGLE =====
         function switchView(view) {
@@ -889,9 +953,7 @@
                 document.getElementById(panels[k]).classList.toggle('active', k === view);
                 document.getElementById(btns[k]).classList.toggle('active', k === view);
             });
-            if (view === 'map') {
-                setTimeout(() => map.invalidateSize(), 50);
-            }
+            if (view === 'map') setTimeout(() => map.invalidateSize(), 50);
         }
 
         // ===== BUILD CHECK-IN LIST =====
@@ -899,12 +961,14 @@
             const list = document.getElementById('checkinList');
             list.innerHTML = '';
 
-            if (mapPlaces.length === 0) {
+            const sorted = getSortedPlaces();
+
+            if (sorted.length === 0) {
                 list.innerHTML = `<div class="checkin-empty"><div class="empty-icon">📍</div><div>No check-ins yet!</div></div>`;
                 return;
             }
 
-            mapPlaces.forEach(place => {
+            sorted.forEach(place => {
                 const totalPhotos = place.visits.reduce((sum, v) => sum + v.photos.filter(p => p && p.src).length, 0);
                 const visitCount = place.visits.length;
                 const item = document.createElement('div');
@@ -928,61 +992,36 @@
         buildCheckinList();
 
         // ===== HANOI MAP =====
-        const map = L.map('hanoi-map', {
-            center: [21.0340, 105.8480],
-            zoom: 14
-        });
-
+        const map = L.map('hanoi-map', { center: [21.0340, 105.8480], zoom: 14 });
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
-
         setTimeout(() => map.invalidateSize(), 300);
 
         // ===== SPECIAL HEART LOCATIONS =====
         const heartPlaces = [
-            {
-                name: "99 Tran Binh",
-                lat: 21.0349, lng: 105.7798,
-            },
-            {
-                name: "Alley 39 Ke Ve",
-                lat: 21.0839, lng: 105.7848,
-            }
+            { name: "99 Tran Binh", lat: 21.03053127477092, lng: 105.77685917843765 },
+            { name: "Alley 39 Ke Ve", lat: 21.090629250221696, lng: 105.78260461048058 }
         ];
 
         mapPlaces.forEach(place => {
             const icon = L.divIcon({
                 html: `<div class="custom-pin"><div class="custom-pin-inner">${place.icon}</div></div>`,
-                className: '',
-                iconSize: [38, 38],
-                iconAnchor: [19, 38],
-                popupAnchor: [0, -42]
+                className: '', iconSize: [38, 38], iconAnchor: [19, 38], popupAnchor: [0, -42]
             });
-
             const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
             marker.on('click', () => openMapPopup(place));
-            marker.bindTooltip(`<b>${place.name}</b>`, {
-                direction: 'top',
-                offset: [0, -42]
-            });
+            marker.bindTooltip(`<b>${place.name}</b>`, { direction: 'top', offset: [0, -42] });
         });
 
         heartPlaces.forEach(place => {
             const icon = L.divIcon({
                 html: `<div class="heart-pin"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="44" viewBox="0 0 48 44"><path d="M24 40 C24 40 4 26 4 14 C4 7.4 9.4 2 16 2 C19.8 2 23.2 3.8 24 6 C24.8 3.8 28.2 2 32 2 C38.6 2 44 7.4 44 14 C44 26 24 40 24 40Z" fill="#e8455a" stroke="#fff" stroke-width="2.5"/></svg></div>`,
-                className: '',
-                iconSize: [48, 44],
-                iconAnchor: [24, 40],
-                popupAnchor: [0, -44]
+                className: '', iconSize: [48, 44], iconAnchor: [24, 40], popupAnchor: [0, -44]
             });
-
             const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
-            marker.bindTooltip(`<b>💕 ${place.name}</b>`, {
-                direction: 'top',
-                offset: [0, -28]
-            });
+            marker.bindTooltip(`<b>💕 ${place.name}</b>`, { direction: 'top', offset: [0, -28] });
         });
 
         // ===== PHOTO POPUP =====
@@ -999,18 +1038,12 @@
             body.innerHTML = '';
 
             if (place.visits.length === 0) {
-                body.innerHTML = `
-                    <div class="visit-empty-state">
-                        <div class="empty-icon">🗓️</div>
-                        <div>No visits yet — add one to <code>visits: []</code></div>
-                    </div>`;
+                body.innerHTML = `<div class="visit-empty-state"><div class="empty-icon">🗓️</div><div>No visits yet</div></div>`;
                 return;
             }
 
-            // Tab bar
             const tabBar = document.createElement('div');
             tabBar.className = 'visit-tab-bar';
-
             place.visits.forEach((visit, i) => {
                 const tab = document.createElement('button');
                 tab.className = 'visit-tab' + (i === activeIdx ? ' active' : '');
@@ -1023,10 +1056,8 @@
             });
             body.appendChild(tabBar);
 
-            // Photo grid for selected visit
             const currentVisit = place.visits[activeIdx];
             const realPhotos = currentVisit ? currentVisit.photos.filter(p => p && p.src) : [];
-
             const photoGrid = document.createElement('div');
             photoGrid.className = 'map-photo-grid';
 
@@ -1035,9 +1066,7 @@
                     const item = document.createElement('div');
                     item.className = 'map-photo-item';
                     const img = document.createElement('img');
-                    img.src = photo.src;
-                    img.alt = photo.caption || place.name;
-                    img.loading = 'lazy';
+                    img.src = photo.src; img.alt = photo.caption || place.name; img.loading = 'lazy';
                     img.onclick = () => {
                         document.getElementById('mapViewerImg').src = photo.src;
                         document.getElementById('mapViewer').classList.add('open');
@@ -1051,21 +1080,12 @@
                 ph.innerHTML = `<div class="map-photo-placeholder"><div class="ph-icon">📷</div><div>No photos yet</div><code>images/yourphoto.jpg</code></div>`;
                 photoGrid.appendChild(ph);
             }
-
             body.appendChild(photoGrid);
         }
 
-        function closeMapPopup() {
-            document.getElementById('mapPopup').classList.remove('open');
-        }
-
-        document.getElementById('mapPopup').addEventListener('click', function (e) {
-            if (e.target === this) closeMapPopup();
-        });
-
-        document.getElementById('mapViewer').addEventListener('click', function (e) {
-            if (e.target === this) this.classList.remove('open');
-        });
+        function closeMapPopup() { document.getElementById('mapPopup').classList.remove('open'); }
+        document.getElementById('mapPopup').addEventListener('click', function (e) { if (e.target === this) closeMapPopup(); });
+        document.getElementById('mapViewer').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
     </script>
 </body>
 
