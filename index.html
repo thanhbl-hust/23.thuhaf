@@ -133,7 +133,6 @@
         .lc-label {
             font-size: 3rem;
             color: var(--muted);
-            text-transform: uppercase;
             letter-spacing: 0.1em;
             margin-bottom: 6px;
         }
@@ -380,6 +379,18 @@
             border-radius: 999px;
         }
 
+        .checkin-visit-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            color: #0a7a3c;
+            font-weight: 500;
+            background: rgba(15, 149, 75, 0.08);
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+
         .checkin-arrow {
             font-size: 0.85rem;
             color: var(--muted);
@@ -488,6 +499,49 @@
             overflow-y: auto;
             padding: 20px 24px 24px;
             flex: 1;
+        }
+
+        /* Visit tabs */
+        .visit-tab-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .visit-tab {
+            padding: 6px 14px;
+            border-radius: 10px;
+            border: 1.5px solid #c8d8e8;
+            background: transparent;
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.18s;
+        }
+
+        .visit-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .visit-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .visit-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+
+        .visit-empty-state .empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
         }
 
         .map-photo-grid {
@@ -616,6 +670,41 @@
             line-height: 1;
         }
 
+        /* Heart pin markers for special locations */
+        .heart-pin {
+            cursor: pointer;
+            filter: drop-shadow(0 4px 6px rgba(232, 69, 90, 0.55));
+            animation: heartBeat 2s ease-in-out infinite;
+        }
+
+        .heart-pin:hover {
+            filter: drop-shadow(0 6px 10px rgba(232, 69, 90, 0.8));
+        }
+
+        @keyframes heartBeat {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            14% {
+                transform: scale(1.18);
+            }
+
+            28% {
+                transform: scale(1);
+            }
+
+            42% {
+                transform: scale(1.12);
+            }
+
+            56% {
+                transform: scale(1);
+            }
+        }
+
         footer {
             text-align: center;
             margin-top: 52px;
@@ -658,7 +747,7 @@
 
         <!-- LOVE COUNTER -->
         <div class="love-counter">
-            <div class="lc-label">🐴 &nbsp; LUV &nbsp; ✈️</div>
+            <div class="lc-label">🐴 &nbsp; luv &nbsp; ✈️</div>
             <div class="lc-days" id="lcDays">0</div>
             <div class="lc-days-unit">Days</div>
             <div class="lc-grid">
@@ -721,9 +810,7 @@
                     </div>
                     <button class="map-popup-close" onclick="closeMapPopup()">✕</button>
                 </div>
-                <div class="map-popup-body">
-                    <div class="map-photo-grid" id="mapPhotoGrid"></div>
-                </div>
+                <div class="map-popup-body" id="mapPopupBody"></div>
             </div>
         </div>
 
@@ -759,73 +846,50 @@
         setInterval(loveTick, 50);
 
         // ===== PLACES DATA =====
+        // Each place has a `visits` array. Every visit has a `date` (YYYY-MM-DD) and its own `photos`.
+        // To add a second visit to a place, just push another { date, photos } object into its visits array.
         const mapPlaces = [
             {
                 name: "Phu Sa Phin",
                 icon: "🏞️",
                 desc: "Lan trekking dau tienn",
                 lat: 21.408675, lng: 104.325442,
-                photos: [
-                    { src: "images/IMG_2820.PNG", caption: "Us" },
-                    { src: "images/IMG_1994.png", caption: "Sunrise" },
+                visits: [
+                    {
+                        date: "2026-02-06",
+                        photos: [
+                            { src: "images/IMG_2820.PNG", caption: "Us" },
+                            { src: "images/IMG_1994.png", caption: "Sunrise" },
+                        ]
+                    }
+                    // Example second visit — uncomment and fill in to use:
+                    // {
+                    //     date: "2026-04-10",
+                    //     photos: [
+                    //         { src: "images/IMG_3000.jpg", caption: "Trail" },
+                    //     ]
+                    // }
                 ]
-            },
-            {
-                name: "Hoan Kiem Lake",
-                icon: "🏞️",
-                desc: "The heart of the Old Quarter",
-                lat: 21.0285, lng: 105.8524,
-                photos: []
-            },
-            {
-                name: "Old Quarter",
-                icon: "🏮",
-                desc: "36 streets full of charm",
-                lat: 21.0340, lng: 105.8500,
-                photos: []
-            },
-            {
-                name: "Temple of Literature",
-                icon: "🏛️",
-                desc: "Vietnam's first university",
-                lat: 21.0267, lng: 105.8355,
-                photos: []
-            },
-            {
-                name: "West Lake (Tây Hồ)",
-                icon: "🌸",
-                desc: "Sunset lotus tea & floating light",
-                lat: 21.0600, lng: 105.8300,
-                photos: []
-            },
-            {
-                name: "Long Bien Bridge",
-                icon: "🌉",
-                desc: "The iconic 1902 railway bridge",
-                lat: 21.0445, lng: 105.8600,
-                photos: []
-            },
-            {
-                name: "Dong Xuan Market",
-                icon: "🛒",
-                desc: "Hanoi's largest indoor market",
-                lat: 21.0370, lng: 105.8490,
-                photos: []
             }
+            //,
+            // {
+            //     name: "Hoan Kiem Lake",
+            //     icon: "🏞️",
+            //     desc: "The heart of the Old Quarter",
+            //     lat: 21.0285, lng: 105.8524,
+            //     visits: []
+            // }
         ];
 
         // ===== VIEW TOGGLE =====
         function switchView(view) {
             const panels = { map: 'panelMap', list: 'panelList' };
             const btns = { map: 'btnMap', list: 'btnList' };
-
             Object.keys(panels).forEach(k => {
                 document.getElementById(panels[k]).classList.toggle('active', k === view);
                 document.getElementById(btns[k]).classList.toggle('active', k === view);
             });
-
             if (view === 'map') {
-                // Re-trigger map resize in case it was hidden on load
                 setTimeout(() => map.invalidateSize(), 50);
             }
         }
@@ -841,7 +905,8 @@
             }
 
             mapPlaces.forEach(place => {
-                const realPhotos = place.photos.filter(p => p && p.src);
+                const totalPhotos = place.visits.reduce((sum, v) => sum + v.photos.filter(p => p && p.src).length, 0);
+                const visitCount = place.visits.length;
                 const item = document.createElement('div');
                 item.className = 'checkin-item';
                 item.innerHTML = `
@@ -851,7 +916,8 @@
                         <div class="checkin-item-desc">${place.desc}</div>
                     </div>
                     <div class="checkin-item-right">
-                        <div class="checkin-photo-count">📷 ${realPhotos.length} photo${realPhotos.length !== 1 ? 's' : ''}</div>
+                        <div class="checkin-photo-count">📷 ${totalPhotos} photo${totalPhotos !== 1 ? 's' : ''}</div>
+                        <div class="checkin-visit-count">🗓 ${visitCount} visit${visitCount !== 1 ? 's' : ''}</div>
                         <div class="checkin-arrow">→</div>
                     </div>
                 `;
@@ -874,6 +940,18 @@
 
         setTimeout(() => map.invalidateSize(), 300);
 
+        // ===== SPECIAL HEART LOCATIONS =====
+        const heartPlaces = [
+            {
+                name: "99 Tran Binh",
+                lat: 21.0349, lng: 105.7798,
+            },
+            {
+                name: "Alley 39 Ke Ve",
+                lat: 21.0839, lng: 105.7848,
+            }
+        ];
+
         mapPlaces.forEach(place => {
             const icon = L.divIcon({
                 html: `<div class="custom-pin"><div class="custom-pin-inner">${place.icon}</div></div>`,
@@ -891,16 +969,66 @@
             });
         });
 
+        heartPlaces.forEach(place => {
+            const icon = L.divIcon({
+                html: `<div class="heart-pin"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="44" viewBox="0 0 48 44"><path d="M24 40 C24 40 4 26 4 14 C4 7.4 9.4 2 16 2 C19.8 2 23.2 3.8 24 6 C24.8 3.8 28.2 2 32 2 C38.6 2 44 7.4 44 14 C44 26 24 40 24 40Z" fill="#e8455a" stroke="#fff" stroke-width="2.5"/></svg></div>`,
+                className: '',
+                iconSize: [48, 44],
+                iconAnchor: [24, 40],
+                popupAnchor: [0, -44]
+            });
+
+            const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
+            marker.bindTooltip(`<b>💕 ${place.name}</b>`, {
+                direction: 'top',
+                offset: [0, -28]
+            });
+        });
+
         // ===== PHOTO POPUP =====
         function openMapPopup(place) {
             document.getElementById('mapPopupIcon').textContent = place.icon;
             document.getElementById('mapPopupName').textContent = place.name;
             document.getElementById('mapPopupDesc').textContent = place.desc;
+            document.getElementById('mapPopup').classList.add('open');
+            renderVisitTabs(place, 0);
+        }
 
-            const grid = document.getElementById('mapPhotoGrid');
-            grid.innerHTML = '';
+        function renderVisitTabs(place, activeIdx) {
+            const body = document.getElementById('mapPopupBody');
+            body.innerHTML = '';
 
-            const realPhotos = place.photos.filter(p => p && p.src);
+            if (place.visits.length === 0) {
+                body.innerHTML = `
+                    <div class="visit-empty-state">
+                        <div class="empty-icon">🗓️</div>
+                        <div>No visits yet — add one to <code>visits: []</code></div>
+                    </div>`;
+                return;
+            }
+
+            // Tab bar
+            const tabBar = document.createElement('div');
+            tabBar.className = 'visit-tab-bar';
+
+            place.visits.forEach((visit, i) => {
+                const tab = document.createElement('button');
+                tab.className = 'visit-tab' + (i === activeIdx ? ' active' : '');
+                const dateLabel = visit.date
+                    ? new Date(visit.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : 'Visit ' + (i + 1);
+                tab.textContent = 'Visit ' + (i + 1) + ' · ' + dateLabel;
+                tab.onclick = () => renderVisitTabs(place, i);
+                tabBar.appendChild(tab);
+            });
+            body.appendChild(tabBar);
+
+            // Photo grid for selected visit
+            const currentVisit = place.visits[activeIdx];
+            const realPhotos = currentVisit ? currentVisit.photos.filter(p => p && p.src) : [];
+
+            const photoGrid = document.createElement('div');
+            photoGrid.className = 'map-photo-grid';
 
             if (realPhotos.length > 0) {
                 realPhotos.forEach(photo => {
@@ -915,16 +1043,16 @@
                         document.getElementById('mapViewer').classList.add('open');
                     };
                     item.appendChild(img);
-                    grid.appendChild(item);
+                    photoGrid.appendChild(item);
                 });
             } else {
                 const ph = document.createElement('div');
                 ph.className = 'map-photo-item';
                 ph.innerHTML = `<div class="map-photo-placeholder"><div class="ph-icon">📷</div><div>No photos yet</div><code>images/yourphoto.jpg</code></div>`;
-                grid.appendChild(ph);
+                photoGrid.appendChild(ph);
             }
 
-            document.getElementById('mapPopup').classList.add('open');
+            body.appendChild(photoGrid);
         }
 
         function closeMapPopup() {
