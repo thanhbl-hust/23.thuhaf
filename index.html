@@ -772,52 +772,52 @@
         <header>
             <div class="heart-row">💕 ✨ 💕</div>
             <h1>Our <em>Couple</em> Bucket List</h1>
-            <p class="subtitle">Những khoảnh khắc chúng mình cùng nhau tạo nên</p>
+            <p class="subtitle">Our moments</p>
         </header>
 
         <!-- LOVE COUNTER -->
         <div class="love-counter">
-            <div class="lc-label">Chúng mình đã bên nhau</div>
+            <div class="lc-label">We've been together for</div>
             <div class="lc-days" id="lcDays">0</div>
-            <div class="lc-days-unit">ngày</div>
+            <div class="lc-days-unit">Days</div>
             <div class="lc-grid">
                 <div class="lc-unit">
                     <div class="lc-num" id="lcH">00</div>
-                    <div class="lc-unit-label">Giờ</div>
+                    <div class="lc-unit-label">Hours</div>
                 </div>
                 <div class="lc-unit">
                     <div class="lc-num" id="lcM">00</div>
-                    <div class="lc-unit-label">Phút</div>
+                    <div class="lc-unit-label">Minutes</div>
                 </div>
                 <div class="lc-unit">
                     <div class="lc-num" id="lcS">00</div>
-                    <div class="lc-unit-label">Giây</div>
+                    <div class="lc-unit-label">Seconds</div>
                 </div>
                 <div class="lc-unit">
                     <div class="lc-num" id="lcMs">00</div>
                     <div class="lc-unit-label">Milli</div>
                 </div>
             </div>
-            <div class="lc-since">💕 Kể từ ngày 06/02/2026</div>
+            <div class="lc-since">💕 Since 06/02/2026</div>
         </div>
 
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-num" id="totalCount">0</div>
-                <div class="stat-label">Tổng cộng</div>
+                <div class="stat-label">Total</div>
             </div>
             <div class="stat-card">
                 <div class="stat-num" id="doneCount">0</div>
-                <div class="stat-label">Đã làm ✅</div>
+                <div class="stat-label">Done ✅</div>
             </div>
             <div class="stat-card">
                 <div class="stat-num" id="todoCount">0</div>
-                <div class="stat-label">Sắp làm 🌙</div>
+                <div class="stat-label">Not yet 🌙</div>
             </div>
         </div>
 
         <div class="progress-wrap">
-            <div class="progress-label"><span>Tiến độ của chúng mình</span><span id="progressPct">0%</span></div>
+            <div class="progress-label"><span>Our process</span><span id="progressPct">0%</span></div>
             <div class="progress-bar-bg">
                 <div class="progress-bar-fill" id="progressFill"></div>
             </div>
@@ -825,12 +825,12 @@
 
         <div class="controls">
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Tìm kiếm hoạt động..." oninput="renderTable()" />
+                <input type="text" id="searchInput" placeholder="Finding Activities..." oninput="renderTable()" />
             </div>
             <div class="filter-btns">
-                <button class="filter-btn active" onclick="setFilter('all',this)">Tất cả</button>
-                <button class="filter-btn" onclick="setFilter('done',this)">✅ Đã làm</button>
-                <button class="filter-btn" onclick="setFilter('todo',this)">🌙 Chưa làm</button>
+                <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+                <button class="filter-btn" onclick="setFilter('done',this)">✅ Done</button>
+                <button class="filter-btn" onclick="setFilter('todo',this)">🌙 Not yet</button>
             </div>
         </div>
 
@@ -839,9 +839,9 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Hoạt động</th>
-                        <th>Ngày</th>
-                        <th>Trạng thái</th>
+                        <th>Activities</th>
+                        <th>Date</th>
+                        <th>Status</th>
                         <th>✔</th>
                     </tr>
                 </thead>
@@ -849,12 +849,12 @@
             </table>
             <div class="empty-state" id="emptyState">
                 <div class="empty-icon">🌸</div>
-                <div>Không có hoạt động nào phù hợp</div>
+                <div>No Activity matched</div>
             </div>
         </div>
 
         <footer>
-            Made with 💕 &nbsp;·&nbsp; Bấm vào hoạt động <strong>đã làm</strong> để xem ảnh kỷ niệm 📷
+            Made with 💕 &nbsp;·&nbsp; Click to <strong>Done activites</strong> to see pictures 📷
         </footer>
     </div>
 
