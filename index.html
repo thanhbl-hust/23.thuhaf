@@ -16,7 +16,7 @@
             --accent: #0f6295;
             --accent2: #85b2d7;
             --soft: #fde8e0;
-            --text: #2a1a14;
+            --text: #0f6295;
             --muted: #87b0d6;
             --shadow: 0 8px 40px rgba(232, 101, 74, 0.10);
             --radius: 18px;
@@ -72,18 +72,6 @@
             margin: 0 auto;
             position: relative;
             z-index: 1;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                transform: scale(1)
-            }
-
-            50% {
-                transform: scale(1.08)
-            }
         }
 
         h1 {
@@ -168,14 +156,14 @@
             margin-top: 14px;
         }
 
-        /* Tab toggle */
+        /* Tab toggle — centered */
         .view-toggle {
             display: flex;
             background: var(--card);
             border-radius: 14px;
             box-shadow: var(--shadow);
             padding: 6px;
-            margin-bottom: 24px;
+            margin: 0 auto 24px auto;
             animation: fadeUp 0.7s 0.2s ease both;
             width: fit-content;
         }
@@ -240,12 +228,6 @@
             font-style: italic;
         }
 
-        .map-section-sub {
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 18px;
-        }
-
         .map-wrapper {
             background: var(--card);
             border-radius: var(--radius);
@@ -274,12 +256,6 @@
         .checkin-title em {
             color: var(--accent);
             font-style: italic;
-        }
-
-        .checkin-sub {
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 12px;
         }
 
         /* Sort bar */
@@ -356,16 +332,10 @@
             border-color: var(--accent2);
         }
 
-        .checkin-item-icon {
-            font-size: 1.8rem;
+        .checkin-item-heart {
+            font-size: 1.4rem;
             flex-shrink: 0;
-            width: 48px;
-            height: 48px;
-            background: var(--soft);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            line-height: 1;
         }
 
         .checkin-item-info {
@@ -408,6 +378,18 @@
             border-radius: 999px;
         }
 
+        .checkin-video-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            color: #7a3f0a;
+            font-weight: 500;
+            background: rgba(200, 120, 20, 0.10);
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+
         .checkin-visit-count {
             display: inline-flex;
             align-items: center;
@@ -434,9 +416,189 @@
             box-shadow: var(--shadow);
         }
 
-        .checkin-empty .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 12px;
+        /* ===== CALENDAR ===== */
+        .calendar-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .cal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .cal-title em {
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .cal-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cal-nav-btn {
+            background: var(--card);
+            border: 1.5px solid #c8d8e8;
+            color: var(--accent);
+            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s;
+            box-shadow: var(--shadow);
+        }
+
+        .cal-nav-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .cal-month-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .calendar-grid-wrap {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .cal-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: var(--accent);
+        }
+
+        .cal-weekday {
+            text-align: center;
+            padding: 10px 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.85);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .cal-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0;
+        }
+
+        .cal-day {
+            border-right: 1px solid #eef4f8;
+            border-bottom: 1px solid #eef4f8;
+            min-height: 90px;
+            padding: 6px;
+            position: relative;
+            transition: background 0.15s;
+        }
+
+        .cal-day:nth-child(7n) {
+            border-right: none;
+        }
+
+        .cal-day.other-month {
+            background: #f7fbfd;
+        }
+
+        .cal-day.other-month .cal-day-num {
+            color: #cce0ee;
+        }
+
+        .cal-day.today {
+            background: rgba(15, 98, 149, 0.04);
+        }
+
+        .cal-day.today .cal-day-num {
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .cal-day.has-visit {
+            cursor: pointer;
+        }
+
+        .cal-day.has-visit:hover {
+            background: rgba(15, 98, 149, 0.06);
+        }
+
+        .cal-day-num {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 4px;
+            line-height: 1;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cal-day-photos {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .cal-day-thumb {
+            width: 100%;
+            aspect-ratio: 16/10;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .cal-day-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .cal-day-place-pill {
+            background: rgba(15, 98, 149, 0.10);
+            border-radius: 6px;
+            padding: 4px 6px;
+            font-size: 0.68rem;
+            color: var(--accent);
+            font-weight: 500;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cal-day-more {
+            font-size: 0.65rem;
+            color: var(--muted);
+            text-align: right;
+            margin-top: 1px;
         }
 
         /* Map popup */
@@ -573,9 +735,25 @@
             margin-bottom: 10px;
         }
 
+        .media-section-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 18px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .media-section-label:first-child {
+            margin-top: 0;
+        }
+
         .map-photo-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 10px;
         }
 
@@ -598,6 +776,28 @@
 
         .map-photo-item:hover img {
             transform: scale(1.06);
+        }
+
+        .map-video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .map-video-item {
+            border-radius: 12px;
+            overflow: hidden;
+            background: #1a1a2e;
+            position: relative;
+        }
+
+        .map-video-item video {
+            width: 100%;
+            display: block;
+            border-radius: 12px;
+            max-height: 220px;
+            object-fit: cover;
+            background: #1a1a2e;
         }
 
         .map-photo-placeholder {
@@ -627,6 +827,7 @@
             word-break: break-all;
         }
 
+        /* Full-size photo viewer */
         .map-viewer {
             display: none;
             position: fixed;
@@ -699,15 +900,10 @@
             line-height: 1;
         }
 
-        /* Heart pin markers */
         .heart-pin {
             cursor: pointer;
             filter: drop-shadow(0 4px 6px rgba(232, 69, 90, 0.55));
             animation: heartBeat 2s ease-in-out infinite;
-        }
-
-        .heart-pin:hover {
-            filter: drop-shadow(0 6px 10px rgba(232, 69, 90, 0.8));
         }
 
         @keyframes heartBeat {
@@ -767,6 +963,10 @@
                 flex: 1;
                 justify-content: center;
             }
+
+            .cal-day {
+                min-height: 64px;
+            }
         }
     </style>
 </head>
@@ -792,10 +992,6 @@
                     <div class="lc-num" id="lcS">00</div>
                     <div class="lc-unit-label">Seconds</div>
                 </div>
-                <div class="lc-unit">
-                    <div class="lc-num" id="lcMs">00</div>
-                    <div class="lc-unit-label">Milli</div>
-                </div>
             </div>
             <div class="lc-since">💕 Since 06/02/2026</div>
         </div>
@@ -806,7 +1002,10 @@
                 <span class="btn-icon">🗺️</span> Our Map
             </button>
             <button class="view-toggle-btn" id="btnList" onclick="switchView('list')">
-                <span class="btn-icon">📋</span> Check-in List
+                <span class="btn-icon">📋</span> Checked-in List
+            </button>
+            <button class="view-toggle-btn" id="btnCal" onclick="switchView('cal')">
+                <span class="btn-icon">📅</span> Our Calendar
             </button>
         </div>
 
@@ -821,10 +1020,8 @@
         <!-- CHECK-IN LIST VIEW -->
         <div class="view-panel" id="panelList">
             <div class="checkin-header">
-                <div class="checkin-title">📋 Our <em>Check-ins</em></div>
+                <div class="checkin-title">📋 Our <em>Checked-in</em></div>
             </div>
-
-            <!-- Sort bar -->
             <div class="sort-bar">
                 <span class="sort-label">Sort by:</span>
                 <button class="sort-btn active" id="sortAZ" onclick="setSort('az')">
@@ -834,8 +1031,31 @@
                     <span class="sort-icon">🗓</span> Most visited
                 </button>
             </div>
-
             <div class="checkin-list" id="checkinList"></div>
+        </div>
+
+        <!-- CALENDAR VIEW -->
+        <div class="view-panel" id="panelCal">
+            <div class="calendar-header-bar">
+                <div class="cal-title">📅 Our <em>Journey</em></div>
+                <div class="cal-nav">
+                    <button class="cal-nav-btn" onclick="calShift(-1)">‹</button>
+                    <div class="cal-month-label" id="calMonthLabel"></div>
+                    <button class="cal-nav-btn" onclick="calShift(1)">›</button>
+                </div>
+            </div>
+            <div class="calendar-grid-wrap">
+                <div class="cal-weekdays">
+                    <div class="cal-weekday">Sun</div>
+                    <div class="cal-weekday">Mon</div>
+                    <div class="cal-weekday">Tue</div>
+                    <div class="cal-weekday">Wed</div>
+                    <div class="cal-weekday">Thu</div>
+                    <div class="cal-weekday">Fri</div>
+                    <div class="cal-weekday">Sat</div>
+                </div>
+                <div class="cal-days" id="calDays"></div>
+            </div>
         </div>
 
         <!-- Map photo popup -->
@@ -863,7 +1083,9 @@
         <footer>Made with 💕 &nbsp;·&nbsp;</footer>
     </div>
 
+    <!-- ① Load data first, then the app logic -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="places.js"></script>
     <script>
         // ===== LOVE COUNTER =====
         const LOVE_START = new Date('2026-02-06T00:00:00');
@@ -877,45 +1099,23 @@
             document.getElementById('lcH').textContent = pad2(Math.floor(rem / 3600000));
             document.getElementById('lcM').textContent = pad2(Math.floor((rem % 3600000) / 60000));
             document.getElementById('lcS').textContent = pad2(Math.floor((rem % 60000) / 1000));
-            document.getElementById('lcMs').textContent = pad2(Math.floor((rem % 1000) / 10));
         }
         loveTick();
-        setInterval(loveTick, 50);
+        setInterval(loveTick, 1000);
 
-        // ===== PLACES DATA =====
-        const mapPlaces = [
-            {
-                name: "Phu Sa Phin",
-                icon: "🏞️",
-                desc: "Lan trekking dau tienn",
-                lat: 21.408675, lng: 104.325442,
-                visits: [
-                    {
-                        date: "2026-02-06",
-                        photos: [
-                            { src: "images/IMG_2820.PNG", caption: "Us" },
-                            { src: "images/IMG_1994.png", caption: "Sunrise" },
-                        ]
-                    }
-                ]
-            },
-            {
-                name: "Su Ming - Pho Duc Chinh",
-                icon: "🍹",
-                desc: "Chua biet mo ta gii",
-                lat: 21.04620088796732, lng: 105.84292809455606,
-                visits: [
-                    {
-                        date: "2025-12-28",
-                        photos: []
-                    },
-                    {
-                        date: "2026-05-09",
-                        photos: []
-                    }
-                ]
-            }
-        ];
+        // ===== BUILD DATE → VISITS INDEX =====
+        function buildDateIndex() {
+            const idx = {};
+            mapPlaces.forEach(place => {
+                place.visits.forEach((visit, vi) => {
+                    if (!visit.date) return;
+                    if (!idx[visit.date]) idx[visit.date] = [];
+                    idx[visit.date].push({ place, visitIdx: vi });
+                });
+            });
+            return idx;
+        }
+        const dateVisitMap = buildDateIndex();
 
         // ===== SORT STATE =====
         let currentSort = 'az';
@@ -931,15 +1131,13 @@
             const copy = [...mapPlaces];
             if (currentSort === 'az') {
                 copy.sort((a, b) => {
-                    const nameCompare = a.name.localeCompare(b.name);
-                    if (nameCompare !== 0) return nameCompare;
-                    return b.visits.length - a.visits.length; // tiebreaker: most visited first
+                    const nc = a.name.localeCompare(b.name);
+                    return nc !== 0 ? nc : b.visits.length - a.visits.length;
                 });
-            } else if (currentSort === 'visits') {
+            } else {
                 copy.sort((a, b) => {
-                    const visitCompare = b.visits.length - a.visits.length;
-                    if (visitCompare !== 0) return visitCompare;
-                    return a.name.localeCompare(b.name); // tiebreaker: A → Z
+                    const vc = b.visits.length - a.visits.length;
+                    return vc !== 0 ? vc : a.name.localeCompare(b.name);
                 });
             }
             return copy;
@@ -947,49 +1145,137 @@
 
         // ===== VIEW TOGGLE =====
         function switchView(view) {
-            const panels = { map: 'panelMap', list: 'panelList' };
-            const btns = { map: 'btnMap', list: 'btnList' };
-            Object.keys(panels).forEach(k => {
-                document.getElementById(panels[k]).classList.toggle('active', k === view);
-                document.getElementById(btns[k]).classList.toggle('active', k === view);
+            ['map', 'list', 'cal'].forEach(k => {
+                const key = k.charAt(0).toUpperCase() + k.slice(1);
+                document.getElementById('panel' + key).classList.toggle('active', k === view);
+                document.getElementById('btn' + key).classList.toggle('active', k === view);
             });
             if (view === 'map') setTimeout(() => map.invalidateSize(), 50);
+            if (view === 'cal') renderCalendar();
         }
 
-        // ===== BUILD CHECK-IN LIST =====
+        // ===== CHECK-IN LIST =====
         function buildCheckinList() {
             const list = document.getElementById('checkinList');
             list.innerHTML = '';
-
             const sorted = getSortedPlaces();
-
             if (sorted.length === 0) {
                 list.innerHTML = `<div class="checkin-empty"><div class="empty-icon">📍</div><div>No check-ins yet!</div></div>`;
                 return;
             }
-
             sorted.forEach(place => {
-                const totalPhotos = place.visits.reduce((sum, v) => sum + v.photos.filter(p => p && p.src).length, 0);
+                const totalPhotos = place.visits.reduce((s, v) => s + (v.photos || []).filter(p => p?.src).length, 0);
+                const totalVideos = place.visits.reduce((s, v) => s + (v.videos || []).filter(x => x?.src).length, 0);
                 const visitCount = place.visits.length;
                 const item = document.createElement('div');
                 item.className = 'checkin-item';
                 item.innerHTML = `
-                    <div class="checkin-item-icon">${place.icon}</div>
+                    <div class="checkin-item-heart">💕</div>
                     <div class="checkin-item-info">
                         <div class="checkin-item-name">${place.name}</div>
                         <div class="checkin-item-desc">${place.desc}</div>
                     </div>
                     <div class="checkin-item-right">
                         <div class="checkin-photo-count">📷 ${totalPhotos} photo${totalPhotos !== 1 ? 's' : ''}</div>
+                        ${totalVideos > 0 ? `<div class="checkin-video-count">🎬 ${totalVideos} video${totalVideos !== 1 ? 's' : ''}</div>` : ''}
                         <div class="checkin-visit-count">🗓 ${visitCount} visit${visitCount !== 1 ? 's' : ''}</div>
                         <div class="checkin-arrow">→</div>
-                    </div>
-                `;
+                    </div>`;
                 item.addEventListener('click', () => openMapPopup(place));
                 list.appendChild(item);
             });
         }
         buildCheckinList();
+
+        // ===== CALENDAR =====
+        let calYear = new Date().getFullYear();
+        let calMonth = new Date().getMonth();
+
+        function calShift(delta) {
+            calMonth += delta;
+            if (calMonth < 0) { calMonth = 11; calYear--; }
+            if (calMonth > 11) { calMonth = 0; calYear++; }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('calMonthLabel').textContent = months[calMonth] + ' ' + calYear;
+
+            const grid = document.getElementById('calDays');
+            grid.innerHTML = '';
+
+            const today = new Date();
+            const firstDay = new Date(calYear, calMonth, 1).getDay();
+            const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+            const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+            for (let i = firstDay - 1; i >= 0; i--)  appendDay(grid, daysInPrev - i, true, null, null);
+            for (let d = 1; d <= daysInMonth; d++) {
+                const isToday = (d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
+                const dateStr = `${calYear}-${pad2(calMonth + 1)}-${pad2(d)}`;
+                appendDay(grid, d, false, isToday, dateVisitMap[dateStr] || null, dateStr);
+            }
+            const trailing = (firstDay + daysInMonth) % 7;
+            if (trailing) for (let i = 1; i <= 7 - trailing; i++) appendDay(grid, i, true, null, null);
+        }
+
+        function appendDay(grid, dayNum, otherMonth, isToday, entries) {
+            const cell = document.createElement('div');
+            cell.className = 'cal-day' +
+                (otherMonth ? ' other-month' : '') +
+                (isToday ? ' today' : '') +
+                (entries ? ' has-visit' : '');
+
+            const numEl = document.createElement('div');
+            numEl.className = 'cal-day-num';
+            numEl.textContent = dayNum;
+            cell.appendChild(numEl);
+
+            if (entries?.length > 0) {
+                const wrap = document.createElement('div');
+                wrap.className = 'cal-day-photos';
+                entries.slice(0, 2).forEach(({ place, visitIdx }) => {
+                    const visit = place.visits[visitIdx];
+                    const firstPhoto = (visit.photos || []).find(p => p?.src);
+                    if (firstPhoto) {
+                        const thumb = document.createElement('div');
+                        thumb.className = 'cal-day-thumb';
+                        const img = document.createElement('img');
+                        img.src = firstPhoto.src; img.alt = place.name; img.loading = 'lazy';
+                        thumb.appendChild(img);
+                        wrap.appendChild(thumb);
+                    } else {
+                        const pill = document.createElement('div');
+                        pill.className = 'cal-day-place-pill';
+                        pill.textContent = place.icon + ' ' + place.name;
+                        wrap.appendChild(pill);
+                    }
+                });
+                if (entries.length > 2) {
+                    const more = document.createElement('div');
+                    more.className = 'cal-day-more';
+                    more.textContent = '+' + (entries.length - 2) + ' more';
+                    wrap.appendChild(more);
+                }
+                cell.appendChild(wrap);
+                cell.addEventListener('click', () => {
+                    const { place, visitIdx } = entries[0];
+                    openMapPopup(place, visitIdx);
+                });
+            }
+            grid.appendChild(cell);
+        }
+
+        // Init calendar to latest data month
+        (function () {
+            const dates = Object.keys(dateVisitMap).sort();
+            if (dates.length > 0) {
+                const d = new Date(dates[dates.length - 1] + 'T00:00:00');
+                calYear = d.getFullYear();
+                calMonth = d.getMonth();
+            }
+        })();
 
         // ===== HANOI MAP =====
         const map = L.map('hanoi-map', { center: [21.0340, 105.8480], zoom: 14 });
@@ -998,12 +1284,6 @@
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
         setTimeout(() => map.invalidateSize(), 300);
-
-        // ===== SPECIAL HEART LOCATIONS =====
-        const heartPlaces = [
-            { name: "99 Tran Binh", lat: 21.03053127477092, lng: 105.77685917843765 },
-            { name: "Alley 39 Ke Ve", lat: 21.090629250221696, lng: 105.78260461048058 }
-        ];
 
         mapPlaces.forEach(place => {
             const icon = L.divIcon({
@@ -1024,13 +1304,13 @@
             marker.bindTooltip(`<b>💕 ${place.name}</b>`, { direction: 'top', offset: [0, -28] });
         });
 
-        // ===== PHOTO POPUP =====
-        function openMapPopup(place) {
+        // ===== POPUP =====
+        function openMapPopup(place, startVisitIdx = 0) {
             document.getElementById('mapPopupIcon').textContent = place.icon;
             document.getElementById('mapPopupName').textContent = place.name;
             document.getElementById('mapPopupDesc').textContent = place.desc;
             document.getElementById('mapPopup').classList.add('open');
-            renderVisitTabs(place, 0);
+            renderVisitTabs(place, startVisitIdx);
         }
 
         function renderVisitTabs(place, activeIdx) {
@@ -1056,11 +1336,18 @@
             });
             body.appendChild(tabBar);
 
-            const currentVisit = place.visits[activeIdx];
-            const realPhotos = currentVisit ? currentVisit.photos.filter(p => p && p.src) : [];
+            const visit = place.visits[activeIdx];
+            const realPhotos = visit ? (visit.photos || []).filter(p => p?.src) : [];
+            const realVideos = visit ? (visit.videos || []).filter(v => v?.src) : [];
+
+            // Photos
+            const photoLabel = document.createElement('div');
+            photoLabel.className = 'media-section-label';
+            photoLabel.innerHTML = '📷 Photos';
+            body.appendChild(photoLabel);
+
             const photoGrid = document.createElement('div');
             photoGrid.className = 'map-photo-grid';
-
             if (realPhotos.length > 0) {
                 realPhotos.forEach(photo => {
                     const item = document.createElement('div');
@@ -1081,9 +1368,43 @@
                 photoGrid.appendChild(ph);
             }
             body.appendChild(photoGrid);
+
+            // Videos
+            const videoLabel = document.createElement('div');
+            videoLabel.className = 'media-section-label';
+            videoLabel.innerHTML = '🎬 Videos';
+            body.appendChild(videoLabel);
+
+            const videoGrid = document.createElement('div');
+            videoGrid.className = 'map-video-grid';
+            if (realVideos.length > 0) {
+                realVideos.forEach(vid => {
+                    const item = document.createElement('div');
+                    item.className = 'map-video-item';
+                    const video = document.createElement('video');
+                    video.src = vid.src;
+                    video.controls = true;
+                    video.preload = 'metadata';
+                    video.setAttribute('playsinline', '');
+                    if (vid.caption) video.title = vid.caption;
+                    item.appendChild(video);
+                    videoGrid.appendChild(item);
+                });
+            } else {
+                const ph = document.createElement('div');
+                ph.className = 'map-video-item';
+                ph.style.cssText = 'background:var(--soft);border-radius:12px;padding:24px;text-align:center;';
+                ph.innerHTML = `<div style="font-size:2rem;margin-bottom:8px;">🎬</div><div style="font-size:0.78rem;color:var(--muted);">No videos yet</div><code style="background:#f3e8e0;padding:2px 7px;border-radius:5px;font-size:0.72rem;color:var(--accent);">videos/yourvideo.mp4</code>`;
+                videoGrid.appendChild(ph);
+            }
+            body.appendChild(videoGrid);
         }
 
-        function closeMapPopup() { document.getElementById('mapPopup').classList.remove('open'); }
+        function closeMapPopup() {
+            document.querySelectorAll('#mapPopupBody video').forEach(v => v.pause());
+            document.getElementById('mapPopup').classList.remove('open');
+        }
+
         document.getElementById('mapPopup').addEventListener('click', function (e) { if (e.target === this) closeMapPopup(); });
         document.getElementById('mapViewer').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
     </script>
