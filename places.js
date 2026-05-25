@@ -26,7 +26,7 @@ const mapPlaces = [
             {
                 date: "2025-12-28",
                 photos: [
-                    { src: "pictures/suminh1-1.jpg", caption: "updatingg" }
+                    { src: "pictures/suminh.jpg", caption: "updatingg" }
                 ],
                 videos: []
             },
