@@ -165,14 +165,17 @@
             padding: 6px;
             margin: 0 auto 24px auto;
             animation: fadeUp 0.7s 0.2s ease both;
-            width: fit-content;
+            width: 100%;
+            max-width: fit-content;
+            box-sizing: border-box;
         }
 
         .view-toggle-btn {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 11px 24px;
+            justify-content: center;
+            gap: 6px;
+            padding: 11px 20px;
             border: none;
             border-radius: 10px;
             font-family: 'DM Sans', sans-serif;
@@ -183,11 +186,20 @@
             color: var(--muted);
             transition: all 0.25s cubic-bezier(.4, 0, .2, 1);
             white-space: nowrap;
+            flex: 1;
+            min-width: 0;
         }
 
         .view-toggle-btn .btn-icon {
             font-size: 1.05rem;
             transition: transform 0.25s;
+            flex-shrink: 0;
+        }
+
+        .view-toggle-btn .btn-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .view-toggle-btn:hover {
@@ -957,15 +969,31 @@
 
             .view-toggle {
                 width: 100%;
+                max-width: 100%;
             }
 
             .view-toggle-btn {
-                flex: 1;
-                justify-content: center;
+                padding: 10px 6px;
+                font-size: 0.78rem;
+                gap: 4px;
             }
 
             .cal-day {
                 min-height: 64px;
+            }
+        }
+
+        /* Very small screens: stack icon above short label */
+        @media (max-width: 380px) {
+            .view-toggle-btn {
+                flex-direction: column;
+                gap: 2px;
+                padding: 8px 4px;
+                font-size: 0.68rem;
+            }
+
+            .view-toggle-btn .btn-icon {
+                font-size: 1.2rem;
             }
         }
     </style>
@@ -999,13 +1027,13 @@
         <!-- TAB TOGGLE -->
         <div class="view-toggle">
             <button class="view-toggle-btn active" id="btnMap" onclick="switchView('map')">
-                <span class="btn-icon">🗺️</span> Our Map
+                <span class="btn-icon">🗺️</span><span class="btn-label">Our Map</span>
             </button>
             <button class="view-toggle-btn" id="btnList" onclick="switchView('list')">
-                <span class="btn-icon">📋</span> Checked-in List
+                <span class="btn-icon">📋</span><span class="btn-label">Check-ins</span>
             </button>
             <button class="view-toggle-btn" id="btnCal" onclick="switchView('cal')">
-                <span class="btn-icon">📅</span> Our Calendar
+                <span class="btn-icon">📅</span><span class="btn-label">Calendar</span>
             </button>
         </div>
 
