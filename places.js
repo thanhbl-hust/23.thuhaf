@@ -7,7 +7,7 @@ const mapPlaces = [
         lng: 104.325442,
         visits: [
             {
-                date: "2026-02-06",
+                date: "2026-02-28",
                 photos: [
                     { src: "images/IMG_2820.PNG", caption: "Us" },
                     { src: "images/IMG_1994.png", caption: "Sunrise" }

@@ -611,6 +611,40 @@
             margin-top: 1px;
         }
 
+        /* Birthday styles */
+        .cal-birthday-cake {
+            font-size: 0.75rem;
+            line-height: 1;
+            animation: cakeBounce 1.8s ease-in-out infinite;
+        }
+
+        @keyframes cakeBounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-3px);
+            }
+        }
+
+        .cal-day.is-birthday {
+            background: linear-gradient(135deg, rgba(253, 232, 224, 0.55) 0%, rgba(255, 245, 200, 0.45) 100%);
+        }
+
+        .cal-day.is-birthday.today {
+            background: linear-gradient(135deg, rgba(253, 232, 224, 0.7) 0%, rgba(255, 245, 200, 0.6) 100%);
+        }
+
+        .cal-birthday-solo {
+            font-size: 1.4rem;
+            text-align: center;
+            margin-top: 4px;
+            animation: cakeBounce 1.8s ease-in-out infinite;
+        }
+
         /* Map popup */
         .map-popup-overlay {
             display: none;
@@ -1030,7 +1064,7 @@
                 <span class="btn-icon">🗺️</span><span class="btn-label">Our Map</span>
             </button>
             <button class="view-toggle-btn" id="btnList" onclick="switchView('list')">
-                <span class="btn-icon">📋</span><span class="btn-label">Check-ins</span>
+                <span class="btn-icon">📋</span><span class="btn-label">Checked-ins</span>
             </button>
             <button class="view-toggle-btn" id="btnCal" onclick="switchView('cal')">
                 <span class="btn-icon">📅</span><span class="btn-label">Calendar</span>
@@ -1215,6 +1249,13 @@
         }
         buildCheckinList();
 
+        // ===== BIRTHDAYS =====
+        // Format: "MM-DD"
+        const BIRTHDAYS = new Set(["12-10", "06-23"]);
+        function isBirthday(month0, day) {
+            return BIRTHDAYS.has(pad2(month0 + 1) + "-" + pad2(day));
+        }
+
         // ===== CALENDAR =====
         let calYear = new Date().getFullYear();
         let calMonth = new Date().getMonth();
@@ -1238,27 +1279,43 @@
             const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
             const daysInPrev = new Date(calYear, calMonth, 0).getDate();
 
-            for (let i = firstDay - 1; i >= 0; i--)  appendDay(grid, daysInPrev - i, true, null, null);
+            for (let i = firstDay - 1; i >= 0; i--)  appendDay(grid, daysInPrev - i, true, null, null, null, null);
             for (let d = 1; d <= daysInMonth; d++) {
                 const isToday = (d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
                 const dateStr = `${calYear}-${pad2(calMonth + 1)}-${pad2(d)}`;
-                appendDay(grid, d, false, isToday, dateVisitMap[dateStr] || null, dateStr);
+                appendDay(grid, d, false, isToday, dateVisitMap[dateStr] || null, calMonth, d);
             }
             const trailing = (firstDay + daysInMonth) % 7;
-            if (trailing) for (let i = 1; i <= 7 - trailing; i++) appendDay(grid, i, true, null, null);
+            if (trailing) for (let i = 1; i <= 7 - trailing; i++) appendDay(grid, i, true, null, null, null, null);
         }
 
-        function appendDay(grid, dayNum, otherMonth, isToday, entries) {
+        function appendDay(grid, dayNum, otherMonth, isToday, entries, month0, day) {
+            const birthday = !otherMonth && month0 != null && isBirthday(month0, day);
+
             const cell = document.createElement('div');
             cell.className = 'cal-day' +
                 (otherMonth ? ' other-month' : '') +
                 (isToday ? ' today' : '') +
-                (entries ? ' has-visit' : '');
+                (entries ? ' has-visit' : '') +
+                (birthday ? ' is-birthday' : '');
+
+            // Date number row — cake sits next to number if there are entries
+            const numRow = document.createElement('div');
+            numRow.style.cssText = 'display:flex;align-items:center;gap:3px;';
 
             const numEl = document.createElement('div');
             numEl.className = 'cal-day-num';
             numEl.textContent = dayNum;
-            cell.appendChild(numEl);
+            numRow.appendChild(numEl);
+
+            if (birthday && entries?.length > 0) {
+                const cake = document.createElement('span');
+                cake.className = 'cal-birthday-cake';
+                cake.textContent = '🎂';
+                numRow.appendChild(cake);
+            }
+
+            cell.appendChild(numRow);
 
             if (entries?.length > 0) {
                 const wrap = document.createElement('div');
@@ -1276,7 +1333,8 @@
                     } else {
                         const pill = document.createElement('div');
                         pill.className = 'cal-day-place-pill';
-                        pill.textContent = place.icon + ' ' + place.name;
+                        // cake replaces icon in pill slot when birthday + no photo
+                        pill.textContent = (birthday ? '🎂 ' : place.icon + ' ') + place.name;
                         wrap.appendChild(pill);
                     }
                 });
@@ -1291,7 +1349,14 @@
                     const { place, visitIdx } = entries[0];
                     openMapPopup(place, visitIdx);
                 });
+            } else if (birthday) {
+                // No check-in but it's a birthday — show cake in the content area
+                const cakeBlock = document.createElement('div');
+                cakeBlock.className = 'cal-birthday-solo';
+                cakeBlock.textContent = '🎂';
+                cell.appendChild(cakeBlock);
             }
+
             grid.appendChild(cell);
         }
 
