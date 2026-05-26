@@ -16,6 +16,38 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Pizza 4P's - Phan Ke Binh",
+        icon: "🍕",
+        desc: "",
+        lat: 21.034281533880666,
+        lng: 105.81246668161833,
+        visits: [
+            {
+                date: "2025-12-10",
+                photos: [
+                    { src: "pictures/4p.png", caption: "Ho Teii" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Don Chicken - Vu Pham Ham",
+        icon: "🍗",
+        desc: "",
+        lat: 21.0187323551837,
+        lng: 105.79852945463436,
+        visits: [
+            {
+                date: "2026-01-27",
+                photos: [
+                    { src: "pictures/chicken.png", caption: "Fry chickenn" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Pezzi - Lieu Giai",
         icon: "🌷",
         desc: "💕",
@@ -56,7 +88,7 @@ const mapPlaces = [
         lng: 105.80776420853245,
         visits: [
             {
-                date: "2026-02-28",
+                date: "2026-04-25",
                 photos: [],
                 videos: [
                     { src: "videos/pkb.mp4", caption: "Us <3" }
