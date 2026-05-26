@@ -13,7 +13,7 @@
         :root {
             --bg: #b4e1ee;
             --card: #ffffff;
-            --accent: #0f6295;
+            --accent: #196ea0;
             --accent2: #85b2d7;
             --soft: #dae4ee;
             --text: #0f6295;
@@ -1378,8 +1378,8 @@
         }).addTo(map);
         setTimeout(() => map.invalidateSize(), 300);
 
-        const allLatLngs = [...mapPlaces.map(p => [p.lat, p.lng]), ...heartPlaces.map(p => [p.lat, p.lng])];
-        if (allLatLngs.length > 0) setTimeout(() => map.fitBounds(L.latLngBounds(allLatLngs), { padding: [48, 48], maxZoom: 15 }), 350);
+        // const allLatLngs = [...mapPlaces.map(p => [p.lat, p.lng]), ...heartPlaces.map(p => [p.lat, p.lng])];
+        // if (allLatLngs.length > 0) setTimeout(() => map.fitBounds(L.latLngBounds(allLatLngs), { padding: [48, 48], maxZoom: 15 }), 350);
 
         mapPlaces.forEach(place => {
             const icon = L.divIcon({

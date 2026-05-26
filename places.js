@@ -1,5 +1,37 @@
 const mapPlaces = [
     {
+        name: "Boujour Coffee - Nguyen Dinh Thi",
+        icon: "🍹",
+        desc: "",
+        lat: 21.04424717905687,
+        lng: 105.82071002698365,
+        visits: [
+            {
+                date: "2025-12-02",
+                photos: [
+                    { src: "pictures/bonjour.png", caption: "Ho Teii" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Pezzi - Lieu Giai",
+        icon: "🌷",
+        desc: "💕",
+        lat: 21.03501384324853,
+        lng: 105.81475996197106,
+        visits: [
+            {
+                date: "2026-02-06",
+                photos: [
+                    { src: "pictures/nts.jpg", caption: "tuylipppp" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Phu Sa Phin",
         icon: "🏞️",
         desc: "Lan trekking dau tienn",
@@ -13,6 +45,22 @@ const mapPlaces = [
                     { src: "images/IMG_1994.png", caption: "Sunrise" }
                 ],
                 videos: []
+            }
+        ]
+    },
+    {
+        name: "Takeko Yakiniku - Phan Ke Binh",
+        icon: "🥩",
+        desc: "Nuong ngonn",
+        lat: 21.036504898050183,
+        lng: 105.80776420853245,
+        visits: [
+            {
+                date: "2026-02-28",
+                photos: [],
+                videos: [
+                    { src: "videos/pkb.mp4", caption: "Us <3" }
+                ]
             }
         ]
     },
