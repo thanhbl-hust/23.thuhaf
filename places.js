@@ -25,7 +25,72 @@ const mapPlaces = [
             {
                 date: "2025-12-10",
                 photos: [
-                    { src: "pictures/4p.png", caption: "Ho Teii" }
+                    { src: "pictures/4p.png", caption: "HPBD!!" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Am Thuc 68 - Phan Ke Binh",
+        icon: "⚽",
+        desc: "",
+        lat: 21.03555970866029,
+        lng: 105.80978812883603,
+        visits: [
+            {
+                date: "2025-12-18",
+                photos: [
+                    { src: "pictures/amthuc68.png", caption: "Nhom nhom" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Lan Can Coffee - Hang Cot",
+        icon: "☕",
+        desc: "",
+        lat: 21.03764904108959,
+        lng: 105.84714846627412,
+        visits: [
+            {
+                date: "2025-12-20",
+                photos: [
+                    { src: "pictures/amthuc68.png", caption: "Nhom nhom" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Cuc Cu Coffee - Nguyen Xuan Khoat",
+        icon: "☕",
+        desc: "",
+        lat: 21.067765620766213,
+        lng: 105.79705661230727,
+        visits: [
+            {
+                date: "2025-12-23",
+                photos: [
+                    { src: "pictures/chrismast.png", caption: "Chrismasss" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Goodtime Burger - Nam Trang",
+        icon: "🍔",
+        desc: "",
+        lat: 21.047259781086805,
+        lng: 105.84102526812663,
+        visits: [
+            {
+                date: "2025-12-25",
+                photos: [
+                    { src: "pictures/withiu.png", caption: "Goodd" },
+                    { src: "pictures/cry.png", caption: "..." },
                 ],
                 // videos: []
             }
@@ -75,6 +140,22 @@ const mapPlaces = [
                 photos: [
                     { src: "images/IMG_2820.PNG", caption: "Us" },
                     { src: "images/IMG_1994.png", caption: "Sunrise" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Sa Bi Chuong - Nguyen Van Tuyet",
+        icon: "🍜",
+        desc: "Com tamm",
+        lat: 21.009547986209927,
+        lng: 105.82064532583708,
+        visits: [
+            {
+                date: "2026-04-01",
+                photos: [
+                    { src: "pictures/comtam.png", caption: "Com tam" }
                 ],
                 videos: []
             }
