@@ -203,7 +203,7 @@ const mapPlaces = [
         lng: 105.80196239515024,
         visits: [
             {
-                date: "2026-02-06",
+                date: "2026-02-02",
                 photos: [
                     { src: "pictures/katinat.png", caption: "tuylipppp" }
                 ],
