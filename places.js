@@ -1,5 +1,21 @@
 const mapPlaces = [
     {
+        name: "Ngan Chay Toi - Nguyen Khang",
+        icon: "🦆",
+        desc: "",
+        lat: 21.020343562180365,
+        lng: 105.80081168465375,
+        visits: [
+            {
+                date: "2025-11-02",
+                photos: [
+                    { src: "pictures/vit.png", caption: "duck" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Boujour Coffee - Nguyen Dinh Thi",
         icon: "🍹",
         desc: "",
@@ -32,6 +48,22 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Pang - Xe Coffee - Lac Long Quan",
+        icon: "☕",
+        desc: "",
+        lat: 21.068514549031597,
+        lng: 105.80962169166831,
+        visits: [
+            {
+                date: "2025-12-13",
+                photos: [
+                    { src: "pictures/12.png", caption: "chill" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Am Thuc 68 - Phan Ke Binh",
         icon: "⚽",
         desc: "",
@@ -57,9 +89,11 @@ const mapPlaces = [
             {
                 date: "2025-12-20",
                 photos: [
-                    { src: "pictures/amthuc68.png", caption: "Nhom nhom" }
+                    { src: "pictures/lancancf.png", caption: "Nhom nhom" }
                 ],
-                // videos: []
+                videos: [
+                    { src: "videos/hi.mp4", caption: "Nhom nhom" }
+                ]
             }
         ]
     },
@@ -91,6 +125,54 @@ const mapPlaces = [
                 photos: [
                     { src: "pictures/withiu.png", caption: "Goodd" },
                     { src: "pictures/cry.png", caption: "..." },
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Nuong Gam Cau - Pho Co",
+        icon: "🥩",
+        desc: "",
+        lat: 21.040199830167353,
+        lng: 105.84834003626658,
+        visits: [
+            {
+                date: "2025-12-28",
+                photos: [
+                    { src: "pictures/nuong.png", caption: "Goodd" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Bun cha Hanh beo - Nguyen Ba Khoan",
+        icon: "🍜",
+        desc: "",
+        lat: 21.01974090657834,
+        lng: 105.80013479763716,
+        visits: [
+            {
+                date: "2026-01-02",
+                photos: [
+                    { src: "pictures/buncha.png", caption: "Bun cha ngon" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Salento - Dolce Vita - Thanh Nien",
+        icon: "🍦",
+        desc: "",
+        lat: 21.04467572391239,
+        lng: 105.83606299023585,
+        visits: [
+            {
+                date: "2026-01-06",
+                photos: [
+                    { src: "pictures/kem.png", caption: "Kemmm" }
                 ],
                 // videos: []
             }
@@ -129,6 +211,23 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Maison Marou - Tho Nhuom",
+        icon: "💕",
+        desc: "💕",
+        lat: 21.022184799073894,
+        lng: 105.84977057791004,
+        visits: [
+            {
+                date: "2026-02-14",
+                photos: [
+                    { src: "pictures/vlt1.png", caption: "tuylipppp" },
+                    { src: "pictures/vlt2.png", caption: "tuylipppp" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Phu Sa Phin",
         icon: "🏞️",
         desc: "Lan trekking dau tienn",
@@ -138,8 +237,8 @@ const mapPlaces = [
             {
                 date: "2026-02-28",
                 photos: [
-                    { src: "images/IMG_2820.PNG", caption: "Us" },
-                    { src: "images/IMG_1994.png", caption: "Sunrise" }
+                    { src: "pictures/us.png", caption: "Us" },
+                    { src: "pictures/nui.png", caption: "Sunrise" }
                 ],
                 videos: []
             }
