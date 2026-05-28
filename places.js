@@ -63,6 +63,7 @@ const mapPlaces = [
             }
         ]
     },
+
     {
         name: "Am Thuc 68 - Phan Ke Binh",
         icon: "⚽",
