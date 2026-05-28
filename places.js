@@ -196,6 +196,22 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Katinat - Trung Hoa",
+        icon: "🥤",
+        desc: "💕",
+        lat: 21.01466049254609,
+        lng: 105.80196239515024,
+        visits: [
+            {
+                date: "2026-02-06",
+                photos: [
+                    { src: "pictures/katinat.png", caption: "tuylipppp" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Pezzi - Lieu Giai",
         icon: "🌷",
         desc: "💕",
