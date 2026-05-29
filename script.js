@@ -223,7 +223,7 @@ function appendDay(grid, dayNum, otherMonth, isToday, entries, month0, day) {
     if (entries?.length > 0) {
         const wrap = document.createElement('div');
         wrap.className = 'cal-day-photos';
-        entries.slice(0, 2).forEach(({ place, visitIdx }) => {
+        entries.slice(0, 1).forEach(({ place, visitIdx }) => {
             const visit = place.visits[visitIdx];
             const firstPhoto = (visit.photos || []).find(p => p?.src);
             if (firstPhoto) {

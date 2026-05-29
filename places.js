@@ -180,6 +180,20 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Kakuto Com Mi Nhat Ban - Pham Van Dong",
+        icon: "🍜",
+        desc: "",
+        lat: 21.044609545440686,
+        lng: 105.78079098347084,
+        visits: [
+            {
+                date: "2026-01-06",
+                photos: [],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Don Chicken - Vu Pham Ham",
         icon: "🍗",
         desc: "",
