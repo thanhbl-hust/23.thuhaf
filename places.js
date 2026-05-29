@@ -33,6 +33,22 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Jidai Coffee - Cau Giay",
+        icon: "🍵",
+        desc: "",
+        lat: 21.031948518873943,
+        lng: 105.7974590816182,
+        visits: [
+            {
+                date: "2025-11-16",
+                photos: [
+                    { src: "pictures/jidai.png", caption: "chic" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Vua Cha Ca - Tran Thai Tong",
         icon: "🦈",
         desc: "",
