@@ -16,6 +16,55 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Nollowa Chicken - Trung Hoa",
+        icon: "🍗",
+        desc: "",
+        lat: 21.016909153153474,
+        lng: 105.79992337136953,
+        visits: [
+            {
+                date: "2025-11-16",
+                photos: [
+                    { src: "pictures/nlw2.png", caption: "chic" },
+                    { src: "pictures/nlw1.png", caption: "chic" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Vua Cha Ca - Tran Thai Tong",
+        icon: "🦈",
+        desc: "",
+        lat: 21.033982986094642,
+        lng: 105.78884425952393,
+        visits: [
+            {
+                date: "2025-11-16",
+                photos: [
+                    { src: "pictures/chaca.png", caption: "chic" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Bep Nha Bo - Hoang Quoc Viet",
+        icon: "🍛",
+        desc: "",
+        lat: 21.046660712526826,
+        lng: 105.79566138114521,
+        visits: [
+            {
+                date: "2025-12-02",
+                photos: [
+                    { src: "pictures/com.png", caption: "Ho Teii" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Boujour Coffee - Nguyen Dinh Thi",
         icon: "🍹",
         desc: "",
@@ -270,6 +319,22 @@ const mapPlaces = [
                 photos: [
                     { src: "pictures/us.png", caption: "Us" },
                     { src: "pictures/nui.png", caption: "Sunrise" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Banh Tom - Phu Tay Ho",
+        icon: "🍤",
+        desc: "",
+        lat: 21.057113577543372,
+        lng: 105.82046868347116,
+        visits: [
+            {
+                date: "2026-03-08",
+                photos: [
+                    { src: "pictures/banhtom.png", caption: "Us" }
                 ],
                 videos: []
             }
