@@ -1,7 +1,7 @@
 const mapPlaces = [
     {
         name: "Ngan Chay Toi - Nguyen Khang",
-        icon: "🦆",
+        icon: "",
         desc: "",
         lat: 21.020343562180365,
         lng: 105.80081168465375,
@@ -17,7 +17,7 @@ const mapPlaces = [
     },
     {
         name: "Nollowa Chicken - Trung Hoa",
-        icon: "🍗",
+        icon: "",
         desc: "",
         lat: 21.016909153153474,
         lng: 105.79992337136953,
@@ -34,7 +34,7 @@ const mapPlaces = [
     },
     {
         name: "Jidai Coffee - Cau Giay",
-        icon: "🍵",
+        icon: "",
         desc: "",
         lat: 21.031948518873943,
         lng: 105.7974590816182,
@@ -50,7 +50,7 @@ const mapPlaces = [
     },
     {
         name: "Vua Cha Ca - Tran Thai Tong",
-        icon: "🦈",
+        icon: "",
         desc: "",
         lat: 21.033982986094642,
         lng: 105.78884425952393,
@@ -66,7 +66,7 @@ const mapPlaces = [
     },
     {
         name: "Bep Nha Bo - Hoang Quoc Viet",
-        icon: "🍛",
+        icon: "",
         desc: "",
         lat: 21.046660712526826,
         lng: 105.79566138114521,
@@ -82,7 +82,7 @@ const mapPlaces = [
     },
     {
         name: "Boujour Coffee - Nguyen Dinh Thi",
-        icon: "🍹",
+        icon: "",
         desc: "",
         lat: 21.04424717905687,
         lng: 105.82071002698365,
@@ -98,7 +98,7 @@ const mapPlaces = [
     },
     {
         name: "Pizza 4P's - Phan Ke Binh",
-        icon: "🍕",
+        icon: "",
         desc: "",
         lat: 21.034281533880666,
         lng: 105.81246668161833,
@@ -114,7 +114,7 @@ const mapPlaces = [
     },
     {
         name: "Pang - Xe Coffee - Lac Long Quan",
-        icon: "☕",
+        icon: "",
         desc: "",
         lat: 21.068514549031597,
         lng: 105.80962169166831,
@@ -131,7 +131,7 @@ const mapPlaces = [
 
     {
         name: "Am Thuc 68 - Phan Ke Binh",
-        icon: "⚽",
+        icon: "",
         desc: "",
         lat: 21.03555970866029,
         lng: 105.80978812883603,
@@ -147,7 +147,7 @@ const mapPlaces = [
     },
     {
         name: "Lan Can Coffee - Hang Cot",
-        icon: "☕",
+        icon: "",
         desc: "",
         lat: 21.03764904108959,
         lng: 105.84714846627412,
@@ -165,7 +165,7 @@ const mapPlaces = [
     },
     {
         name: "Cuc Cu Coffee - Nguyen Xuan Khoat",
-        icon: "☕",
+        icon: "",
         desc: "",
         lat: 21.067765620766213,
         lng: 105.79705661230727,
@@ -181,7 +181,7 @@ const mapPlaces = [
     },
     {
         name: "Goodtime Burger - Nam Trang",
-        icon: "🍔",
+        icon: "",
         desc: "",
         lat: 21.047259781086805,
         lng: 105.84102526812663,
@@ -198,7 +198,7 @@ const mapPlaces = [
     },
     {
         name: "Nuong Gam Cau - Pho Co",
-        icon: "🥩",
+        icon: "",
         desc: "",
         lat: 21.040199830167353,
         lng: 105.84834003626658,
@@ -214,7 +214,7 @@ const mapPlaces = [
     },
     {
         name: "Bun cha Hanh beo - Nguyen Ba Khoan",
-        icon: "🍜",
+        icon: "",
         desc: "",
         lat: 21.01974090657834,
         lng: 105.80013479763716,
@@ -230,7 +230,7 @@ const mapPlaces = [
     },
     {
         name: "Salento - Dolce Vita - Thanh Nien",
-        icon: "🍦",
+        icon: "",
         desc: "",
         lat: 21.04467572391239,
         lng: 105.83606299023585,
@@ -246,7 +246,7 @@ const mapPlaces = [
     },
     {
         name: "Kakuto Com Mi Nhat Ban - Pham Van Dong",
-        icon: "🍜",
+        icon: "",
         desc: "",
         lat: 21.044609545440686,
         lng: 105.78079098347084,
@@ -260,7 +260,7 @@ const mapPlaces = [
     },
     {
         name: "Don Chicken - Vu Pham Ham",
-        icon: "🍗",
+        icon: "",
         desc: "",
         lat: 21.0187323551837,
         lng: 105.79852945463436,
@@ -276,7 +276,7 @@ const mapPlaces = [
     },
     {
         name: "Katinat - Trung Hoa",
-        icon: "🥤",
+        icon: "",
         desc: "💕",
         lat: 21.01466049254609,
         lng: 105.80196239515024,
@@ -292,7 +292,7 @@ const mapPlaces = [
     },
     {
         name: "Pezzi - Lieu Giai",
-        icon: "🌷",
+        icon: "",
         desc: "💕",
         lat: 21.03501384324853,
         lng: 105.81475996197106,
@@ -308,7 +308,7 @@ const mapPlaces = [
     },
     {
         name: "Maison Marou - Tho Nhuom",
-        icon: "💕",
+        icon: "",
         desc: "💕",
         lat: 21.022184799073894,
         lng: 105.84977057791004,
@@ -325,7 +325,7 @@ const mapPlaces = [
     },
     {
         name: "Phu Sa Phin",
-        icon: "🏞️",
+        icon: "",
         desc: "Lan trekking dau tienn",
         lat: 21.408675,
         lng: 104.325442,
@@ -342,7 +342,7 @@ const mapPlaces = [
     },
     {
         name: "Banh Tom - Phu Tay Ho",
-        icon: "🍤",
+        icon: "",
         desc: "",
         lat: 21.057113577543372,
         lng: 105.82046868347116,
@@ -358,7 +358,7 @@ const mapPlaces = [
     },
     {
         name: "Sa Bi Chuong - Nguyen Van Tuyet",
-        icon: "🍜",
+        icon: "",
         desc: "Com tamm",
         lat: 21.009547986209927,
         lng: 105.82064532583708,
@@ -374,7 +374,7 @@ const mapPlaces = [
     },
     {
         name: "Takeko Yakiniku - Phan Ke Binh",
-        icon: "🥩",
+        icon: "",
         desc: "Nuong ngonn",
         lat: 21.036504898050183,
         lng: 105.80776420853245,
@@ -390,7 +390,7 @@ const mapPlaces = [
     },
     {
         name: "Su Ming - Pho Duc Chinh",
-        icon: "🍹",
+        icon: "",
         desc: "Chua biet mo ta gii",
         lat: 21.04620088796732,
         lng: 105.84292809455606,

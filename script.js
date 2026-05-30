@@ -296,7 +296,7 @@ mapPlaces.forEach(place => {
 heartPlaces.forEach(place => {
     const icon = L.divIcon({
         html: `<div class="heart-pin"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="44" viewBox="0 0 48 44"><path d="M24 40 C24 40 4 26 4 14 C4 7.4 9.4 2 16 2 C19.8 2 23.2 3.8 24 6 C24.8 3.8 28.2 2 32 2 C38.6 2 44 7.4 44 14 C44 26 24 40 24 40Z" fill="#e8455a" stroke="#fff" stroke-width="2.5"/></svg></div>`,
-        className: '', iconSize: [48, 44], iconAnchor: [24, 40], popupAnchor: [0, -44]
+        className: '', iconSize: [25, 25], iconAnchor: [24, 40], popupAnchor: [0, -44]
     });
     const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
     marker.bindTooltip(`<b>💕 ${place.name}</b>`, { direction: 'top', offset: [0, -28] });
