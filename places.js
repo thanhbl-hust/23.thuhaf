@@ -56,7 +56,7 @@ const mapPlaces = [
         lng: 105.78884425952393,
         visits: [
             {
-                date: "2025-11-16",
+                date: "2025-11-25",
                 photos: [
                     { src: "pictures/chaca.png", caption: "chic" }
                 ],
@@ -91,6 +91,13 @@ const mapPlaces = [
                 date: "2025-12-02",
                 photos: [
                     { src: "pictures/bonjour.png", caption: "Ho Teii" }
+                ],
+                // videos: []
+            },
+            {
+                date: "2026-07-03",
+                photos: [
+                    { src: "pictures/cf2.png", caption: "Ho Teii" }
                 ],
                 // videos: []
             }
@@ -324,6 +331,22 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Lotte Ho Tay",
+        icon: "",
+        desc: "",
+        lat: 21.07610124731252,
+        lng: 105.81261908142878,
+        visits: [
+            {
+                date: "2026-02-19",
+                photos: [
+                    { src: "pictures/lotte.png", caption: "mammammam" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Phu Sa Phin",
         icon: "",
         desc: "Lan trekking dau tienn",
@@ -412,11 +435,60 @@ const mapPlaces = [
                 ]
             }
         ]
+    },
+    {
+        name: "Kem Trang Tien - Hoan Kiem",
+        icon: "",
+        desc: "",
+        //21.025303706741482, 105.85473522549722
+        lat: 21.025303706741482,
+        lng: 105.85473522549722,
+        visits: [
+            {
+                date: "2026-07-15",
+                photos: [
+                    { src: "pictures/iccream.png", caption: "KEMM" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Hao Chi Dimsum Taipei - Tran Huy Lieu",
+        icon: "",
+        desc: "",
+        lat: 21.02735964060173,
+        lng: 105.82214106793263,
+        visits: [
+            {
+                date: "2026-07-17",
+                photos: [
+                    { src: "pictures/dim.png", caption: "dimsumm" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "The Odyssey - LotteCinema Kosmo",
+        icon: "",
+        desc: "",
+        lat: 21.068446284568033,
+        lng: 105.8024073000386,
+        visits: [
+            {
+                date: "2026-07-20",
+                photos: [
+                    { src: "pictures/movie.png", caption: "movieee" }
+                ],
+                videos: []
+            }
+        ]
     }
 ];
 
 // Special heart-pin locations (homes, meaningful spots — no popup)
 const heartPlaces = [
     { name: "99 Tran Binh", lat: 21.03053127477092, lng: 105.77685917843765 },
-    { name: "Alley 39 Ke Ve", lat: 21.090629250221696, lng: 105.78260461048058 }
+    { name: "Alley 39 Ke Ve", lat: 21.09059879968952, lng: 105.78262411444823 }
 ];
