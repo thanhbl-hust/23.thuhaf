@@ -220,6 +220,23 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Dap xe - Ho Tay",
+        icon: "",
+        desc: "",
+        lat: 21.05391922920903,
+        lng: 105.83544831350187,
+        visits: [
+            {
+                date: "2026-01-01",
+                photos: [
+                    { src: "pictures/dx2.png", caption: "Bun cha ngon" },
+                    { src: "pictures/dx1.png", caption: "Bun cha ngon" },
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Bun cha Hanh beo - Nguyen Ba Khoan",
         icon: "",
         desc: "",
@@ -230,6 +247,22 @@ const mapPlaces = [
                 date: "2026-01-02",
                 photos: [
                     { src: "pictures/buncha.png", caption: "Bun cha ngon" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Pickleball Dam Chuoi - Khuong Dinh",
+        icon: "",
+        desc: "",
+        lat: 20.989519408533315,
+        lng: 105.81687869854692,
+        visits: [
+            {
+                date: "2026-01-02",
+                photos: [
+                    { src: "pictures/pick.jpg", caption: "Bun cha ngon" }
                 ],
                 // videos: []
             }
@@ -396,6 +429,22 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Nuoc sau - Ho Tay",
+        icon: "",
+        desc: "",
+        lat: 21.05668770116845,
+        lng: 105.82234355294433,
+        visits: [
+            {
+                date: "2026-04-12",
+                photos: [
+                    { src: "pictures/hotei.JPG", caption: "" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
         name: "Takeko Yakiniku - Phan Ke Binh",
         icon: "",
         desc: "Nuong ngonn",
@@ -454,6 +503,40 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Vit 34 - Nghia Tan",
+        icon: "",
+        desc: "",
+        lat: 21.043539767507248,
+        lng: 105.79040361881019,
+        visits: [
+            {
+                date: "2026-07-04",
+                photos: [
+                    { src: "pictures/vit.jpg", caption: "duck" }
+                ],
+                videos: [
+                    { src: "videos/vit.mp4", caption: "duck" }
+                ]
+            }
+        ]
+    },
+    {
+        name: "Pho cuon Huong Mai - Xuan La",
+        icon: "",
+        desc: "",
+        lat: 21.062408319223017,
+        lng: 105.80800616283301,
+        visits: [
+            {
+                date: "2026-07-11",
+                photos: [],
+                videos: [
+                    { src: "videos/phocuon.mp4", caption: "Us <3" }
+                ]
+            }
+        ]
+    },
+    {
         name: "Hao Chi Dimsum Taipei - Tran Huy Lieu",
         icon: "",
         desc: "",
@@ -480,6 +563,22 @@ const mapPlaces = [
                 date: "2026-07-20",
                 photos: [
                     { src: "pictures/movie.png", caption: "movieee" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Practice - Ciputra",
+        icon: "",
+        desc: "",
+        lat: 21.079905158964422,
+        lng: 105.80426113419583,
+        visits: [
+            {
+                date: "2026-07-21",
+                photos: [
+                    { src: "pictures/walk.png", caption: "" }
                 ],
                 videos: []
             }
