@@ -45,6 +45,13 @@ const mapPlaces = [
                     { src: "pictures/jidai.png", caption: "chic" }
                 ],
                 // videos: []
+            },
+            {
+                date: "2025-07-25",
+                photos: [
+                    { src: "pictures/jidai1.png", caption: "chic" }
+                ],
+                // videos: []
             }
         ]
     },
@@ -364,7 +371,23 @@ const mapPlaces = [
         ]
     },
     {
-        name: "Lotte Ho Tay",
+        name: "McDonald - Thai Ha",
+        icon: "",
+        desc: "💕",
+        lat: 21.00982935136959,
+        lng: 105.82369291576708,
+        visits: [
+            {
+                date: "2026-02-15",
+                photos: [
+                    { src: "pictures/mcdonald.png", caption: "tuylipppp" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Do Nhat - Lotte Ho Tay",
         icon: "",
         desc: "",
         lat: 21.07610124731252,
@@ -407,6 +430,22 @@ const mapPlaces = [
                 date: "2026-03-08",
                 photos: [
                     { src: "pictures/banhtom.png", caption: "Us" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Pickleball Thuong Dinh - Nguyen Trai",
+        icon: "",
+        desc: "",
+        lat: 21.000190754305734,
+        lng: 105.8167916561582,
+        visits: [
+            {
+                date: "2026-03-08",
+                photos: [
+                    { src: "pictures/pick-nt.png", caption: "Us" }
                 ],
                 videos: []
             }
@@ -533,6 +572,13 @@ const mapPlaces = [
                 videos: [
                     { src: "videos/phocuon.mp4", caption: "Us <3" }
                 ]
+            },
+            {
+                date: "2026-07-25",
+                photos: [
+                    { src: "pictures/hmai.png", caption: "Us <3" }
+                ],
+                videos: []
             }
         ]
     },
@@ -576,9 +622,55 @@ const mapPlaces = [
         lng: 105.80426113419583,
         visits: [
             {
+                date: "2026-01-03",
+                photos: [
+                    { src: "pictures/ci2.jpg", caption: "" }
+                ],
+                videos: []
+            },
+            {
+                date: "2026-04-02",
+                photos: [
+                    { src: "pictures/ci1.jpg", caption: "" }
+                ],
+                videos: []
+            },
+            {
                 date: "2026-07-21",
                 photos: [
                     { src: "pictures/walk.png", caption: "" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Bia Hoi Hai Xom - Hoang Quoc Viet",
+        icon: "",
+        desc: "",
+        lat: 21.045948028015072,
+        lng: 105.80118549647857,
+        visits: [
+            {
+                date: "2026-07-24",
+                photos: [
+                    { src: "pictures/bia.png", caption: "" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "KF Billiards - Cau Giay",
+        icon: "",
+        desc: "",
+        lat: 21.031913821115634,
+        lng: 105.79705205336862,
+        visits: [
+            {
+                date: "2026-07-25",
+                photos: [
+                    { src: "pictures/bi-a.png", caption: "" }
                 ],
                 videos: []
             }
