@@ -306,6 +306,22 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Han Coffee - Nguyen Dinh Thi",
+        icon: "",
+        desc: "",
+        lat: 21.043033089534635,
+        lng: 105.82518862088916,
+        visits: [
+            {
+                date: "2026-01-23",
+                photos: [
+                    { src: "pictures/vodich.png", caption: "Fry chickenn" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Don Chicken - Vu Pham Ham",
         icon: "",
         desc: "",
@@ -354,6 +370,22 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Aventus Coffee - Tran Thai Tong",
+        icon: "",
+        desc: "💕",
+        lat: 21.0342428641151,
+        lng: 105.78930034676617,
+        visits: [
+            {
+                date: "2026-02-13",
+                photos: [
+                    { src: "pictures/paris.jpg", caption: "tuylipppp" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Maison Marou - Tho Nhuom",
         icon: "",
         desc: "💕",
@@ -381,6 +413,22 @@ const mapPlaces = [
                 date: "2026-02-15",
                 photos: [
                     { src: "pictures/mcdonald.png", caption: "tuylipppp" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Paris - Tan Xuan",
+        icon: "",
+        desc: "💕",
+        lat: 21.08442393180407,
+        lng: 105.78503676557051,
+        visits: [
+            {
+                date: "2026-02-15",
+                photos: [
+                    { src: "pictures/paris1.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             }
