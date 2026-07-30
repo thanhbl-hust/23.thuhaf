@@ -444,7 +444,7 @@ const mapPlaces = [
             {
                 date: "2026-02-19",
                 photos: [
-                    { src: "pictures/lotte.png", caption: "mammammam" }
+                    { src: "pictures/image.png", caption: "mammammam" }
                 ],
                 // videos: []
             }
