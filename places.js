@@ -1,5 +1,48 @@
 const mapPlaces = [
     {
+        name: "789 Pickleball Club - Hoang Quoc Viet",
+        icon: "",
+        desc: "",
+        lat: 21.046042656658326,
+        lng: 105.7997664393302,
+        visits: [
+            {
+                date: "2025-10-12",
+                photos: [
+                    { src: "pictures/789.PNG", caption: "duck" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "Pickleball 268 Vu Huu - Vu Huu",
+        icon: "",
+        desc: "",
+        lat: 20.994809045061615,
+        lng: 105.79641707245716,
+        visits: [
+            {
+                date: "2025-11-02",
+                photos: [
+                    { src: "pictures/vuhuu-0211.PNG", caption: "duck" }
+                ],
+            },
+            {
+                date: "2025-11-16",
+                photos: [
+                    { src: "pictures/vuhuu-1611.PNG", caption: "duck" }
+                ],
+            },
+            {
+                date: "2025-11-30",
+                photos: [
+                    { src: "pictures/vuhuu-3011.PNG", caption: "duck" }
+                ],
+            }
+        ]
+    },
+    {
         name: "Ngan Chay Toi - Nguyen Khang",
         icon: "",
         desc: "",
@@ -370,6 +413,22 @@ const mapPlaces = [
         ]
     },
     {
+        name: "Highlands Coffee - Ciputra",
+        icon: "",
+        desc: "💕",
+        lat: 21.081049863976762,
+        lng: 105.79160951234611,
+        visits: [
+            {
+                date: "2026-02-09",
+                photos: [
+                    { src: "pictures/hl-ci.PNG", caption: "tuylipppp" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
         name: "Aventus Coffee - Tran Thai Tong",
         icon: "",
         desc: "💕",
@@ -494,6 +553,13 @@ const mapPlaces = [
                 date: "2026-03-08",
                 photos: [
                     { src: "pictures/pick-nt.png", caption: "Us" }
+                ],
+                videos: []
+            },
+            {
+                date: "2026-08-02",
+                photos: [
+                    { src: "pictures/pickk.png", caption: "Us" }
                 ],
                 videos: []
             }
@@ -719,6 +785,38 @@ const mapPlaces = [
                 date: "2026-07-25",
                 photos: [
                     { src: "pictures/bi-a.png", caption: "" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Khrua Baan Thai - Tran Kim Xuyen",
+        icon: "",
+        desc: "",
+        lat: 21.017916621168506,
+        lng: 105.79762908350897,
+        visits: [
+            {
+                date: "2026-07-30",
+                photos: [
+                    { src: "pictures/thai.png", caption: "" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Katinat - Nguyen Dinh Thi",
+        icon: "",
+        desc: "",
+        lat: 21.04223045461755,
+        lng: 105.82683271997693,
+        visits: [
+            {
+                date: "2026-08-02",
+                photos: [
+                    { src: "pictures/kat.png", caption: "" }
                 ],
                 videos: []
             }
