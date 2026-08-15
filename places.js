@@ -312,7 +312,7 @@ const mapPlaces = [
             {
                 date: "2026-01-02",
                 photos: [
-                    { src: "pictures/pick.jpg", caption: "Bun cha ngon" }
+                    { src: "pictures/pick.JPG", caption: "Bun cha ngon" }
                 ],
                 // videos: []
             }
