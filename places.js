@@ -90,7 +90,7 @@ const mapPlaces = [
                 // videos: []
             },
             {
-                date: "2025-07-25",
+                date: "2026-07-25",
                 photos: [
                     { src: "pictures/jidai1.png", caption: "chic" }
                 ],
@@ -606,7 +606,9 @@ const mapPlaces = [
         visits: [
             {
                 date: "2026-04-25",
-                photos: [],
+                photos: [
+                    { src: "pictures/nuongg.png", caption: "Good drinks!" }
+                ],
                 videos: [
                     { src: "videos/pkb.mp4", caption: "Us <3" }
                 ]
@@ -635,6 +637,29 @@ const mapPlaces = [
                 videos: [
                     { src: "videos/suminh2-1.mp4", caption: "Us <3" }
                 ]
+            }
+        ]
+    },
+    {
+        name: "Be boi La Thanh - Doi Can",
+        icon: "",
+        desc: "",
+        lat: 21.034508764880695,
+        lng: 105.81964007091311,
+        visits: [
+            {
+                date: "2026-04-27",
+                photos: [
+                    { src: "pictures/boi0.png", caption: "KEMM" }
+                ],
+                videos: []
+            },
+            {
+                date: "2026-05-10",
+                photos: [
+                    { src: "pictures/boi.png", caption: "KEMM" }
+                ],
+                videos: []
             }
         ]
     },
