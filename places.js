@@ -150,6 +150,13 @@ const mapPlaces = [
                     { src: "pictures/cf2.png", caption: "Ho Teii" }
                 ],
                 // videos: []
+            },
+            {
+                date: "2026-09-07",
+                photos: [
+                    { src: "pictures/cff.PNG", caption: "Ho Teii" }
+                ],
+                // videos: []
             }
         ]
     },
@@ -474,6 +481,13 @@ const mapPlaces = [
                     { src: "pictures/mcdonald.png", caption: "tuylipppp" }
                 ],
                 // videos: []
+            },
+            {
+                date: "2026-09-05",
+                photos: [
+                    { src: "pictures/ga.png", caption: "tuylipppp" }
+                ],
+                // videos: []
             }
         ]
     },
@@ -718,6 +732,13 @@ const mapPlaces = [
                     { src: "pictures/hmai.png", caption: "Us <3" }
                 ],
                 videos: []
+            },
+            {
+                date: "2026-09-07",
+                photos: [
+                    { src: "pictures/cuonpho.png", caption: "Us <3" }
+                ],
+                videos: []
             }
         ]
     },
@@ -844,6 +865,68 @@ const mapPlaces = [
                     { src: "pictures/kat.png", caption: "" }
                 ],
                 videos: []
+            }
+        ]
+    },
+    {
+        name: "Lim Donuts - To Hieu",
+        icon: "",
+        desc: "",
+        lat: 21.042585458920144,
+        lng: 105.79595684299439,
+        visits: [
+            {
+                date: "2026-08-30",
+                photos: [
+                    { src: "pictures/donut.png", caption: "" }
+                ],
+                videos: []
+            }
+        ]
+    },
+    {
+        name: "Pizza 4P's - Au Co",
+        icon: "",
+        desc: "",
+        lat: 21.059419450817472,
+        lng: 105.8338696083173,
+        visits: [
+            {
+                date: "2026-08-31",
+                photos: [
+                    { src: "pictures/pizza.png", caption: "HPBD!!" }
+                ],
+                // videos: []
+            }
+        ]
+    },
+    {
+        name: "PITO Pickleball - Dong Thang",
+        icon: "",
+        desc: "",
+        lat: 21.088241747340295,
+        lng: 105.78203194417935,
+        visits: [
+            {
+                date: "2026-08-31",
+                photos: [
+                    { src: "pictures/pkv1.png", caption: "HPBD!!" }
+                ],
+                // videos: []
+            },
+            {
+                date: "2026-09-02",
+                photos: [
+                    { src: "pictures/pkv2.png", caption: "HPBD!!" }
+                ],
+                // videos: []
+            },
+            {
+                date: "2026-09-06",
+                photos: [
+                    { src: "pictures/pkv3.png", caption: "HPBD!!" }
+                ],
+                // videos: []
             }
         ]
     }

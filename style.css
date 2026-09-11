@@ -18,14 +18,19 @@
     padding: 0;
 }
 
+/* The page itself never scrolls: everything fits in one screen,
+   only the check-in list, the calendar and the popup scroll inside themselves */
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
-    padding: 48px 16px 80px;
     position: relative;
-    overflow-x: hidden;
 }
 
 body::before,
@@ -55,47 +60,53 @@ body::after {
     left: -100px;
 }
 
-.container {
-    max-width: 860px;
-    margin: 0 auto;
+/* ===== APP LAYOUT =====
+   Laptop: sidebar (counter + tabs) on the left, the active view fills the right.
+   Phone: counter on top, view in the middle, tabs at the bottom (see media queries). */
+.app {
     position: relative;
     z-index: 1;
-}
-
-h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(2rem, 6vw, 3.4rem);
-    font-weight: 700;
-    line-height: 1.15;
-    margin-bottom: 10px;
-}
-
-h1 em {
-    font-style: italic;
-    color: var(--accent);
+    height: 100vh;
+    height: 100dvh;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+        "hero stage"
+        "tabs stage"
+        "foot stage";
+    gap: 16px 24px;
 }
 
 /* Love counter */
 .love-counter {
+    grid-area: hero;
     background: var(--card);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    padding: 28px 24px;
-    margin-bottom: 40px;
+    padding: 24px 20px;
     text-align: center;
     animation: fadeUp 0.7s 0.12s ease both;
 }
 
 .lc-label {
-    font-size: 3rem;
+    font-size: 2.4rem;
+    line-height: 1.2;
     color: var(--muted);
     letter-spacing: 0.1em;
     margin-bottom: 6px;
 }
 
+.lc-main {
+    margin-bottom: 16px;
+}
+
 .lc-days {
     font-family: 'Playfair Display', serif;
-    font-size: clamp(2.8rem, 8vw, 4.2rem);
+    font-size: 3.6rem;
     font-weight: 700;
     color: var(--accent);
     line-height: 1;
@@ -105,25 +116,25 @@ h1 em {
 .lc-days-unit {
     font-size: 1rem;
     color: var(--muted);
-    margin: 2px 0 16px;
+    margin-top: 2px;
 }
 
 .lc-grid {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .lc-unit {
+    flex: 1;
+    max-width: 76px;
     background: var(--soft);
     border-radius: 12px;
-    padding: 12px 18px;
-    min-width: 72px;
+    padding: 10px 0;
 }
 
 .lc-num {
-    font-size: 1.7rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--text);
     font-variant-numeric: tabular-nums;
@@ -131,7 +142,7 @@ h1 em {
 }
 
 .lc-unit-label {
-    font-size: 0.7rem;
+    font-size: 0.62rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -144,31 +155,30 @@ h1 em {
     margin-top: 14px;
 }
 
-/* Tab toggle — centered */
+/* Tabs: a vertical menu in the sidebar */
 .view-toggle {
+    grid-area: tabs;
     display: flex;
+    flex-direction: column;
+    gap: 4px;
     background: var(--card);
     border-radius: 14px;
     box-shadow: var(--shadow);
     padding: 6px;
-    margin: 0 auto 24px auto;
     animation: fadeUp 0.7s 0.2s ease both;
-    width: 100%;
-    max-width: fit-content;
-    box-sizing: border-box;
 }
 
 .view-toggle-btn {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 11px 20px;
+    gap: 10px;
+    padding: 12px 16px;
     border: none;
     border-radius: 10px;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 500;
+    text-align: left;
     cursor: pointer;
     background: transparent;
     color: var(--muted);
@@ -177,7 +187,7 @@ h1 em {
 }
 
 .view-toggle-btn .btn-icon {
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     transition: transform 0.25s;
     flex-shrink: 0;
 }
@@ -192,6 +202,10 @@ h1 em {
     color: var(--accent);
 }
 
+.view-toggle-btn:not(.active):hover {
+    background: rgba(15, 98, 149, 0.06);
+}
+
 .view-toggle-btn.active {
     background: var(--accent);
     color: #fff;
@@ -202,66 +216,63 @@ h1 em {
     transform: scale(1.15);
 }
 
-/* View panels */
+/* The active view fills all the space it is given */
+.stage {
+    grid-area: stage;
+    min-width: 0;
+    min-height: 0;
+}
+
 .view-panel {
     display: none;
+    height: 100%;
+    flex-direction: column;
     animation: fadeUp 0.4s ease both;
 }
 
 .view-panel.active {
-    display: block;
+    display: flex;
 }
 
-/* Map section */
-.map-section-title {
+.panel-title {
+    flex-shrink: 0;
     font-family: 'Playfair Display', serif;
     font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 6px;
+    line-height: 1.3;
     color: var(--text);
+    margin-bottom: 12px;
 }
 
-.map-section-title em {
+.panel-title em {
     color: var(--accent);
     font-style: italic;
 }
 
+/* Map section */
 .map-wrapper {
+    flex: 1;
+    min-height: 0;
     background: var(--card);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     overflow: hidden;
+    /* Keep Leaflet's z-indexes from rising above the popups and the tab bar */
+    isolation: isolate;
 }
 
 #hanoi-map {
     width: 100%;
-    height: 460px;
-}
-
-/* Check-in list */
-.checkin-header {
-    margin-bottom: 14px;
-}
-
-.checkin-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
-}
-
-.checkin-title em {
-    color: var(--accent);
-    font-style: italic;
+    height: 100%;
 }
 
 /* Sort bar */
 .sort-bar {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     flex-wrap: wrap;
 }
 
@@ -305,20 +316,29 @@ h1 em {
     font-size: 0.95rem;
 }
 
+/* Check-in list: scrolls inside the panel */
 .checkin-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    /* Room for the card shadows and the hover lift inside the scroll box */
+    margin: 0 -8px;
+    padding: 4px 8px 16px;
 }
 
 .checkin-item {
+    flex-shrink: 0;
     background: var(--card);
     border-radius: 14px;
     box-shadow: var(--shadow);
-    padding: 16px 20px;
+    padding: 14px 18px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     cursor: pointer;
     transition: transform 0.18s, box-shadow 0.18s;
     border: 2px solid transparent;
@@ -345,23 +365,22 @@ h1 em {
     font-weight: 600;
     font-size: 1rem;
     color: var(--text);
-    margin-bottom: 2px;
 }
 
 .checkin-item-desc {
     font-size: 0.82rem;
     color: var(--muted);
+    margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.checkin-item-right {
+.checkin-item-meta {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-wrap: wrap;
     gap: 6px;
-    flex-shrink: 0;
+    margin-top: 8px;
 }
 
 .checkin-photo-count {
@@ -401,6 +420,7 @@ h1 em {
 }
 
 .checkin-arrow {
+    flex-shrink: 0;
     font-size: 0.85rem;
     color: var(--muted);
 }
@@ -415,72 +435,32 @@ h1 em {
 }
 
 /* ===== CALENDAR ===== */
-.calendar-header-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 18px;
-}
-
-.cal-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.cal-title em {
-    color: var(--accent);
-    font-style: italic;
-}
-
-.cal-nav {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.cal-nav-btn {
-    background: var(--card);
-    border: 1.5px solid #c8d8e8;
-    color: var(--accent);
-    border-radius: 10px;
-    width: 36px;
-    height: 36px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.18s;
-    box-shadow: var(--shadow);
-}
-
-.cal-nav-btn:hover {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-}
-
-.cal-month-label {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--text);
-    min-width: 140px;
-    text-align: center;
-}
-
 .calendar-grid-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     background: var(--card);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     overflow: hidden;
 }
 
+/* Takes whatever height is left on screen; the months scroll inside it */
+.cal-scroll {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
 .cal-weekdays {
+    position: sticky;
+    top: 0;
+    z-index: 3;
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     background: var(--accent);
 }
 
@@ -488,25 +468,52 @@ h1 em {
     text-align: center;
     padding: 10px 4px;
     font-size: 0.75rem;
+    line-height: 14px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.85);
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
 
+/* Month name stays pinned under the weekday row (34px tall) while its month is on screen */
+.cal-month-label {
+    position: sticky;
+    top: 34px;
+    z-index: 2;
+    padding: 8px 12px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    /* Fixed so the web font loading in late doesn't shift the scroll position */
+    line-height: 20px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    background: var(--card);
+    border-bottom: 1px solid #eef4f8;
+}
+
+/* Let the current (last) month scroll all the way up under the weekday row */
+.cal-month:last-child {
+    min-height: calc(100% - 34px);
+}
+
 .cal-days {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    /* Fixed row height so the calendar is the same size every month */
+    grid-auto-rows: 110px;
     gap: 0;
 }
 
 .cal-day {
     border-right: 1px solid #eef4f8;
     border-bottom: 1px solid #eef4f8;
-    min-height: 90px;
     padding: 6px;
     position: relative;
     transition: background 0.15s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .cal-day:nth-child(7n) {
@@ -559,14 +566,18 @@ h1 em {
 }
 
 .cal-day-photos {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 3px;
+    position: relative;
 }
 
 .cal-day-thumb {
     width: 100%;
-    aspect-ratio: 16/10;
+    flex: 1;
+    min-height: 0;
     border-radius: 6px;
     overflow: hidden;
     position: relative;
@@ -601,11 +612,18 @@ h1 em {
     word-break: break-word;
 }
 
+/* Overlaid on the cell so it never adds height */
 .cal-day-more {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
     font-size: 0.65rem;
-    color: var(--muted);
-    text-align: right;
-    margin-top: 1px;
+    line-height: 1;
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 5px;
+    border-radius: 999px;
+    white-space: nowrap;
 }
 
 /* Birthday styles */
@@ -665,6 +683,7 @@ h1 em {
     max-width: 680px;
     width: 100%;
     max-height: 88vh;
+    max-height: 88dvh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -729,6 +748,7 @@ h1 em {
 
 .map-popup-body {
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 20px 24px 24px;
     flex: 1;
 }
@@ -972,8 +992,9 @@ h1 em {
 }
 
 footer {
+    grid-area: foot;
+    align-self: end;
     text-align: center;
-    margin-top: 52px;
     font-size: 0.82rem;
     color: var(--muted);
     animation: fadeUp 0.7s 0.6s ease both;
@@ -991,39 +1012,178 @@ footer {
     }
 }
 
-@media (max-width: 640px) {
-    #hanoi-map {
-        height: 320px;
+/* ===== SHORT LANDSCAPE SCREENS (small laptops, phones turned sideways) ===== */
+@media (orientation: landscape) and (max-height: 620px) {
+    .app {
+        grid-template-columns: 250px minmax(0, 1fr);
+        padding: 14px;
+        gap: 10px 16px;
     }
 
+    .love-counter {
+        padding: 12px 14px;
+    }
+
+    .lc-label {
+        font-size: 1.5rem;
+        margin-bottom: 2px;
+    }
+
+    .lc-main {
+        margin-bottom: 10px;
+    }
+
+    .lc-days {
+        font-size: 2.6rem;
+    }
+
+    .lc-days-unit {
+        font-size: 0.85rem;
+    }
+
+    .lc-unit {
+        padding: 6px 0;
+    }
+
+    .lc-num {
+        font-size: 1.15rem;
+    }
+
+    .lc-since,
+    .panel-title,
+    footer {
+        display: none;
+    }
+
+    .view-toggle-btn {
+        padding: 9px 14px;
+    }
+
+    .cal-days {
+        grid-auto-rows: 76px;
+    }
+}
+
+/* ===== PHONES & PORTRAIT TABLETS: counter on top, tabs as a bottom bar ===== */
+@media (orientation: portrait) and (max-width: 1024px),
+(max-width: 560px) {
+    .app {
+        padding: 12px 12px 0;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        grid-template-areas:
+            "hero"
+            "stage"
+            "tabs";
+        gap: 12px;
+    }
+
+    /* Compact counter: text on the left, hours/minutes/seconds on the right */
+    .love-counter {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "label grid"
+            "main grid"
+            "since grid";
+        align-items: center;
+        column-gap: 12px;
+        padding: 12px 16px;
+        text-align: left;
+    }
+
+    .lc-label {
+        grid-area: label;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+
+    .lc-main {
+        grid-area: main;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin-bottom: 0;
+    }
+
+    .lc-days {
+        font-size: 2.2rem;
+    }
+
+    .lc-days-unit {
+        margin-top: 0;
+        font-size: 0.9rem;
+    }
+
+    .lc-grid {
+        grid-area: grid;
+        gap: 6px;
+    }
+
+    .lc-unit {
+        flex: none;
+        width: 50px;
+        padding: 8px 0;
+        text-align: center;
+    }
+
+    .lc-num {
+        font-size: 1.2rem;
+    }
+
+    .lc-unit-label {
+        font-size: 0.55rem;
+        letter-spacing: 0.04em;
+    }
+
+    .lc-since {
+        grid-area: since;
+        display: block;
+        margin-top: 2px;
+        font-size: 0.72rem;
+    }
+
+    /* Tabs turn into a bottom bar */
     .view-toggle {
-        width: 100%;
-        max-width: 100%;
+        flex-direction: row;
+        margin: 0 -12px;
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+        border-radius: 18px 18px 0 0;
+        box-shadow: 0 -4px 24px rgba(15, 98, 149, 0.10);
     }
 
     .view-toggle-btn {
         flex: 1;
         min-width: 0;
-        padding: 10px 6px;
-        font-size: 0.78rem;
-        gap: 4px;
-    }
-
-    .cal-day {
-        min-height: 64px;
-    }
-}
-
-/* Very small screens: stack icon above short label */
-@media (max-width: 380px) {
-    .view-toggle-btn {
         flex-direction: column;
+        justify-content: center;
         gap: 2px;
         padding: 8px 4px;
-        font-size: 0.68rem;
+        font-size: 0.72rem;
+        text-align: center;
     }
 
     .view-toggle-btn .btn-icon {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
+    }
+
+    .panel-title,
+    footer {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .cal-days {
+        grid-auto-rows: 76px;
+    }
+
+    .cal-day-more-label {
+        display: none;
+    }
+
+    .checkin-item {
+        padding: 12px 14px;
+        gap: 12px;
     }
 }

@@ -62,7 +62,7 @@ function switchView(view) {
         document.getElementById('btn' + key).classList.toggle('active', k === view);
     });
     if (view === 'map') setTimeout(() => map.invalidateSize(), 50);
-    if (view === 'cal') renderCalendar();
+    if (view === 'cal') restoreCalendarScroll();
 }
 
 // ===== CHECK-IN LIST =====
@@ -84,14 +84,14 @@ function buildCheckinList() {
                     <div class="checkin-item-heart">💕</div>
                     <div class="checkin-item-info">
                         <div class="checkin-item-name">${place.name}</div>
-                        <div class="checkin-item-desc">${place.desc}</div>
+                        ${place.desc ? `<div class="checkin-item-desc">${place.desc}</div>` : ''}
+                        <div class="checkin-item-meta">
+                            <span class="checkin-photo-count">📷 ${totalPhotos} photo${totalPhotos !== 1 ? 's' : ''}</span>
+                            ${totalVideos > 0 ? `<span class="checkin-video-count">🎬 ${totalVideos} video${totalVideos !== 1 ? 's' : ''}</span>` : ''}
+                            <span class="checkin-visit-count">🗓 ${visitCount} visit${visitCount !== 1 ? 's' : ''}</span>
+                        </div>
                     </div>
-                    <div class="checkin-item-right">
-                        <div class="checkin-photo-count">📷 ${totalPhotos} photo${totalPhotos !== 1 ? 's' : ''}</div>
-                        ${totalVideos > 0 ? `<div class="checkin-video-count">🎬 ${totalVideos} video${totalVideos !== 1 ? 's' : ''}</div>` : ''}
-                        <div class="checkin-visit-count">🗓 ${visitCount} visit${visitCount !== 1 ? 's' : ''}</div>
-                        <div class="checkin-arrow">→</div>
-                    </div>`;
+                    <div class="checkin-arrow">→</div>`;
         item.addEventListener('click', () => openMapPopup(place));
         list.appendChild(item);
     });
@@ -106,98 +106,59 @@ function isBirthday(month0, day) {
 }
 
 // ===== CALENDAR =====
-let calYear = new Date().getFullYear();
-let calMonth = new Date().getMonth();
-
-function calShift(delta) {
-    calMonth += delta;
-    if (calMonth < 0) { calMonth = 11; calYear--; }
-    if (calMonth > 11) { calMonth = 0; calYear++; }
-    renderCalendar();
-}
-
+// One scrollable list of months, from the month of the oldest check-in to the current month
 function renderCalendar() {
-    const months = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-
-    document.getElementById('calMonthLabel').textContent =
-        months[calMonth] + ' ' + calYear;
-
-    const grid = document.getElementById('calDays');
-    grid.innerHTML = '';
-
+    const scroller = document.getElementById('calScroll');
     const today = new Date();
+    const dates = Object.keys(dateVisitMap).sort();
+    const start = dates.length > 0 ? new Date(dates[0] + 'T00:00:00') : today;
 
-    const firstDay = new Date(calYear, calMonth, 1).getDay();
-    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-    const daysInPrev = new Date(calYear, calMonth, 0).getDate();
-
-    let cellsRendered = 0;
-
-    // ===== PREVIOUS MONTH =====
-    for (let i = firstDay - 1; i >= 0; i--) {
-        appendDay(
-            grid,
-            daysInPrev - i,
-            true,
-            null,
-            null,
-            null,
-            null
-        );
-        cellsRendered++;
-    }
-
-    // ===== CURRENT MONTH =====
-    for (let d = 1; d <= daysInMonth; d++) {
-        const isToday =
-            d === today.getDate() &&
-            calMonth === today.getMonth() &&
-            calYear === today.getFullYear();
-
-        const dateStr =
-            `${calYear}-${pad2(calMonth + 1)}-${pad2(d)}`;
-
-        appendDay(
-            grid,
-            d,
-            false,
-            isToday,
-            dateVisitMap[dateStr] || null,
-            calMonth,
-            d
-        );
-
-        cellsRendered++;
-    }
-
-    // ===== NEXT MONTH =====
-    // Always fill to 42 cells (6 rows × 7 days)
-    let nextDay = 1;
-
-    while (cellsRendered < 42) {
-        appendDay(
-            grid,
-            nextDay++,
-            true,
-            null,
-            null,
-            null,
-            null
-        );
-
-        cellsRendered++;
+    let year = start.getFullYear();
+    let month0 = start.getMonth();
+    while (year < today.getFullYear() || (year === today.getFullYear() && month0 <= today.getMonth())) {
+        scroller.appendChild(buildMonth(year, month0, today));
+        if (++month0 > 11) { month0 = 0; year++; }
     }
 }
 
-function appendDay(grid, dayNum, otherMonth, isToday, entries, month0, day) {
-    const birthday = !otherMonth && month0 != null && isBirthday(month0, day);
+function buildMonth(year, month0, today) {
+    const section = document.createElement('section');
+    section.className = 'cal-month';
+
+    const label = document.createElement('div');
+    label.className = 'cal-month-label';
+    label.textContent = new Date(year, month0, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    section.appendChild(label);
+
+    const grid = document.createElement('div');
+    grid.className = 'cal-days';
+    const firstDay = new Date(year, month0, 1).getDay();
+    const daysInMonth = new Date(year, month0 + 1, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) appendBlank(grid);
+    for (let d = 1; d <= daysInMonth; d++) {
+        const isToday = d === today.getDate() && month0 === today.getMonth() && year === today.getFullYear();
+        const dateStr = `${year}-${pad2(month0 + 1)}-${pad2(d)}`;
+        appendDay(grid, month0, d, isToday, dateVisitMap[dateStr] || null);
+    }
+    // Pad the last week so every row has 7 cells
+    while (grid.children.length % 7 !== 0) appendBlank(grid);
+
+    section.appendChild(grid);
+    return section;
+}
+
+function appendBlank(grid) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-day other-month';
+    grid.appendChild(cell);
+}
+
+function appendDay(grid, month0, day, isToday, entries) {
+    const birthday = isBirthday(month0, day);
 
     const cell = document.createElement('div');
     cell.className = 'cal-day' +
-        (otherMonth ? ' other-month' : '') +
         (isToday ? ' today' : '') +
         (entries ? ' has-visit' : '') +
         (birthday ? ' is-birthday' : '');
@@ -208,7 +169,7 @@ function appendDay(grid, dayNum, otherMonth, isToday, entries, month0, day) {
 
     const numEl = document.createElement('div');
     numEl.className = 'cal-day-num';
-    numEl.textContent = dayNum;
+    numEl.textContent = day;
     numRow.appendChild(numEl);
 
     if (birthday && entries?.length > 0) {
@@ -244,7 +205,7 @@ function appendDay(grid, dayNum, otherMonth, isToday, entries, month0, day) {
         if (entries.length > 2) {
             const more = document.createElement('div');
             more.className = 'cal-day-more';
-            more.textContent = '+' + (entries.length - 2) + ' more';
+            more.innerHTML = '+' + (entries.length - 2) + '<span class="cal-day-more-label"> more</span>';
             wrap.appendChild(more);
         }
         cell.appendChild(wrap);
@@ -263,15 +224,21 @@ function appendDay(grid, dayNum, otherMonth, isToday, entries, month0, day) {
     grid.appendChild(cell);
 }
 
-// Init calendar to latest data month
-(function () {
-    const dates = Object.keys(dateVisitMap).sort();
-    if (dates.length > 0) {
-        const d = new Date(dates[dates.length - 1] + 'T00:00:00');
-        calYear = d.getFullYear();
-        calMonth = d.getMonth();
+renderCalendar();
+
+// Remember where the calendar was scrolled; the first time it opens, start at the current month
+let calScrollTop = null;
+document.getElementById('calScroll').addEventListener('scroll', e => { calScrollTop = e.target.scrollTop; });
+
+function restoreCalendarScroll() {
+    const scroller = document.getElementById('calScroll');
+    if (calScrollTop === null) {
+        const currentMonth = scroller.lastElementChild;
+        const weekdays = scroller.querySelector('.cal-weekdays');
+        calScrollTop = currentMonth.offsetTop - weekdays.offsetHeight;
     }
-})();
+    scroller.scrollTop = calScrollTop;
+}
 
 // ===== HANOI MAP =====
 // lat: 21.034281533880666,

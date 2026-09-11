@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#b4e1ee" />
     <title>Our Journey</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈️</text></svg>">
@@ -15,13 +16,16 @@
 </head>
 
 <body>
-    <div class="container">
+    <!-- One screen, no page scroll: sidebar + view on laptop, header + view + bottom tabs on phone -->
+    <div class="app">
 
         <!-- LOVE COUNTER -->
-        <div class="love-counter">
+        <header class="love-counter">
             <div class="lc-label">🐴 &nbsp; luv &nbsp; ✈️</div>
-            <div class="lc-days" id="lcDays">0</div>
-            <div class="lc-days-unit">Days</div>
+            <div class="lc-main">
+                <div class="lc-days" id="lcDays">0</div>
+                <div class="lc-days-unit">Days</div>
+            </div>
             <div class="lc-grid">
                 <div class="lc-unit">
                     <div class="lc-num" id="lcH">00</div>
@@ -37,10 +41,10 @@
                 </div>
             </div>
             <div class="lc-since">💕 Since 06/02/2026</div>
-        </div>
+        </header>
 
-        <!-- TAB TOGGLE -->
-        <div class="view-toggle">
+        <!-- TABS -->
+        <nav class="view-toggle">
             <button class="view-toggle-btn active" id="btnMap" onclick="switchView('map')">
                 <span class="btn-icon">🗺️</span><span class="btn-label">Our Map</span>
             </button>
@@ -50,79 +54,75 @@
             <button class="view-toggle-btn" id="btnCal" onclick="switchView('cal')">
                 <span class="btn-icon">📅</span><span class="btn-label">Calendar</span>
             </button>
-        </div>
+        </nav>
 
-        <!-- MAP VIEW -->
-        <div class="view-panel active" id="panelMap">
-            <div class="map-section-title">📍 Our <em>City</em> Map</div>
-            <div class="map-wrapper">
-                <div id="hanoi-map"></div>
-            </div>
-        </div>
-
-        <!-- CHECK-IN LIST VIEW -->
-        <div class="view-panel" id="panelList">
-            <div class="checkin-header">
-                <div class="checkin-title">📋 Our <em>Checked-in</em></div>
-            </div>
-            <div class="sort-bar">
-                <span class="sort-label">Sort by:</span>
-                <button class="sort-btn active" id="sortAZ" onclick="setSort('az')">
-                    <span class="sort-icon">🔤</span> A → Z
-                </button>
-                <button class="sort-btn" id="sortVisits" onclick="setSort('visits')">
-                    <span class="sort-icon">🗓</span> Most visited
-                </button>
-            </div>
-            <div class="checkin-list" id="checkinList"></div>
-        </div>
-
-        <!-- CALENDAR VIEW -->
-        <div class="view-panel" id="panelCal">
-            <div class="calendar-header-bar">
-                <div class="cal-title">📅 Our <em>Journey</em></div>
-                <div class="cal-nav">
-                    <button class="cal-nav-btn" onclick="calShift(-1)">‹</button>
-                    <div class="cal-month-label" id="calMonthLabel"></div>
-                    <button class="cal-nav-btn" onclick="calShift(1)">›</button>
+        <main class="stage">
+            <!-- MAP VIEW -->
+            <section class="view-panel active" id="panelMap">
+                <div class="panel-title">📍 Our <em>City</em> Map</div>
+                <div class="map-wrapper">
+                    <div id="hanoi-map"></div>
                 </div>
-            </div>
-            <div class="calendar-grid-wrap">
-                <div class="cal-weekdays">
-                    <div class="cal-weekday">Sun</div>
-                    <div class="cal-weekday">Mon</div>
-                    <div class="cal-weekday">Tue</div>
-                    <div class="cal-weekday">Wed</div>
-                    <div class="cal-weekday">Thu</div>
-                    <div class="cal-weekday">Fri</div>
-                    <div class="cal-weekday">Sat</div>
-                </div>
-                <div class="cal-days" id="calDays"></div>
-            </div>
-        </div>
+            </section>
 
-        <!-- Map photo popup -->
-        <div class="map-popup-overlay" id="mapPopup">
-            <div class="map-popup-box">
-                <div class="map-popup-header">
-                    <div>
-                        <div class="map-popup-icon" id="mapPopupIcon"></div>
-                        <div class="map-popup-name" id="mapPopupName"></div>
-                        <div class="map-popup-desc" id="mapPopupDesc"></div>
+            <!-- CHECK-IN LIST VIEW -->
+            <section class="view-panel" id="panelList">
+                <div class="panel-title">📋 Our <em>Checked-in</em></div>
+                <div class="sort-bar">
+                    <span class="sort-label">Sort by:</span>
+                    <button class="sort-btn active" id="sortAZ" onclick="setSort('az')">
+                        <span class="sort-icon">🔤</span> A → Z
+                    </button>
+                    <button class="sort-btn" id="sortVisits" onclick="setSort('visits')">
+                        <span class="sort-icon">🗓</span> Most visited
+                    </button>
+                </div>
+                <div class="checkin-list" id="checkinList"></div>
+            </section>
+
+            <!-- CALENDAR VIEW -->
+            <section class="view-panel" id="panelCal">
+                <div class="panel-title">📅 Our <em>Journey</em></div>
+                <div class="calendar-grid-wrap">
+                    <!-- Months are appended here by script.js, oldest first -->
+                    <div class="cal-scroll" id="calScroll">
+                        <div class="cal-weekdays">
+                            <div class="cal-weekday">Sun</div>
+                            <div class="cal-weekday">Mon</div>
+                            <div class="cal-weekday">Tue</div>
+                            <div class="cal-weekday">Wed</div>
+                            <div class="cal-weekday">Thu</div>
+                            <div class="cal-weekday">Fri</div>
+                            <div class="cal-weekday">Sat</div>
+                        </div>
                     </div>
-                    <button class="map-popup-close" onclick="closeMapPopup()">✕</button>
                 </div>
-                <div class="map-popup-body" id="mapPopupBody"></div>
-            </div>
-        </div>
+            </section>
+        </main>
 
-        <!-- Full-size photo viewer -->
-        <div class="map-viewer" id="mapViewer">
-            <button class="map-viewer-close"
-                onclick="document.getElementById('mapViewer').classList.remove('open')">✕</button>
-            <img id="mapViewerImg" src="" alt="" />
-        </div>
         <footer>Made with 💕 &nbsp;·&nbsp;</footer>
+    </div>
+
+    <!-- Map photo popup -->
+    <div class="map-popup-overlay" id="mapPopup">
+        <div class="map-popup-box">
+            <div class="map-popup-header">
+                <div>
+                    <div class="map-popup-icon" id="mapPopupIcon"></div>
+                    <div class="map-popup-name" id="mapPopupName"></div>
+                    <div class="map-popup-desc" id="mapPopupDesc"></div>
+                </div>
+                <button class="map-popup-close" onclick="closeMapPopup()">✕</button>
+            </div>
+            <div class="map-popup-body" id="mapPopupBody"></div>
+        </div>
+    </div>
+
+    <!-- Full-size photo viewer -->
+    <div class="map-viewer" id="mapViewer">
+        <button class="map-viewer-close"
+            onclick="document.getElementById('mapViewer').classList.remove('open')">✕</button>
+        <img id="mapViewerImg" src="" alt="" />
     </div>
 
     <!-- ① Load data first, then the app logic -->
