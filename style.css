@@ -8,6 +8,9 @@
     --muted: #87b0d6;
     --shadow: 0 8px 40px rgba(232, 101, 74, 0.10);
     --radius: 18px;
+    /* 0px on screens 650px tall or less, growing to 1px at 900px and taller.
+       Sizes are written as "compact + extra * var(--grow)" so everything fits in one screen */
+    --grow: clamp(0px, (100vh - 650px) / 250, 1px);
 }
 
 *,
@@ -61,52 +64,44 @@ body::after {
 }
 
 /* ===== APP LAYOUT =====
-   Laptop: sidebar (counter + tabs) on the left, the active view fills the right.
-   Phone: counter on top, view in the middle, tabs at the bottom (see media queries). */
+   One centered column exactly one screen tall: the counter stays pinned on top, then the tabs,
+   and the active view takes the rest (it scrolls inside itself, the page never does). */
 .app {
     position: relative;
     z-index: 1;
     height: 100vh;
     height: 100dvh;
-    max-width: 1280px;
+    /* 860px of content + 16px padding on each side, as before */
+    max-width: 892px;
     margin: 0 auto;
-    padding: 24px;
-    display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
-    grid-template-areas:
-        "hero stage"
-        "tabs stage"
-        "foot stage";
-    gap: 16px 24px;
+    padding: calc(12px + 20 * var(--grow)) 16px calc(8px + 8 * var(--grow));
+    display: flex;
+    flex-direction: column;
 }
 
 /* Love counter */
 .love-counter {
-    grid-area: hero;
+    flex-shrink: 0;
     background: var(--card);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    padding: 24px 20px;
+    padding: calc(12px + 16 * var(--grow)) 24px;
+    margin-bottom: calc(12px + 16 * var(--grow));
     text-align: center;
     animation: fadeUp 0.7s 0.12s ease both;
 }
 
 .lc-label {
-    font-size: 2.4rem;
+    font-size: calc(24px + 24 * var(--grow));
     line-height: 1.2;
     color: var(--muted);
     letter-spacing: 0.1em;
-    margin-bottom: 6px;
-}
-
-.lc-main {
-    margin-bottom: 16px;
+    margin-bottom: calc(2px + 4 * var(--grow));
 }
 
 .lc-days {
     font-family: 'Playfair Display', serif;
-    font-size: 3.6rem;
+    font-size: calc(40px + 27 * var(--grow));
     font-weight: 700;
     color: var(--accent);
     line-height: 1;
@@ -116,25 +111,25 @@ body::after {
 .lc-days-unit {
     font-size: 1rem;
     color: var(--muted);
-    margin-top: 2px;
+    margin: 2px 0 calc(8px + 8 * var(--grow));
 }
 
 .lc-grid {
     display: flex;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .lc-unit {
-    flex: 1;
-    max-width: 76px;
     background: var(--soft);
     border-radius: 12px;
-    padding: 10px 0;
+    padding: calc(6px + 6 * var(--grow)) 18px;
+    min-width: 72px;
 }
 
 .lc-num {
-    font-size: 1.5rem;
+    font-size: calc(18px + 9 * var(--grow));
     font-weight: 700;
     color: var(--text);
     font-variant-numeric: tabular-nums;
@@ -142,7 +137,7 @@ body::after {
 }
 
 .lc-unit-label {
-    font-size: 0.62rem;
+    font-size: 0.7rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -152,33 +147,34 @@ body::after {
 .lc-since {
     font-size: 0.78rem;
     color: var(--muted);
-    margin-top: 14px;
+    margin-top: calc(6px + 8 * var(--grow));
 }
 
-/* Tabs: a vertical menu in the sidebar */
+/* Tab toggle — centered */
 .view-toggle {
-    grid-area: tabs;
+    flex-shrink: 0;
+    align-self: center;
+    max-width: 100%;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
     background: var(--card);
     border-radius: 14px;
     box-shadow: var(--shadow);
     padding: 6px;
+    margin-bottom: calc(10px + 10 * var(--grow));
     animation: fadeUp 0.7s 0.2s ease both;
 }
 
 .view-toggle-btn {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
+    justify-content: center;
+    gap: 6px;
+    padding: calc(8px + 3 * var(--grow)) 20px;
     border: none;
     border-radius: 10px;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 500;
-    text-align: left;
     cursor: pointer;
     background: transparent;
     color: var(--muted);
@@ -187,7 +183,7 @@ body::after {
 }
 
 .view-toggle-btn .btn-icon {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     transition: transform 0.25s;
     flex-shrink: 0;
 }
@@ -202,10 +198,6 @@ body::after {
     color: var(--accent);
 }
 
-.view-toggle-btn:not(.active):hover {
-    background: rgba(15, 98, 149, 0.06);
-}
-
 .view-toggle-btn.active {
     background: var(--accent);
     color: #fff;
@@ -216,10 +208,9 @@ body::after {
     transform: scale(1.15);
 }
 
-/* The active view fills all the space it is given */
+/* The active view fills whatever height is left */
 .stage {
-    grid-area: stage;
-    min-width: 0;
+    flex: 1;
     min-height: 0;
 }
 
@@ -237,11 +228,11 @@ body::after {
 .panel-title {
     flex-shrink: 0;
     font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
+    font-size: calc(20px + 4 * var(--grow));
     font-weight: 700;
     line-height: 1.3;
     color: var(--text);
-    margin-bottom: 12px;
+    margin-bottom: calc(6px + 6 * var(--grow));
 }
 
 .panel-title em {
@@ -500,8 +491,8 @@ body::after {
 .cal-days {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    /* Fixed row height so the calendar is the same size every month */
-    grid-auto-rows: 110px;
+    /* Fixed row height so the calendar is the same size every month (shorter on short screens) */
+    grid-auto-rows: calc(76px + 34 * var(--grow));
     gap: 0;
 }
 
@@ -992,9 +983,9 @@ body::after {
 }
 
 footer {
-    grid-area: foot;
-    align-self: end;
+    flex-shrink: 0;
     text-align: center;
+    margin-top: calc(6px + 8 * var(--grow));
     font-size: 0.82rem;
     color: var(--muted);
     animation: fadeUp 0.7s 0.6s ease both;
@@ -1012,41 +1003,48 @@ footer {
     }
 }
 
-/* ===== SHORT LANDSCAPE SCREENS (small laptops, phones turned sideways) ===== */
-@media (orientation: landscape) and (max-height: 620px) {
-    .app {
-        grid-template-columns: 250px minmax(0, 1fr);
-        padding: 14px;
-        gap: 10px 16px;
-    }
-
+/* ===== VERY SHORT SCREENS (small laptops, phones turned sideways) =====
+   The counter folds into one centered row so the view still gets most of the height */
+@media (max-height: 600px) {
     .love-counter {
-        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        padding: 8px 16px;
     }
 
     .lc-label {
-        font-size: 1.5rem;
-        margin-bottom: 2px;
+        font-size: 1.3rem;
+        margin-bottom: 0;
     }
 
     .lc-main {
-        margin-bottom: 10px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
     }
 
     .lc-days {
-        font-size: 2.6rem;
+        font-size: 2rem;
     }
 
     .lc-days-unit {
-        font-size: 0.85rem;
+        margin: 0;
     }
 
     .lc-unit {
-        padding: 6px 0;
+        padding: 4px 10px;
+        min-width: 52px;
     }
 
     .lc-num {
-        font-size: 1.15rem;
+        font-size: 1rem;
+    }
+
+    .lc-unit-label {
+        font-size: 0.55rem;
     }
 
     .lc-since,
@@ -1054,126 +1052,22 @@ footer {
     footer {
         display: none;
     }
-
-    .view-toggle-btn {
-        padding: 9px 14px;
-    }
-
-    .cal-days {
-        grid-auto-rows: 76px;
-    }
 }
 
-/* ===== PHONES & PORTRAIT TABLETS: counter on top, tabs as a bottom bar ===== */
-@media (orientation: portrait) and (max-width: 1024px),
-(max-width: 560px) {
-    .app {
-        padding: 12px 12px 0;
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr) auto;
-        grid-template-areas:
-            "hero"
-            "stage"
-            "tabs";
-        gap: 12px;
-    }
-
-    /* Compact counter: text on the left, hours/minutes/seconds on the right */
-    .love-counter {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas:
-            "label grid"
-            "main grid"
-            "since grid";
-        align-items: center;
-        column-gap: 12px;
-        padding: 12px 16px;
-        text-align: left;
-    }
-
-    .lc-label {
-        grid-area: label;
-        font-size: 1.1rem;
-        margin-bottom: 0;
-    }
-
-    .lc-main {
-        grid-area: main;
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        margin-bottom: 0;
-    }
-
-    .lc-days {
-        font-size: 2.2rem;
-    }
-
-    .lc-days-unit {
-        margin-top: 0;
-        font-size: 0.9rem;
-    }
-
-    .lc-grid {
-        grid-area: grid;
-        gap: 6px;
-    }
-
-    .lc-unit {
-        flex: none;
-        width: 50px;
-        padding: 8px 0;
-        text-align: center;
-    }
-
-    .lc-num {
-        font-size: 1.2rem;
-    }
-
-    .lc-unit-label {
-        font-size: 0.55rem;
-        letter-spacing: 0.04em;
-    }
-
-    .lc-since {
-        grid-area: since;
-        display: block;
-        margin-top: 2px;
-        font-size: 0.72rem;
-    }
-
-    /* Tabs turn into a bottom bar */
+@media (max-width: 640px) {
     .view-toggle {
-        flex-direction: row;
-        margin: 0 -12px;
-        padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-        border-radius: 18px 18px 0 0;
-        box-shadow: 0 -4px 24px rgba(15, 98, 149, 0.10);
+        align-self: stretch;
     }
 
     .view-toggle-btn {
         flex: 1;
         min-width: 0;
-        flex-direction: column;
-        justify-content: center;
-        gap: 2px;
-        padding: 8px 4px;
-        font-size: 0.72rem;
-        text-align: center;
+        padding-left: 6px;
+        padding-right: 6px;
+        font-size: 0.78rem;
+        gap: 4px;
     }
 
-    .view-toggle-btn .btn-icon {
-        font-size: 1.3rem;
-    }
-
-    .panel-title,
-    footer {
-        display: none;
-    }
-}
-
-@media (max-width: 640px) {
     .cal-days {
         grid-auto-rows: 76px;
     }
