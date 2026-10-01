@@ -280,28 +280,13 @@ if (window.maplibregl && L.maplibreGL && webglSupported()) {
 }
 setTimeout(() => map.invalidateSize(), 300);
 
-// Pins that sit close together are grouped into a numbered bubble until you zoom in
-// (plain layer if the cluster plugin didn't load)
-const pinLayer = L.markerClusterGroup
-    ? L.markerClusterGroup({
-        maxClusterRadius: 36,
-        disableClusteringAtZoom: 16,
-        showCoverageOnHover: false,
-        iconCreateFunction: cluster => L.divIcon({
-            html: `<div class="pin-cluster">${cluster.getChildCount()}</div>`,
-            className: '', iconSize: [34, 34], iconAnchor: [17, 17]
-        })
-    })
-    : L.layerGroup();
-pinLayer.addTo(map);
-
 mapPlaces.forEach(place => {
     // The pin is a 25px square turned 45°: its tip is 12.5px from the left and 30px from the top
     const icon = L.divIcon({
         html: `<div class="custom-pin"><div class="custom-pin-inner">${place.icon}</div></div>`,
         className: '', iconSize: [25, 25], iconAnchor: [12.5, 30], popupAnchor: [0, -36]
     });
-    const marker = L.marker([place.lat, place.lng], { icon }).addTo(pinLayer);
+    const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
     marker.on('click', () => openMapPopup(place));
     marker.bindTooltip(`<b>${place.name}</b>`, { direction: 'top', offset: [0, -36] });
 });
