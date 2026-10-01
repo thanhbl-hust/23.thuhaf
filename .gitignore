@@ -1,1 +1,3 @@
 /tmp
+# Original photos stay on this machine only; the site uses the copies in photos/ (see README)
+/pictures/

@@ -257,6 +257,23 @@ body::after {
     height: 100%;
 }
 
+/* Fallback map (only when the vector map can't run): OpenStreetMap tiles recoloured to match the page */
+#hanoi-map.raster-map .leaflet-tile-pane {
+    filter: grayscale(1) sepia(0.25) hue-rotate(165deg) saturate(1.1) brightness(1.02) contrast(1.05);
+}
+
+/* Zoom buttons styled like the rest of the cards */
+#hanoi-map .leaflet-bar {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(15, 98, 149, 0.18);
+}
+
+#hanoi-map .leaflet-bar a {
+    color: var(--accent);
+    border-bottom-color: #eef4f8;
+}
 /* Sort bar */
 .sort-bar {
     flex-shrink: 0;
@@ -708,6 +725,10 @@ body::after {
     margin-bottom: 2px;
 }
 
+.map-popup-icon:empty {
+    display: none;
+}
+
 .map-popup-name {
     font-family: 'Playfair Display', serif;
     font-size: 1.2rem;
@@ -787,6 +808,50 @@ body::after {
     margin-bottom: 10px;
 }
 
+/* A calendar day with several check-ins: pick one */
+.day-entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.day-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px;
+    border: 1.5px solid #c8d8e8;
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.18s;
+}
+
+.day-entry:hover {
+    border-color: var(--accent);
+    background: rgba(15, 98, 149, 0.04);
+}
+
+.day-entry img,
+.day-entry-noimg {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
 .media-section-label {
     font-size: 0.78rem;
     font-weight: 600;
@@ -852,33 +917,6 @@ body::after {
     background: #1a1a2e;
 }
 
-.map-photo-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: var(--muted);
-    font-size: 0.78rem;
-    text-align: center;
-    padding: 12px;
-}
-
-.map-photo-placeholder .ph-icon {
-    font-size: 2rem;
-}
-
-.map-photo-placeholder code {
-    background: #f3e8e0;
-    padding: 2px 7px;
-    border-radius: 5px;
-    font-size: 0.72rem;
-    color: var(--accent);
-    word-break: break-all;
-}
-
 /* Full-size photo viewer */
 .map-viewer {
     display: none;
@@ -935,7 +973,7 @@ body::after {
     background: var(--accent);
     border-radius: 50% 50% 50% 0;
     transform: rotate(-45deg);
-    box-shadow: 0 4px 14px rgba(232, 101, 74, 0.45);
+    box-shadow: 0 4px 14px rgba(15, 98, 149, 0.35);
     border: 3px solid #fff;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -943,13 +981,31 @@ body::after {
 
 .custom-pin:hover {
     transform: rotate(-45deg) scale(1.15);
-    box-shadow: 0 6px 20px rgba(232, 101, 74, 0.6);
+    box-shadow: 0 6px 20px rgba(15, 98, 149, 0.5);
 }
 
 .custom-pin-inner {
     transform: rotate(45deg);
     font-size: 1rem;
     line-height: 1;
+}
+
+/* Numbered bubble for pins that sit close together (zoom in to split it) */
+.pin-cluster {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(15, 98, 149, 0.35);
+    cursor: pointer;
 }
 
 .heart-pin {
@@ -1079,5 +1135,19 @@ footer {
     .checkin-item {
         padding: 12px 14px;
         gap: 12px;
+    }
+}
+
+/* Very small screens: stack icon above short label */
+@media (max-width: 380px) {
+    .view-toggle-btn {
+        flex-direction: column;
+        gap: 2px;
+        padding: 8px 4px;
+        font-size: 0.68rem;
+    }
+
+    .view-toggle-btn .btn-icon {
+        font-size: 1.2rem;
     }
 }

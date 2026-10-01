@@ -28,6 +28,11 @@ function buildDateIndex() {
 }
 const dateVisitMap = buildDateIndex();
 
+// Photos are in photos/ (max 1600px); smaller copies for the calendar and popup grids are in photos/thumbs/
+function thumbSrc(src) {
+    return src.replace(/^photos\//, 'photos/thumbs/');
+}
+
 // ===== SORT STATE =====
 let currentSort = 'az';
 
@@ -184,34 +189,34 @@ function appendDay(grid, month0, day, isToday, entries) {
     if (entries?.length > 0) {
         const wrap = document.createElement('div');
         wrap.className = 'cal-day-photos';
-        entries.slice(0, 1).forEach(({ place, visitIdx }) => {
-            const visit = place.visits[visitIdx];
-            const firstPhoto = (visit.photos || []).find(p => p?.src);
-            if (firstPhoto) {
-                const thumb = document.createElement('div');
-                thumb.className = 'cal-day-thumb';
-                const img = document.createElement('img');
-                img.src = firstPhoto.src; img.alt = place.name; img.loading = 'lazy';
-                thumb.appendChild(img);
-                wrap.appendChild(thumb);
-            } else {
-                const pill = document.createElement('div');
-                pill.className = 'cal-day-place-pill';
-                // cake replaces icon in pill slot when birthday + no photo
-                pill.textContent = (birthday ? '🎂 ' : place.icon + ' ') + place.name;
-                wrap.appendChild(pill);
-            }
-        });
-        if (entries.length > 2) {
+        // The cell shows the day's first check-in; "+N" tells how many more there are
+        const { place, visitIdx } = entries[0];
+        const firstPhoto = (place.visits[visitIdx].photos || []).find(p => p?.src);
+        if (firstPhoto) {
+            const thumb = document.createElement('div');
+            thumb.className = 'cal-day-thumb';
+            const img = document.createElement('img');
+            img.src = thumbSrc(firstPhoto.src); img.alt = place.name; img.loading = 'lazy';
+            thumb.appendChild(img);
+            wrap.appendChild(thumb);
+        } else {
+            const pill = document.createElement('div');
+            pill.className = 'cal-day-place-pill';
+            // cake replaces icon in pill slot when birthday + no photo
+            pill.textContent = (birthday ? '🎂 ' : place.icon ? place.icon + ' ' : '') + place.name;
+            wrap.appendChild(pill);
+        }
+        if (entries.length > 1) {
             const more = document.createElement('div');
             more.className = 'cal-day-more';
-            more.innerHTML = '+' + (entries.length - 2) + '<span class="cal-day-more-label"> more</span>';
+            more.innerHTML = '+' + (entries.length - 1) + '<span class="cal-day-more-label"> more</span>';
             wrap.appendChild(more);
         }
         cell.appendChild(wrap);
+        // One check-in opens it directly; several open a list to pick from
         cell.addEventListener('click', () => {
-            const { place, visitIdx } = entries[0];
-            openMapPopup(place, visitIdx);
+            if (entries.length === 1) openMapPopup(place, visitIdx);
+            else openDayPopup(entries);
         });
     } else if (birthday) {
         // No check-in but it's a birthday — show cake in the content area
@@ -243,21 +248,58 @@ function restoreCalendarScroll() {
 // ===== HANOI MAP =====
 // lat: 21.034281533880666,
 // lng: 105.81246668161833,
-const map = L.map('hanoi-map', { center: [21.034281533880666, 105.81246668161833], zoom: 13 });
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}).addTo(map);
+const map = L.map('hanoi-map', { center: [21.034281533880666, 105.81246668161833], zoom: 13, maxZoom: 19 });
+
+// Base map: free vector style, no API key. Other styles that also work here:
+//   VersaTiles:  colorful, graybeard, neutrino  -> https://tiles.versatiles.org/assets/styles/<name>/style.json
+//   OpenFreeMap: positron, bright, liberty      -> https://tiles.openfreemap.org/styles/<name>
+const MAP_STYLE = 'https://tiles.versatiles.org/assets/styles/colorful/style.json';
+
+function webglSupported() {
+    try {
+        const canvas = document.createElement('canvas');
+        return !!(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+    } catch (e) {
+        return false;
+    }
+}
+
+if (window.maplibregl && L.maplibreGL && webglSupported()) {
+    L.maplibreGL({ style: MAP_STYLE }).addTo(map);
+} else {
+    // Fallback when the vector map can't run: plain OpenStreetMap tiles, recoloured in style.css
+    document.getElementById('hanoi-map').classList.add('raster-map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+}
 setTimeout(() => map.invalidateSize(), 300);
 
+// Pins that sit close together are grouped into a numbered bubble until you zoom in
+// (plain layer if the cluster plugin didn't load)
+const pinLayer = L.markerClusterGroup
+    ? L.markerClusterGroup({
+        maxClusterRadius: 36,
+        disableClusteringAtZoom: 16,
+        showCoverageOnHover: false,
+        iconCreateFunction: cluster => L.divIcon({
+            html: `<div class="pin-cluster">${cluster.getChildCount()}</div>`,
+            className: '', iconSize: [34, 34], iconAnchor: [17, 17]
+        })
+    })
+    : L.layerGroup();
+pinLayer.addTo(map);
+
 mapPlaces.forEach(place => {
+    // The pin is a 25px square turned 45°: its tip is 12.5px from the left and 30px from the top
     const icon = L.divIcon({
         html: `<div class="custom-pin"><div class="custom-pin-inner">${place.icon}</div></div>`,
-        className: '', iconSize: [38, 38], iconAnchor: [19, 38], popupAnchor: [0, -42]
+        className: '', iconSize: [25, 25], iconAnchor: [12.5, 30], popupAnchor: [0, -36]
     });
-    const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
+    const marker = L.marker([place.lat, place.lng], { icon }).addTo(pinLayer);
     marker.on('click', () => openMapPopup(place));
-    marker.bindTooltip(`<b>${place.name}</b>`, { direction: 'top', offset: [0, -42] });
+    marker.bindTooltip(`<b>${place.name}</b>`, { direction: 'top', offset: [0, -36] });
 });
 
 heartPlaces.forEach(place => {
@@ -266,7 +308,7 @@ heartPlaces.forEach(place => {
         className: '', iconSize: [25, 25], iconAnchor: [24, 40], popupAnchor: [0, -44]
     });
     const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
-    marker.bindTooltip(`<b>💕 ${place.name}</b>`, { direction: 'top', offset: [0, -28] });
+    marker.bindTooltip(`<b>💕 ${place.name}</b>`, { direction: 'top', offset: [0, -42] });
 });
 
 // ===== POPUP =====
@@ -305,44 +347,41 @@ function renderVisitTabs(place, activeIdx) {
     const realPhotos = visit ? (visit.photos || []).filter(p => p?.src) : [];
     const realVideos = visit ? (visit.videos || []).filter(v => v?.src) : [];
 
-    // Photos
-    const photoLabel = document.createElement('div');
-    photoLabel.className = 'media-section-label';
-    photoLabel.innerHTML = '📷 Photos';
-    body.appendChild(photoLabel);
+    if (realPhotos.length === 0 && realVideos.length === 0) {
+        body.insertAdjacentHTML('beforeend', `<div class="visit-empty-state"><div class="empty-icon">📷</div><div>No photos for this visit yet</div></div>`);
+        return;
+    }
 
-    const photoGrid = document.createElement('div');
-    photoGrid.className = 'map-photo-grid';
+    // Photos: small copies in the grid, the full-size photo opens in the viewer
     if (realPhotos.length > 0) {
+        const photoLabel = document.createElement('div');
+        photoLabel.className = 'media-section-label';
+        photoLabel.innerHTML = '📷 Photos';
+        body.appendChild(photoLabel);
+
+        const photoGrid = document.createElement('div');
+        photoGrid.className = 'map-photo-grid';
         realPhotos.forEach(photo => {
             const item = document.createElement('div');
             item.className = 'map-photo-item';
             const img = document.createElement('img');
-            img.src = photo.src; img.alt = photo.caption || place.name; img.loading = 'lazy';
-            img.onclick = () => {
-                document.getElementById('mapViewerImg').src = photo.src;
-                document.getElementById('mapViewer').classList.add('open');
-            };
+            img.src = thumbSrc(photo.src); img.alt = photo.caption || place.name; img.loading = 'lazy';
+            img.onclick = () => openPhotoViewer(photo.src);
             item.appendChild(img);
             photoGrid.appendChild(item);
         });
-    } else {
-        const ph = document.createElement('div');
-        ph.className = 'map-photo-item';
-        ph.innerHTML = `<div class="map-photo-placeholder"><div class="ph-icon">📷</div><div>No photos yet</div><code>images/yourphoto.jpg</code></div>`;
-        photoGrid.appendChild(ph);
+        body.appendChild(photoGrid);
     }
-    body.appendChild(photoGrid);
 
     // Videos
-    const videoLabel = document.createElement('div');
-    videoLabel.className = 'media-section-label';
-    videoLabel.innerHTML = '🎬 Videos';
-    body.appendChild(videoLabel);
-
-    const videoGrid = document.createElement('div');
-    videoGrid.className = 'map-video-grid';
     if (realVideos.length > 0) {
+        const videoLabel = document.createElement('div');
+        videoLabel.className = 'media-section-label';
+        videoLabel.innerHTML = '🎬 Videos';
+        body.appendChild(videoLabel);
+
+        const videoGrid = document.createElement('div');
+        videoGrid.className = 'map-video-grid';
         realVideos.forEach(vid => {
             const item = document.createElement('div');
             item.className = 'map-video-item';
@@ -355,14 +394,8 @@ function renderVisitTabs(place, activeIdx) {
             item.appendChild(video);
             videoGrid.appendChild(item);
         });
-    } else {
-        const ph = document.createElement('div');
-        ph.className = 'map-video-item';
-        ph.style.cssText = 'background:var(--soft);border-radius:12px;padding:24px;text-align:center;';
-        ph.innerHTML = `<div style="font-size:2rem;margin-bottom:8px;">🎬</div><div style="font-size:0.78rem;color:var(--muted);">No videos yet</div><code style="background:#f3e8e0;padding:2px 7px;border-radius:5px;font-size:0.72rem;color:var(--accent);">videos/yourvideo.mp4</code>`;
-        videoGrid.appendChild(ph);
+        body.appendChild(videoGrid);
     }
-    body.appendChild(videoGrid);
 }
 
 function closeMapPopup() {
@@ -370,5 +403,59 @@ function closeMapPopup() {
     document.getElementById('mapPopup').classList.remove('open');
 }
 
+// A calendar day with several check-ins: list them, tap one to see its photos
+function openDayPopup(entries) {
+    const first = entries[0];
+    const date = first.place.visits[first.visitIdx].date;
+    document.getElementById('mapPopupIcon').textContent = '📅';
+    document.getElementById('mapPopupName').textContent = new Date(date + 'T00:00:00')
+        .toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('mapPopupDesc').textContent = entries.length + ' check-ins';
+
+    const list = document.createElement('div');
+    list.className = 'day-entry-list';
+    entries.forEach(({ place, visitIdx }) => {
+        const photo = (place.visits[visitIdx].photos || []).find(p => p?.src);
+        const btn = document.createElement('button');
+        btn.className = 'day-entry';
+        if (photo) {
+            const img = document.createElement('img');
+            img.src = thumbSrc(photo.src); img.alt = ''; img.loading = 'lazy';
+            btn.appendChild(img);
+        } else {
+            const noImg = document.createElement('span');
+            noImg.className = 'day-entry-noimg';
+            noImg.textContent = '📍';
+            btn.appendChild(noImg);
+        }
+        const name = document.createElement('span');
+        name.textContent = place.name;
+        btn.appendChild(name);
+        btn.addEventListener('click', () => openMapPopup(place, visitIdx));
+        list.appendChild(btn);
+    });
+
+    const body = document.getElementById('mapPopupBody');
+    body.innerHTML = '';
+    body.appendChild(list);
+    document.getElementById('mapPopup').classList.add('open');
+}
+
+function openPhotoViewer(src) {
+    document.getElementById('mapViewerImg').src = src;
+    document.getElementById('mapViewer').classList.add('open');
+}
+
+function closePhotoViewer() {
+    document.getElementById('mapViewer').classList.remove('open');
+}
+
 document.getElementById('mapPopup').addEventListener('click', function (e) { if (e.target === this) closeMapPopup(); });
-document.getElementById('mapViewer').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
+document.getElementById('mapViewer').addEventListener('click', function (e) { if (e.target === this) closePhotoViewer(); });
+
+// Esc closes the photo viewer first, then the popup
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('mapViewer').classList.contains('open')) closePhotoViewer();
+    else if (document.getElementById('mapPopup').classList.contains('open')) closeMapPopup();
+});

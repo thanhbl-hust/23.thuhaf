@@ -9,7 +9,7 @@ const mapPlaces = [
             {
                 date: "2025-10-12",
                 photos: [
-                    { src: "pictures/789.PNG", caption: "duck" }
+                    { src: "photos/789.jpg", caption: "duck" }
                 ],
                 // videos: []
             }
@@ -25,19 +25,19 @@ const mapPlaces = [
             {
                 date: "2025-11-02",
                 photos: [
-                    { src: "pictures/vuhuu-0211.PNG", caption: "duck" }
+                    { src: "photos/vuhuu-0211.jpg", caption: "duck" }
                 ],
             },
             {
                 date: "2025-11-16",
                 photos: [
-                    { src: "pictures/vuhuu-1611.PNG", caption: "duck" }
+                    { src: "photos/vuhuu-1611.jpg", caption: "duck" }
                 ],
             },
             {
                 date: "2025-11-30",
                 photos: [
-                    { src: "pictures/vuhuu-3011.PNG", caption: "duck" }
+                    { src: "photos/vuhuu-3011.jpg", caption: "duck" }
                 ],
             }
         ]
@@ -52,7 +52,7 @@ const mapPlaces = [
             {
                 date: "2025-11-02",
                 photos: [
-                    { src: "pictures/vit.png", caption: "duck" }
+                    { src: "photos/vit-png.jpg", caption: "duck" }
                 ],
                 // videos: []
             }
@@ -68,8 +68,8 @@ const mapPlaces = [
             {
                 date: "2025-11-16",
                 photos: [
-                    { src: "pictures/nlw2.png", caption: "chic" },
-                    { src: "pictures/nlw1.png", caption: "chic" }
+                    { src: "photos/nlw2.jpg", caption: "chic" },
+                    { src: "photos/nlw1.jpg", caption: "chic" }
                 ],
                 // videos: []
             }
@@ -85,14 +85,14 @@ const mapPlaces = [
             {
                 date: "2025-11-16",
                 photos: [
-                    { src: "pictures/jidai.png", caption: "chic" }
+                    { src: "photos/jidai.jpg", caption: "chic" }
                 ],
                 // videos: []
             },
             {
                 date: "2026-07-25",
                 photos: [
-                    { src: "pictures/jidai1.png", caption: "chic" }
+                    { src: "photos/jidai1.jpg", caption: "chic" }
                 ],
                 // videos: []
             }
@@ -108,7 +108,7 @@ const mapPlaces = [
             {
                 date: "2025-11-25",
                 photos: [
-                    { src: "pictures/chaca.png", caption: "chic" }
+                    { src: "photos/chaca.jpg", caption: "chic" }
                 ],
                 // videos: []
             }
@@ -124,14 +124,14 @@ const mapPlaces = [
             {
                 date: "2025-12-02",
                 photos: [
-                    { src: "pictures/com.png", caption: "Ho Teii" }
+                    { src: "photos/com.jpg", caption: "Ho Teii" }
                 ],
                 // videos: []
             }
         ]
     },
     {
-        name: "Boujour Coffee - Nguyen Dinh Thi",
+        name: "Bonjour Coffee - Nguyen Dinh Thi",
         icon: "",
         desc: "",
         lat: 21.04424717905687,
@@ -140,21 +140,21 @@ const mapPlaces = [
             {
                 date: "2025-12-02",
                 photos: [
-                    { src: "pictures/bonjour.png", caption: "Ho Teii" }
+                    { src: "photos/bonjour.jpg", caption: "Ho Teii" }
                 ],
                 // videos: []
             },
             {
                 date: "2026-07-03",
                 photos: [
-                    { src: "pictures/cf2.png", caption: "Ho Teii" }
+                    { src: "photos/cf2.jpg", caption: "Ho Teii" }
                 ],
                 // videos: []
             },
             {
                 date: "2026-09-07",
                 photos: [
-                    { src: "pictures/cff.PNG", caption: "Ho Teii" }
+                    { src: "photos/cff.jpg", caption: "Ho Teii" }
                 ],
                 // videos: []
             }
@@ -170,7 +170,7 @@ const mapPlaces = [
             {
                 date: "2025-12-10",
                 photos: [
-                    { src: "pictures/4p.png", caption: "HPBD!!" }
+                    { src: "photos/4p.jpg", caption: "HPBD!!" }
                 ],
                 // videos: []
             }
@@ -186,7 +186,7 @@ const mapPlaces = [
             {
                 date: "2025-12-13",
                 photos: [
-                    { src: "pictures/12.png", caption: "chill" }
+                    { src: "photos/12.jpg", caption: "chill" }
                 ],
                 // videos: []
             }
@@ -203,7 +203,7 @@ const mapPlaces = [
             {
                 date: "2025-12-18",
                 photos: [
-                    { src: "pictures/amthuc68.png", caption: "Nhom nhom" }
+                    { src: "photos/amthuc68.jpg", caption: "Nhom nhom" }
                 ],
                 // videos: []
             }
@@ -219,7 +219,7 @@ const mapPlaces = [
             {
                 date: "2025-12-20",
                 photos: [
-                    { src: "pictures/lancancf.png", caption: "Nhom nhom" }
+                    { src: "photos/lancancf.jpg", caption: "Nhom nhom" }
                 ],
                 videos: [
                     { src: "videos/hi.mp4", caption: "Nhom nhom" }
@@ -237,7 +237,7 @@ const mapPlaces = [
             {
                 date: "2025-12-23",
                 photos: [
-                    { src: "pictures/chrismast.png", caption: "Chrismasss" }
+                    { src: "photos/chrismast.jpg", caption: "Chrismasss" }
                 ],
                 // videos: []
             }
@@ -253,8 +253,8 @@ const mapPlaces = [
             {
                 date: "2025-12-25",
                 photos: [
-                    { src: "pictures/withiu.png", caption: "Goodd" },
-                    { src: "pictures/cry.png", caption: "..." },
+                    { src: "photos/withiu.jpg", caption: "Goodd" },
+                    { src: "photos/cry.jpg", caption: "..." },
                 ],
                 // videos: []
             }
@@ -270,7 +270,7 @@ const mapPlaces = [
             {
                 date: "2025-12-28",
                 photos: [
-                    { src: "pictures/nuong.png", caption: "Goodd" }
+                    { src: "photos/nuong.jpg", caption: "Goodd" }
                 ],
                 // videos: []
             }
@@ -286,8 +286,8 @@ const mapPlaces = [
             {
                 date: "2026-01-01",
                 photos: [
-                    { src: "pictures/dx2.png", caption: "Bun cha ngon" },
-                    { src: "pictures/dx1.png", caption: "Bun cha ngon" },
+                    { src: "photos/dx2.jpg", caption: "Bun cha ngon" },
+                    { src: "photos/dx1.jpg", caption: "Bun cha ngon" },
                 ],
                 // videos: []
             }
@@ -303,7 +303,7 @@ const mapPlaces = [
             {
                 date: "2026-01-02",
                 photos: [
-                    { src: "pictures/buncha.png", caption: "Bun cha ngon" }
+                    { src: "photos/buncha.jpg", caption: "Bun cha ngon" }
                 ],
                 // videos: []
             }
@@ -319,7 +319,7 @@ const mapPlaces = [
             {
                 date: "2026-01-02",
                 photos: [
-                    { src: "pictures/pick.JPG", caption: "Bun cha ngon" }
+                    { src: "photos/pick.jpg", caption: "Bun cha ngon" }
                 ],
                 // videos: []
             }
@@ -335,7 +335,7 @@ const mapPlaces = [
             {
                 date: "2026-01-06",
                 photos: [
-                    { src: "pictures/kem.png", caption: "Kemmm" }
+                    { src: "photos/kem.jpg", caption: "Kemmm" }
                 ],
                 // videos: []
             }
@@ -365,7 +365,7 @@ const mapPlaces = [
             {
                 date: "2026-01-23",
                 photos: [
-                    { src: "pictures/vodich.png", caption: "Fry chickenn" }
+                    { src: "photos/vodich.jpg", caption: "Fry chickenn" }
                 ],
                 // videos: []
             }
@@ -381,7 +381,7 @@ const mapPlaces = [
             {
                 date: "2026-01-27",
                 photos: [
-                    { src: "pictures/chicken.png", caption: "Fry chickenn" }
+                    { src: "photos/chicken.jpg", caption: "Fry chickenn" }
                 ],
                 // videos: []
             }
@@ -397,7 +397,7 @@ const mapPlaces = [
             {
                 date: "2026-02-02",
                 photos: [
-                    { src: "pictures/katinat.png", caption: "tuylipppp" }
+                    { src: "photos/katinat.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             }
@@ -413,7 +413,7 @@ const mapPlaces = [
             {
                 date: "2026-02-06",
                 photos: [
-                    { src: "pictures/nts.jpg", caption: "tuylipppp" }
+                    { src: "photos/nts.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             }
@@ -429,7 +429,7 @@ const mapPlaces = [
             {
                 date: "2026-02-09",
                 photos: [
-                    { src: "pictures/hl-ci.PNG", caption: "tuylipppp" }
+                    { src: "photos/hl-ci.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             }
@@ -445,7 +445,7 @@ const mapPlaces = [
             {
                 date: "2026-02-13",
                 photos: [
-                    { src: "pictures/paris.jpg", caption: "tuylipppp" }
+                    { src: "photos/paris.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             }
@@ -461,8 +461,8 @@ const mapPlaces = [
             {
                 date: "2026-02-14",
                 photos: [
-                    { src: "pictures/vlt1.png", caption: "tuylipppp" },
-                    { src: "pictures/vlt2.png", caption: "tuylipppp" }
+                    { src: "photos/vlt1.jpg", caption: "tuylipppp" },
+                    { src: "photos/vlt2.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             }
@@ -478,14 +478,14 @@ const mapPlaces = [
             {
                 date: "2026-02-15",
                 photos: [
-                    { src: "pictures/mcdonald.png", caption: "tuylipppp" }
+                    { src: "photos/mcdonald.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             },
             {
                 date: "2026-09-05",
                 photos: [
-                    { src: "pictures/ga.png", caption: "tuylipppp" }
+                    { src: "photos/ga.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             }
@@ -501,7 +501,7 @@ const mapPlaces = [
             {
                 date: "2026-02-15",
                 photos: [
-                    { src: "pictures/paris1.jpg", caption: "tuylipppp" }
+                    { src: "photos/paris1.jpg", caption: "tuylipppp" }
                 ],
                 // videos: []
             }
@@ -517,7 +517,7 @@ const mapPlaces = [
             {
                 date: "2026-02-19",
                 photos: [
-                    { src: "pictures/image.png", caption: "mammammam" }
+                    { src: "photos/image.jpg", caption: "mammammam" }
                 ],
                 // videos: []
             }
@@ -533,8 +533,8 @@ const mapPlaces = [
             {
                 date: "2026-02-28",
                 photos: [
-                    { src: "pictures/us.png", caption: "Us" },
-                    { src: "pictures/nui.png", caption: "Sunrise" }
+                    { src: "photos/us.jpg", caption: "Us" },
+                    { src: "photos/nui.jpg", caption: "Sunrise" }
                 ],
                 videos: []
             }
@@ -550,7 +550,7 @@ const mapPlaces = [
             {
                 date: "2026-03-08",
                 photos: [
-                    { src: "pictures/banhtom.png", caption: "Us" }
+                    { src: "photos/banhtom.jpg", caption: "Us" }
                 ],
                 videos: []
             }
@@ -566,14 +566,14 @@ const mapPlaces = [
             {
                 date: "2026-03-08",
                 photos: [
-                    { src: "pictures/pick-nt.png", caption: "Us" }
+                    { src: "photos/pick-nt.jpg", caption: "Us" }
                 ],
                 videos: []
             },
             {
                 date: "2026-08-02",
                 photos: [
-                    { src: "pictures/pickk.png", caption: "Us" }
+                    { src: "photos/pickk.jpg", caption: "Us" }
                 ],
                 videos: []
             }
@@ -589,7 +589,7 @@ const mapPlaces = [
             {
                 date: "2026-04-01",
                 photos: [
-                    { src: "pictures/comtam.png", caption: "Com tam" }
+                    { src: "photos/comtam.jpg", caption: "Com tam" }
                 ],
                 videos: []
             }
@@ -605,7 +605,7 @@ const mapPlaces = [
             {
                 date: "2026-04-12",
                 photos: [
-                    { src: "pictures/hotei.JPG", caption: "" }
+                    { src: "photos/hotei.jpg", caption: "" }
                 ],
                 videos: []
             }
@@ -621,7 +621,7 @@ const mapPlaces = [
             {
                 date: "2026-04-25",
                 photos: [
-                    { src: "pictures/nuongg.png", caption: "Good drinks!" }
+                    { src: "photos/nuongg.jpg", caption: "Good drinks!" }
                 ],
                 videos: [
                     { src: "videos/pkb.mp4", caption: "Us <3" }
@@ -639,14 +639,14 @@ const mapPlaces = [
             {
                 date: "2025-12-28",
                 photos: [
-                    { src: "pictures/suminh.jpg", caption: "updatingg" }
+                    { src: "photos/suminh.jpg", caption: "updatingg" }
                 ],
                 videos: []
             },
             {
                 date: "2026-05-09",
                 photos: [
-                    { src: "pictures/suminh2-1.jpg", caption: "Good drinks!" }
+                    { src: "photos/suminh2-1.jpg", caption: "Good drinks!" }
                 ],
                 videos: [
                     { src: "videos/suminh2-1.mp4", caption: "Us <3" }
@@ -664,14 +664,14 @@ const mapPlaces = [
             {
                 date: "2026-04-27",
                 photos: [
-                    { src: "pictures/boi0.png", caption: "KEMM" }
+                    { src: "photos/boi0.jpg", caption: "KEMM" }
                 ],
                 videos: []
             },
             {
                 date: "2026-05-10",
                 photos: [
-                    { src: "pictures/boi.png", caption: "KEMM" }
+                    { src: "photos/boi.jpg", caption: "KEMM" }
                 ],
                 videos: []
             }
@@ -688,7 +688,7 @@ const mapPlaces = [
             {
                 date: "2026-07-15",
                 photos: [
-                    { src: "pictures/iccream.png", caption: "KEMM" }
+                    { src: "photos/iccream.jpg", caption: "KEMM" }
                 ],
                 videos: []
             }
@@ -704,7 +704,7 @@ const mapPlaces = [
             {
                 date: "2026-07-04",
                 photos: [
-                    { src: "pictures/vit.jpg", caption: "duck" }
+                    { src: "photos/vit.jpg", caption: "duck" }
                 ],
                 videos: [
                     { src: "videos/vit.mp4", caption: "duck" }
@@ -729,14 +729,14 @@ const mapPlaces = [
             {
                 date: "2026-07-25",
                 photos: [
-                    { src: "pictures/hmai.png", caption: "Us <3" }
+                    { src: "photos/hmai.jpg", caption: "Us <3" }
                 ],
                 videos: []
             },
             {
                 date: "2026-09-07",
                 photos: [
-                    { src: "pictures/cuonpho.png", caption: "Us <3" }
+                    { src: "photos/cuonpho.jpg", caption: "Us <3" }
                 ],
                 videos: []
             }
@@ -752,7 +752,7 @@ const mapPlaces = [
             {
                 date: "2026-07-17",
                 photos: [
-                    { src: "pictures/dim.png", caption: "dimsumm" }
+                    { src: "photos/dim.jpg", caption: "dimsumm" }
                 ],
                 videos: []
             }
@@ -768,7 +768,7 @@ const mapPlaces = [
             {
                 date: "2026-07-20",
                 photos: [
-                    { src: "pictures/movie.png", caption: "movieee" }
+                    { src: "photos/movie.jpg", caption: "movieee" }
                 ],
                 videos: []
             }
@@ -784,21 +784,21 @@ const mapPlaces = [
             {
                 date: "2026-01-03",
                 photos: [
-                    { src: "pictures/ci2.jpg", caption: "" }
+                    { src: "photos/ci2.jpg", caption: "" }
                 ],
                 videos: []
             },
             {
                 date: "2026-04-02",
                 photos: [
-                    { src: "pictures/ci1.jpg", caption: "" }
+                    { src: "photos/ci1.jpg", caption: "" }
                 ],
                 videos: []
             },
             {
                 date: "2026-07-21",
                 photos: [
-                    { src: "pictures/walk.png", caption: "" }
+                    { src: "photos/walk.jpg", caption: "" }
                 ],
                 videos: []
             }
@@ -814,7 +814,7 @@ const mapPlaces = [
             {
                 date: "2026-07-24",
                 photos: [
-                    { src: "pictures/bia.png", caption: "" }
+                    { src: "photos/bia.jpg", caption: "" }
                 ],
                 videos: []
             }
@@ -830,7 +830,7 @@ const mapPlaces = [
             {
                 date: "2026-07-25",
                 photos: [
-                    { src: "pictures/bi-a.png", caption: "" }
+                    { src: "photos/bi-a.jpg", caption: "" }
                 ],
                 videos: []
             }
@@ -846,7 +846,7 @@ const mapPlaces = [
             {
                 date: "2026-07-30",
                 photos: [
-                    { src: "pictures/thai.png", caption: "" }
+                    { src: "photos/thai.jpg", caption: "" }
                 ],
                 videos: []
             }
@@ -862,7 +862,7 @@ const mapPlaces = [
             {
                 date: "2026-08-02",
                 photos: [
-                    { src: "pictures/kat.png", caption: "" }
+                    { src: "photos/kat.jpg", caption: "" }
                 ],
                 videos: []
             }
@@ -878,7 +878,7 @@ const mapPlaces = [
             {
                 date: "2026-08-30",
                 photos: [
-                    { src: "pictures/donut.png", caption: "" }
+                    { src: "photos/donut.jpg", caption: "" }
                 ],
                 videos: []
             }
@@ -894,7 +894,7 @@ const mapPlaces = [
             {
                 date: "2026-08-31",
                 photos: [
-                    { src: "pictures/pizza.png", caption: "HPBD!!" }
+                    { src: "photos/pizza.jpg", caption: "HPBD!!" }
                 ],
                 // videos: []
             }
@@ -910,21 +910,21 @@ const mapPlaces = [
             {
                 date: "2026-08-31",
                 photos: [
-                    { src: "pictures/pkv1.png", caption: "HPBD!!" }
+                    { src: "photos/pkv1.jpg", caption: "HPBD!!" }
                 ],
                 // videos: []
             },
             {
                 date: "2026-09-02",
                 photos: [
-                    { src: "pictures/pkv2.png", caption: "HPBD!!" }
+                    { src: "photos/pkv2.jpg", caption: "HPBD!!" }
                 ],
                 // videos: []
             },
             {
                 date: "2026-09-06",
                 photos: [
-                    { src: "pictures/pkv3.png", caption: "HPBD!!" }
+                    { src: "photos/pkv3.jpg", caption: "HPBD!!" }
                 ],
                 // videos: []
             }
