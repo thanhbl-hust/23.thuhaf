@@ -32,7 +32,12 @@
 
         <!-- LOVE COUNTER -->
         <header class="love-counter">
-            <div class="lc-label">🐴 &nbsp; luv &nbsp; ✈️</div>
+            <!-- When the page opens the two of them run toward each other and a heart pops out (style.css) -->
+            <div class="lc-label">
+                <span class="lc-horse">🐴</span>
+                <span class="lc-word">luv<span class="lc-spark" aria-hidden="true">💕</span></span>
+                <span class="lc-plane">✈️</span>
+            </div>
             <div class="lc-main">
                 <div class="lc-days" id="lcDays">0</div>
                 <div class="lc-days-unit">Days</div>
@@ -56,6 +61,8 @@
 
         <!-- TABS -->
         <nav class="view-toggle">
+            <!-- Blue highlight that slides to the active tab (script.js) -->
+            <span class="view-toggle-pill" aria-hidden="true"></span>
             <button class="view-toggle-btn active" id="btnMap" onclick="switchView('map')">
                 <span class="btn-icon">🗺️</span><span class="btn-label">Our Map</span>
             </button>

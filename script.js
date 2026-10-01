@@ -1,18 +1,82 @@
+// People who ask their system for less motion get the page without the animations
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 // ===== LOVE COUNTER =====
 const LOVE_START = new Date('2026-02-06T00:00:00');
 function pad2(n) { return String(n).padStart(2, '0'); }
+function daysTogether(now = Date.now()) { return Math.floor((now - LOVE_START.getTime()) / 86400000); }
+
+// Each digit is its own span; a digit that changes rolls up like a mechanical counter
+function setDigits(el, text) {
+    if (el.children.length !== text.length) {
+        el.replaceChildren(...[...text].map(ch => Object.assign(document.createElement('span'), { className: 'lc-digit', textContent: ch })));
+        return;
+    }
+    [...text].forEach((ch, i) => {
+        const digit = el.children[i];
+        if (digit.textContent === ch) return;
+        digit.dataset.prev = digit.textContent;
+        digit.textContent = ch;
+        digit.classList.remove('roll');
+        void digit.offsetWidth; // restart the animation
+        digit.classList.add('roll');
+    });
+}
+
+// The day count runs up from 0 when the page opens; until then loveTick leaves it alone
+let daysCountingUp = !reduceMotion;
+function countUpDays(target, duration = 1400) {
+    const el = document.getElementById('lcDays');
+    const start = performance.now() + 250;
+    function frame(now) {
+        const t = Math.min(Math.max((now - start) / duration, 0), 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(target * eased).toLocaleString('vi-VN');
+        if (t < 1) requestAnimationFrame(frame);
+        else daysCountingUp = false;
+    }
+    requestAnimationFrame(frame);
+}
+
 function loveTick() {
     const diff = Date.now() - LOVE_START.getTime();
     if (diff < 0) return;
-    const days = Math.floor(diff / 86400000);
     const rem = diff % 86400000;
-    document.getElementById('lcDays').textContent = days.toLocaleString('vi-VN');
-    document.getElementById('lcH').textContent = pad2(Math.floor(rem / 3600000));
-    document.getElementById('lcM').textContent = pad2(Math.floor((rem % 3600000) / 60000));
-    document.getElementById('lcS').textContent = pad2(Math.floor((rem % 60000) / 1000));
+    if (!daysCountingUp) document.getElementById('lcDays').textContent = daysTogether().toLocaleString('vi-VN');
+    setDigits(document.getElementById('lcH'), pad2(Math.floor(rem / 3600000)));
+    setDigits(document.getElementById('lcM'), pad2(Math.floor((rem % 3600000) / 60000)));
+    setDigits(document.getElementById('lcS'), pad2(Math.floor((rem % 60000) / 1000)));
 }
 loveTick();
+if (daysCountingUp) countUpDays(Math.max(daysTogether(), 0));
 setInterval(loveTick, 1000);
+
+// Tap the counter for a burst of hearts
+document.querySelector('.love-counter').addEventListener('click', e => burstHearts(e.clientX, e.clientY));
+
+function burstHearts(x, y) {
+    if (reduceMotion) return;
+    const hearts = ['❤️', '💕', '💖', '💗', '💘'];
+    for (let i = 0; i < 16; i++) {
+        const heart = document.createElement('span');
+        heart.className = 'burst-heart';
+        heart.textContent = hearts[i % hearts.length];
+        heart.style.left = x + 'px';
+        heart.style.top = y + 'px';
+        document.body.appendChild(heart);
+        // Fly out in a random direction, then drift up and fade
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 60 + Math.random() * 90;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist - 30;
+        const turn = (Math.random() - 0.5) * 70;
+        heart.animate([
+            { transform: 'translate(-50%, -50%) scale(0.3)', opacity: 1 },
+            { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${turn}deg) scale(1)`, opacity: 1, offset: 0.55 },
+            { transform: `translate(calc(-50% + ${dx * 1.15}px), calc(-50% + ${dy - 60}px)) rotate(${turn}deg) scale(0.7)`, opacity: 0 }
+        ], { duration: 900 + Math.random() * 500, easing: 'cubic-bezier(.2, .7, .3, 1)' }).finished.then(() => heart.remove());
+    }
+}
 
 // ===== BUILD DATE → VISITS INDEX =====
 function buildDateIndex() {
@@ -60,15 +124,44 @@ function getSortedPlaces() {
 }
 
 // ===== VIEW TOGGLE =====
+const VIEWS = ['map', 'list', 'cal'];
+let currentView = 'map';
+
 function switchView(view) {
-    ['map', 'list', 'cal'].forEach(k => {
+    // The new view slides in from the side of its tab
+    const direction = Math.sign(VIEWS.indexOf(view) - VIEWS.indexOf(currentView));
+    currentView = view;
+    VIEWS.forEach(k => {
         const key = k.charAt(0).toUpperCase() + k.slice(1);
-        document.getElementById('panel' + key).classList.toggle('active', k === view);
+        const panel = document.getElementById('panel' + key);
+        panel.style.setProperty('--panel-dx', direction * 28 + 'px');
+        panel.style.setProperty('--panel-dy', '0px');
+        panel.classList.toggle('active', k === view);
         document.getElementById('btn' + key).classList.toggle('active', k === view);
     });
+    placeTabPill(true);
     if (view === 'map') setTimeout(() => map.invalidateSize(), 50);
     if (view === 'cal') restoreCalendarScroll();
 }
+
+// Move the blue highlight under the active tab (without animating on first draw and on resize)
+function placeTabPill(animate) {
+    const bar = document.querySelector('.view-toggle');
+    const pill = bar.querySelector('.view-toggle-pill');
+    const btn = bar.querySelector('.view-toggle-btn.active');
+    if (!animate) pill.style.transition = 'none';
+    pill.style.width = btn.offsetWidth + 'px';
+    pill.style.height = btn.offsetHeight + 'px';
+    pill.style.transform = `translate(${btn.offsetLeft}px, ${btn.offsetTop}px)`;
+    if (!animate) {
+        void pill.offsetWidth;
+        pill.style.transition = '';
+    }
+    bar.classList.add('has-pill');
+}
+placeTabPill(false);
+new ResizeObserver(() => placeTabPill(false)).observe(document.querySelector('.view-toggle'));
+document.fonts?.ready.then(() => placeTabPill(false));
 
 // ===== CHECK-IN LIST =====
 function buildCheckinList() {
@@ -79,12 +172,14 @@ function buildCheckinList() {
         list.innerHTML = `<div class="checkin-empty"><div class="empty-icon">📍</div><div>No check-ins yet!</div></div>`;
         return;
     }
-    sorted.forEach(place => {
+    sorted.forEach((place, i) => {
         const totalPhotos = place.visits.reduce((s, v) => s + (v.photos || []).filter(p => p?.src).length, 0);
         const totalVideos = place.visits.reduce((s, v) => s + (v.videos || []).filter(x => x?.src).length, 0);
         const visitCount = place.visits.length;
         const item = document.createElement('div');
         item.className = 'checkin-item';
+        // Cards come in one after another; past the first screenful they all come in together
+        item.style.setProperty('--i', Math.min(i, 12));
         item.innerHTML = `
                     <div class="checkin-item-heart">💕</div>
                     <div class="checkin-item-info">
@@ -280,10 +375,21 @@ if (window.maplibregl && L.maplibreGL && webglSupported()) {
 }
 setTimeout(() => map.invalidateSize(), 300);
 
+// When the page opens the pins drop onto the map one by one, in the order the places were first visited,
+// and the hearts land last. Each pin keeps the drop class only until its animation has played once.
+const firstVisit = place => place.visits.map(v => v.date).filter(Boolean).sort()[0] || '9999';
+const dropOrder = [...mapPlaces].sort((a, b) => firstVisit(a).localeCompare(firstVisit(b)));
+const DROP_START = 350;
+const DROP_STEP = Math.min(45, 1400 / Math.max(dropOrder.length, 1));
+const dropDelay = i => Math.round(DROP_START + i * DROP_STEP);
+document.getElementById('hanoi-map').addEventListener('animationend', e => {
+    if (e.animationName === 'pinDrop') e.target.classList.remove('pin-drop');
+});
+
 mapPlaces.forEach(place => {
     // The pin is a 25px square turned 45°: its tip is 12.5px from the left and 30px from the top
     const icon = L.divIcon({
-        html: `<div class="custom-pin"><div class="custom-pin-inner">${place.icon}</div></div>`,
+        html: `<div class="pin-drop" style="animation-delay:${dropDelay(dropOrder.indexOf(place))}ms"><div class="custom-pin"><div class="custom-pin-inner">${place.icon}</div></div></div>`,
         className: '', iconSize: [25, 25], iconAnchor: [12.5, 30], popupAnchor: [0, -36]
     });
     const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
@@ -291,9 +397,9 @@ mapPlaces.forEach(place => {
     marker.bindTooltip(`<b>${place.name}</b>`, { direction: 'top', offset: [0, -36] });
 });
 
-heartPlaces.forEach(place => {
+heartPlaces.forEach((place, i) => {
     const icon = L.divIcon({
-        html: `<div class="heart-pin"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="44" viewBox="0 0 48 44"><path d="M24 40 C24 40 4 26 4 14 C4 7.4 9.4 2 16 2 C19.8 2 23.2 3.8 24 6 C24.8 3.8 28.2 2 32 2 C38.6 2 44 7.4 44 14 C44 26 24 40 24 40Z" fill="#e8455a" stroke="#fff" stroke-width="2.5"/></svg></div>`,
+        html: `<div class="pin-drop" style="animation-delay:${dropDelay(dropOrder.length + 3 + i * 4)}ms"><div class="heart-pin"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="44" viewBox="0 0 48 44"><path d="M24 40 C24 40 4 26 4 14 C4 7.4 9.4 2 16 2 C19.8 2 23.2 3.8 24 6 C24.8 3.8 28.2 2 32 2 C38.6 2 44 7.4 44 14 C44 26 24 40 24 40Z" fill="#e8455a" stroke="#fff" stroke-width="2.5"/></svg></div></div>`,
         className: '', iconSize: [25, 25], iconAnchor: [24, 40], popupAnchor: [0, -44]
     });
     const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
@@ -301,12 +407,27 @@ heartPlaces.forEach(place => {
 });
 
 // ===== POPUP =====
+// Remember where the last tap or click was, so the popup can grow out of the pin, card or day that opened it
+let lastPointer = null;
+document.addEventListener('pointerdown', e => { lastPointer = { x: e.clientX, y: e.clientY, time: performance.now() }; }, true);
+
+function growPopupFromPointer() {
+    const box = document.querySelector('.map-popup-box');
+    const recent = lastPointer && performance.now() - lastPointer.time < 1000;
+    // offsetLeft/Top ignore the opening animation's scale, so the origin lands on the tap itself
+    box.style.transformOrigin = recent ? `${lastPointer.x - box.offsetLeft}px ${lastPointer.y - box.offsetTop}px` : '';
+    box.style.setProperty('--pop-from', recent ? '0.3' : '0.82');
+}
+
 function openMapPopup(place, startVisitIdx = 0) {
+    const overlay = document.getElementById('mapPopup');
+    const opening = !overlay.classList.contains('open');
     document.getElementById('mapPopupIcon').textContent = place.icon;
     document.getElementById('mapPopupName').textContent = place.name;
     document.getElementById('mapPopupDesc').textContent = place.desc;
-    document.getElementById('mapPopup').classList.add('open');
+    overlay.classList.add('open');
     renderVisitTabs(place, startVisitIdx);
+    if (opening) growPopupFromPointer();
 }
 
 function renderVisitTabs(place, activeIdx) {
@@ -357,7 +478,7 @@ function renderVisitTabs(place, activeIdx) {
             item.className = 'map-photo-item';
             const img = document.createElement('img');
             img.src = thumbSrc(photo.src); img.alt = photo.caption || place.name; img.loading = 'lazy';
-            img.onclick = () => openPhotoViewer(photo.src);
+            img.onclick = () => openPhotoViewer(photo.src, img);
             item.appendChild(img);
             photoGrid.appendChild(item);
         });
@@ -430,15 +551,65 @@ function openDayPopup(entries) {
     body.innerHTML = '';
     body.appendChild(list);
     document.getElementById('mapPopup').classList.add('open');
+    growPopupFromPointer();
 }
 
-function openPhotoViewer(src) {
-    document.getElementById('mapViewerImg').src = src;
-    document.getElementById('mapViewer').classList.add('open');
+// ===== PHOTO VIEWER =====
+// The photo grows out of the small copy that was tapped. The small copy (already loaded) stands in
+// at full size first, and the full-size photo replaces it as soon as it has loaded.
+let viewerSrc = null;
+
+function openPhotoViewer(src, fromImg) {
+    const viewer = document.getElementById('mapViewer');
+    const img = document.getElementById('mapViewerImg');
+    viewer.getAnimations().forEach(a => a.cancel()); // a closing fade that is still running
+    viewerSrc = src;
+    if (fromImg?.naturalWidth) {
+        img.style.setProperty('--ar', fromImg.naturalWidth / fromImg.naturalHeight);
+        img.classList.add('sized');
+        img.src = fromImg.currentSrc || fromImg.src;
+        const full = new Image();
+        full.src = src;
+        full.decode().catch(() => {}).then(() => { if (viewerSrc === src) img.src = src; });
+    } else {
+        img.classList.remove('sized');
+        img.src = src;
+    }
+    viewer.classList.add('open');
+    if (!reduceMotion && fromImg?.naturalWidth) zoomFromThumb(img, fromImg.closest('.map-photo-item') || fromImg);
+}
+
+function zoomFromThumb(img, thumb) {
+    const a = thumb.getBoundingClientRect();
+    const b = img.getBoundingClientRect();
+    if (!a.width || !b.width) return;
+    // Start scaled down until it covers the thumbnail, cropped to the thumbnail's square
+    const scale = Math.max(a.width / b.width, a.height / b.height);
+    const dx = a.left + a.width / 2 - (b.left + b.width / 2);
+    const dy = a.top + a.height / 2 - (b.top + b.height / 2);
+    const insetX = (b.width - a.width / scale) / 2;
+    const insetY = (b.height - a.height / scale) / 2;
+    img.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, clipPath: `inset(${insetY}px ${insetX}px round ${12 / scale}px)` },
+        { transform: 'none', clipPath: 'inset(0px 0px round 12px)' }
+    ], { duration: 420, easing: 'cubic-bezier(.2, .8, .2, 1)' });
+    document.getElementById('mapViewer').animate(
+        [{ backgroundColor: 'rgba(10, 5, 4, 0)' }, { backgroundColor: 'rgba(10, 5, 4, 0.96)' }],
+        { duration: 320 });
 }
 
 function closePhotoViewer() {
-    document.getElementById('mapViewer').classList.remove('open');
+    const viewer = document.getElementById('mapViewer');
+    viewerSrc = null;
+    if (reduceMotion) {
+        viewer.classList.remove('open');
+        return;
+    }
+    const fade = viewer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-in', fill: 'forwards' });
+    fade.finished.then(() => {
+        viewer.classList.remove('open');
+        fade.cancel();
+    }).catch(() => {}); // cancelled because a photo was opened again
 }
 
 document.getElementById('mapPopup').addEventListener('click', function (e) { if (e.target === this) closeMapPopup(); });
@@ -450,3 +621,55 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('mapViewer').classList.contains('open')) closePhotoViewer();
     else if (document.getElementById('mapPopup').classList.contains('open')) closeMapPopup();
 });
+
+// ===== SPECIAL DAYS =====
+// Every 100 days together, the anniversary and the birthdays get confetti and a short note.
+// Open the page with #celebrate at the end of the address to preview it on any day.
+function specialDayMessage(now = new Date()) {
+    const days = daysTogether(now.getTime());
+    if (isBirthday(now.getMonth(), now.getDate())) return 'Happy birthday! 🎂';
+    const years = now.getFullYear() - LOVE_START.getFullYear();
+    if (years > 0 && now.getMonth() === LOVE_START.getMonth() && now.getDate() === LOVE_START.getDate()) {
+        return `Happy anniversary! ${years} year${years > 1 ? 's' : ''} together 💕`;
+    }
+    if (days > 0 && days % 100 === 0) return `${days} days together! 🎉`;
+    return null;
+}
+
+// The confetti library is only downloaded on the days it is used
+function loadConfetti() {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.js';
+        script.integrity = 'sha384-bopE5cbMjKUprmGnIRk2UdvCnHImrRLCtNW2uR6oDYqO+o3XWJeuIrWWxDzeDgNW';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => resolve(window.confetti);
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+function celebrate(message) {
+    const note = document.createElement('div');
+    note.className = 'celebrate-note';
+    note.setAttribute('role', 'status');
+    note.textContent = message;
+    document.body.appendChild(note);
+    setTimeout(() => note.classList.add('hide'), 5000);
+    note.addEventListener('transitionend', () => note.remove());
+
+    if (reduceMotion) return;
+    loadConfetti().then(confetti => {
+        const colors = ['#196ea0', '#85b2d7', '#e8455a', '#f5c0a8', '#ffd166'];
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.35 }, colors });
+        setTimeout(() => {
+            confetti({ particleCount: 60, angle: 60, spread: 60, origin: { x: 0, y: 0.65 }, colors });
+            confetti({ particleCount: 60, angle: 120, spread: 60, origin: { x: 1, y: 0.65 }, colors });
+        }, 400);
+    }).catch(() => {});
+}
+
+const todaysMessage = location.hash === '#celebrate'
+    ? specialDayMessage() || 'Preview: 300 days together! 🎉'
+    : specialDayMessage();
+if (todaysMessage) setTimeout(() => celebrate(todaysMessage), 1600);

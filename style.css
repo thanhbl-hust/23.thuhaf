@@ -53,6 +53,7 @@ body::before {
     background: var(--accent);
     top: -120px;
     right: -160px;
+    animation: blobDriftA 22s ease-in-out infinite alternate;
 }
 
 body::after {
@@ -61,6 +62,20 @@ body::after {
     background: #f5c0a8;
     bottom: -100px;
     left: -100px;
+    animation: blobDriftB 27s ease-in-out infinite alternate;
+}
+
+/* The two blurred blobs drift slowly and stretch a little. Only transform changes, so the blur is not redrawn */
+@keyframes blobDriftA {
+    0% { transform: translate(0, 0) scale(1) }
+    50% { transform: translate(-70px, 60px) scale(1.12, 0.92) }
+    100% { transform: translate(-20px, 130px) scale(0.94, 1.08) }
+}
+
+@keyframes blobDriftB {
+    0% { transform: translate(0, 0) scale(1) }
+    50% { transform: translate(80px, -50px) scale(0.9, 1.1) }
+    100% { transform: translate(30px, -110px) scale(1.1, 0.95) }
 }
 
 /* ===== APP LAYOUT =====
@@ -89,14 +104,78 @@ body::after {
     margin-bottom: calc(12px + 16 * var(--grow));
     text-align: center;
     animation: fadeUp 0.7s 0.12s ease both;
+    /* Tapping it bursts hearts (script.js) */
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .lc-label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1em;
     font-size: calc(24px + 24 * var(--grow));
     line-height: 1.2;
     color: var(--muted);
     letter-spacing: 0.1em;
     margin-bottom: calc(2px + 4 * var(--grow));
+}
+
+/* The horse gallops in from the left and the plane glides in from the right, turned to face each other */
+.lc-horse,
+.lc-plane {
+    display: inline-block;
+    letter-spacing: 0;
+    transform: scaleX(-1);
+}
+
+.lc-horse {
+    animation: horseIn 1.1s 0.3s ease-in-out both;
+}
+
+.lc-plane {
+    animation: planeIn 1.1s 0.3s cubic-bezier(.25, .8, .35, 1) both;
+}
+
+@keyframes horseIn {
+    0% { transform: translate(-110px, 0) scaleX(-1); opacity: 0 }
+    15% { transform: translate(-86px, -10px) scaleX(-1); opacity: 1 }
+    30% { transform: translate(-62px, 0) scaleX(-1) }
+    45% { transform: translate(-40px, -9px) scaleX(-1) }
+    60% { transform: translate(-20px, 0) scaleX(-1) }
+    75% { transform: translate(-7px, -5px) scaleX(-1) }
+    88% { transform: translate(5px, 0) scaleX(-1) }
+    100% { transform: translate(0, 0) scaleX(-1) }
+}
+
+@keyframes planeIn {
+    0% { transform: translate(120px, -26px) scaleX(-1) rotate(-8deg); opacity: 0 }
+    20% { opacity: 1 }
+    80% { transform: translate(-6px, 2px) scaleX(-1) rotate(2deg) }
+    100% { transform: translate(0, 0) scaleX(-1) rotate(0) }
+}
+
+/* ...and once they meet, a heart pops out of "luv" and floats away */
+.lc-word {
+    position: relative;
+}
+
+.lc-spark {
+    position: absolute;
+    left: 50%;
+    top: -0.1em;
+    font-size: 0.5em;
+    letter-spacing: 0;
+    pointer-events: none;
+    animation: sparkPop 1.5s 1.3s ease-out both;
+}
+
+@keyframes sparkPop {
+    0% { transform: translate(-50%, 0.4em) scale(0); opacity: 0 }
+    22% { transform: translate(-50%, -0.3em) scale(1.3); opacity: 1 }
+    38% { transform: translate(-50%, -0.4em) scale(1); opacity: 1 }
+    100% { transform: translate(-50%, -1.6em) scale(0.9); opacity: 0 }
 }
 
 .lc-days {
@@ -134,6 +213,30 @@ body::after {
     color: var(--text);
     font-variant-numeric: tabular-nums;
     line-height: 1;
+    /* Hides the digits while they roll in and out */
+    overflow: hidden;
+}
+
+/* A changed digit rolls up: the old one (::before, from data-prev) leaves at the top as the new one comes in */
+.lc-digit {
+    display: inline-block;
+    position: relative;
+}
+
+.lc-digit.roll {
+    animation: digitRoll 0.45s cubic-bezier(.25, .9, .35, 1.1) both;
+}
+
+.lc-digit.roll::before {
+    content: attr(data-prev);
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+}
+
+@keyframes digitRoll {
+    from { transform: translateY(100%) }
+    to { transform: translateY(0) }
 }
 
 .lc-unit-label {
@@ -162,6 +265,18 @@ body::after {
     padding: 6px;
     margin-bottom: calc(10px + 10 * var(--grow));
     animation: fadeUp 0.7s 0.2s ease both;
+    position: relative;
+}
+
+/* The highlight behind the active tab; script.js sizes it and slides it from tab to tab */
+.view-toggle-pill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 10px;
+    background: var(--accent);
+    box-shadow: 0 4px 16px rgba(15, 98, 149, 0.30);
+    transition: transform 0.4s cubic-bezier(.35, 1.25, .5, 1), width 0.4s cubic-bezier(.35, 1.25, .5, 1);
 }
 
 .view-toggle-btn {
@@ -180,6 +295,8 @@ body::after {
     color: var(--muted);
     transition: all 0.25s cubic-bezier(.4, 0, .2, 1);
     white-space: nowrap;
+    position: relative;
+    z-index: 1;
 }
 
 .view-toggle-btn .btn-icon {
@@ -204,6 +321,12 @@ body::after {
     box-shadow: 0 4px 16px rgba(15, 98, 149, 0.30);
 }
 
+/* Once the sliding highlight is in place it draws the active background instead */
+.view-toggle.has-pill .view-toggle-btn.active {
+    background: transparent;
+    box-shadow: none;
+}
+
 .view-toggle-btn.active .btn-icon {
     transform: scale(1.15);
 }
@@ -214,11 +337,24 @@ body::after {
     min-height: 0;
 }
 
+/* On first load the view rises into place; after that script.js sets --panel-dx so it slides in from its tab's side */
 .view-panel {
     display: none;
     height: 100%;
     flex-direction: column;
-    animation: fadeUp 0.4s ease both;
+    animation: panelIn 0.4s ease both;
+}
+
+@keyframes panelIn {
+    from {
+        opacity: 0;
+        transform: translate(var(--panel-dx, 0px), var(--panel-dy, 22px));
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
 }
 
 .view-panel.active {
@@ -350,6 +486,15 @@ body::after {
     cursor: pointer;
     transition: transform 0.18s, box-shadow 0.18s;
     border: 2px solid transparent;
+    /* Cards come in one after another (--i is set in script.js). "backwards" so the hover lift still works afterwards */
+    animation: cardIn 0.45s calc(0.08s + var(--i, 0) * 45ms) cubic-bezier(.2, .8, .3, 1) backwards;
+}
+
+@keyframes cardIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+    }
 }
 
 .checkin-item:hover {
@@ -699,9 +844,10 @@ body::after {
     box-shadow: 0 32px 100px rgba(232, 101, 74, 0.28);
 }
 
+/* script.js points transform-origin at the tap that opened the popup and lowers --pop-from, so it grows out of it */
 @keyframes popIn {
     from {
-        transform: scale(0.82);
+        transform: scale(var(--pop-from, 0.82));
         opacity: 0
     }
 
@@ -941,6 +1087,14 @@ body::after {
     object-fit: contain;
 }
 
+/* Sized from the photo's shape (--ar, set in script.js) so the small copy can stand in at full size
+   until the full-size file has loaded */
+.map-viewer img.sized {
+    width: min(92vw, calc(82vh * var(--ar)));
+    height: auto;
+    aspect-ratio: var(--ar);
+}
+
 .map-viewer-close {
     position: absolute;
     top: 20px;
@@ -961,6 +1115,21 @@ body::after {
 
 .map-viewer-close:hover {
     background: rgba(255, 255, 255, 0.28);
+}
+
+/* Pins drop onto the map one by one when the page opens (script.js sets each delay, then removes the class) */
+.pin-drop {
+    transform-origin: 50% 100%;
+    animation: pinDrop 0.7s backwards;
+}
+
+@keyframes pinDrop {
+    0% { transform: translateY(-44px); opacity: 0; animation-timing-function: cubic-bezier(.55, 0, 1, .45) }
+    50% { transform: translateY(0) scale(1.15, 0.85); opacity: 1; animation-timing-function: ease-out }
+    68% { transform: translateY(-8px) scale(0.95, 1.05); animation-timing-function: ease-in }
+    84% { transform: translateY(0) scale(1.04, 0.96); animation-timing-function: ease-out }
+    92% { transform: translateY(-2px) }
+    100% { transform: translateY(0) }
 }
 
 /* Custom pin markers */
@@ -1027,6 +1196,48 @@ footer {
     font-size: 0.82rem;
     color: var(--muted);
     animation: fadeUp 0.7s 0.6s ease both;
+}
+
+/* Hearts that burst out when the counter is tapped (moved by script.js) */
+.burst-heart {
+    position: fixed;
+    z-index: 600;
+    font-size: 1.4rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* Note shown with the confetti on special days */
+.celebrate-note {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    z-index: 700;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 32px);
+    padding: 10px 20px;
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: 0 10px 30px rgba(15, 98, 149, 0.25);
+    color: var(--accent);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-align: center;
+    animation: noteIn 0.5s cubic-bezier(.34, 1.56, .64, 1) backwards;
+    transition: opacity 0.6s, transform 0.6s;
+}
+
+.celebrate-note.hide {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+}
+
+@keyframes noteIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -30px) scale(0.9);
+    }
 }
 
 @keyframes fadeUp {
@@ -1148,5 +1359,18 @@ footer {
 
     .view-toggle-btn .btn-icon {
         font-size: 1.2rem;
+    }
+}
+
+/* People who ask their system for less motion: everything jumps straight to its end state
+   (script.js also skips the count-up, the heart burst, the photo zoom and the confetti) */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0s !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
