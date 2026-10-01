@@ -393,11 +393,6 @@ body::after {
     height: 100%;
 }
 
-/* Fallback map (only when the vector map can't run): OpenStreetMap tiles recoloured to match the page */
-#hanoi-map.raster-map .leaflet-tile-pane {
-    filter: grayscale(1) sepia(0.25) hue-rotate(165deg) saturate(1.1) brightness(1.02) contrast(1.05);
-}
-
 /* Zoom buttons styled like the rest of the cards */
 #hanoi-map .leaflet-bar {
     border: none;

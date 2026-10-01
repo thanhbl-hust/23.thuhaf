@@ -349,30 +349,12 @@ function restoreCalendarScroll() {
 // lng: 105.81246668161833,
 const map = L.map('hanoi-map', { center: [21.034281533880666, 105.81246668161833], zoom: 13, maxZoom: 19 });
 
-// Base map: free vector style, no API key. Other styles that also work here:
-//   VersaTiles:  colorful, graybeard, neutrino  -> https://tiles.versatiles.org/assets/styles/<name>/style.json
-//   OpenFreeMap: positron, bright, liberty      -> https://tiles.openfreemap.org/styles/<name>
-const MAP_STYLE = 'https://tiles.versatiles.org/assets/styles/colorful/style.json';
-
-function webglSupported() {
-    try {
-        const canvas = document.createElement('canvas');
-        return !!(canvas.getContext('webgl2') || canvas.getContext('webgl'));
-    } catch (e) {
-        return false;
-    }
-}
-
-if (window.maplibregl && L.maplibreGL && webglSupported()) {
-    L.maplibreGL({ style: MAP_STYLE }).addTo(map);
-} else {
-    // Fallback when the vector map can't run: plain OpenStreetMap tiles, recoloured in style.css
-    document.getElementById('hanoi-map').classList.add('raster-map');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-}
+// Base map: plain OpenStreetMap image tiles. They move with the pins at no extra cost while dragging;
+// a vector map (MapLibre) looked nicer but redrew itself about 30 times a second and made dragging stutter
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
 setTimeout(() => map.invalidateSize(), 300);
 
 // When the page opens the pins drop onto the map one by one, in the order the places were first visited,
