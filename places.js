@@ -933,7 +933,8 @@ const mapPlaces = [
 ];
 
 // Special heart-pin locations (homes, meaningful spots — no popup)
+// The page is public: give only the street and a point a few hundred metres away, never the exact address
 const heartPlaces = [
-    { name: "99 Tran Binh", lat: 21.03053127477092, lng: 105.77685917843765 },
-    { name: "Alley 39 Ke Ve", lat: 21.09059879968952, lng: 105.78262411444823 }
+    { name: "Tran Binh", lat: 21.0349, lng: 105.7798 },
+    { name: "Ke Ve", lat: 21.0839, lng: 105.7848 }
 ];
