@@ -129,6 +129,7 @@ function renderCalendar() {
 function buildMonth(year, month0, today) {
     const section = document.createElement('section');
     section.className = 'cal-month';
+    section.dataset.month = `${year}-${pad2(month0 + 1)}`;
 
     const label = document.createElement('div');
     label.className = 'cal-month-label';
@@ -231,16 +232,19 @@ function appendDay(grid, month0, day, isToday, entries) {
 
 renderCalendar();
 
-// Remember where the calendar was scrolled; the first time it opens, start at the current month
+// Remember where the calendar was scrolled; the first time it opens, start at the month of the
+// newest check-in (the current month may still be empty)
 let calScrollTop = null;
 document.getElementById('calScroll').addEventListener('scroll', e => { calScrollTop = e.target.scrollTop; });
 
 function restoreCalendarScroll() {
     const scroller = document.getElementById('calScroll');
     if (calScrollTop === null) {
-        const currentMonth = scroller.lastElementChild;
+        const newestDate = Object.keys(dateVisitMap).sort().pop();
+        const startMonth = (newestDate && scroller.querySelector(`[data-month="${newestDate.slice(0, 7)}"]`))
+            || scroller.lastElementChild;
         const weekdays = scroller.querySelector('.cal-weekdays');
-        calScrollTop = currentMonth.offsetTop - weekdays.offsetHeight;
+        calScrollTop = startMonth.offsetTop - weekdays.offsetHeight;
     }
     scroller.scrollTop = calScrollTop;
 }
@@ -342,6 +346,8 @@ function renderVisitTabs(place, activeIdx) {
         tabBar.appendChild(tab);
     });
     body.appendChild(tabBar);
+    // On phones the tabs scroll sideways: bring the open visit into view
+    tabBar.scrollLeft = tabBar.children[activeIdx].offsetLeft - tabBar.offsetLeft;
 
     const visit = place.visits[activeIdx];
     const realPhotos = visit ? (visit.photos || []).filter(p => p?.src) : [];

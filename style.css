@@ -1111,8 +1111,25 @@ footer {
 }
 
 @media (max-width: 640px) {
+    /* Phones are tall but narrow: keep the counter at its compact size so the map and calendar get more room */
+    .love-counter {
+        --grow: 0px;
+    }
+
     .view-toggle {
         align-self: stretch;
+    }
+
+    /* Visit tabs stay on one line and scroll sideways instead of stacking above the photos */
+    .visit-tab-bar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .visit-tab {
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .view-toggle-btn {
