@@ -4,7 +4,7 @@ Bản đồ, danh sách check-in và lịch các nơi đã đi.
 
 ## Màn hình mở đầu
 
-Mỗi lần mở trang sẽ hiện cảnh hai đứa nắm tay trên một hòn đảo bãi biển bằng khối lơ lửng giữa trời hoàng hôn; bấm "Start our journey" để vào trang.
+Mỗi lần mở trang sẽ hiện cảnh hai đứa nắm tay trên một hòn đảo bãi biển bằng khối lơ lửng giữa trời hoàng hôn (vịnh, thác nước, nhà gỗ, hải đăng, các đảo nhỏ xung quanh...). Camera luôn nhìn vào hai đứa: kéo để xoay quanh hoặc lên xuống, cuộn chuột hoặc chụm hai ngón để phóng to thu nhỏ. Bấm "Start our journey" để vào trang.
 
 - Cảnh 3D nằm trong `intro.js`, vẽ bằng three.js (bản 0.185.1 chép nguyên từ npm vào `vendor/three/`, giấy phép MIT).
 - Đổi màu áo, tóc, da: sửa `HIM` và `HER` trong `intro.js`. Màu trời, nước, cát, đất: `COLORS` ở đầu file.

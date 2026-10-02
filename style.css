@@ -154,6 +154,11 @@ body::after {
     transform: translateY(-14px);
 }
 
+/* While the scene is being turned or zoomed (intro.js), the title steps back */
+.intro.exploring .intro-text {
+    opacity: 0.12;
+}
+
 .intro-title {
     font-family: 'Playfair Display', serif;
     font-style: italic;
