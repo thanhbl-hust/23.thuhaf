@@ -696,8 +696,9 @@ function topLevel(i, k) {
     // The resort's terrace is level with the grass, its pool and the pond a block lower
     if (onTerrace(i, k)) return inPool(i, k) ? 1 : RESORT.ground;
     if (isPond(i, k)) return 1;
-    // The courts, the car park, the pitch and the helipad are level, and so is a strip of grass round them
-    if ([COURT, TENNIS, CAR_PARK, PITCH, HELIPAD].some(r => inRect(r, i, k, 2))) return 2;
+    // The courts, the car park, the pitch, the helipad and the tulip field are level, and so is a strip of
+    // grass round them (round the pitch, wide enough for its net)
+    if ([COURT, TENNIS, CAR_PARK, HELIPAD].some(r => inRect(r, i, k, 2)) || inRect(PITCH, i, k, 4) || inRect(TULIPS, i, k, 1)) return 2;
     const mill = Math.round(3.4 * Math.exp(-((i - MILL.i) ** 2 + (k - MILL.k) ** 2) / 60));
     const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && !nearPond(i, k, 2) && hash(i, k, 1) > 0.8 ? 1 : 0;
     return 2 + mill + bump;
@@ -1914,9 +1915,9 @@ function tennisCourt(b, glow) {
 
 // The football pitch behind the car park, as wide as the resort: mown in stripes, with its white lines, the
 // centre circle and the penalty boxes, goals with nets at both ends, corner flags, the teams' dugouts along the
-// far side and floodlights at the corners, and a ball on the centre spot. It is a small pitch, a block to a
-// metre, for seven a side
-function footballPitch(b, glow) {
+// far side and floodlights at the corners, a ball on the centre spot, and a tall net round it all to keep the
+// ball in, see-through, its panels going into `net`. It is a small pitch, a block to a metre, for seven a side
+function footballPitch(b, glow, net) {
     const { i0, i1, k0, k1 } = PITCH, y = ground(i0, k0), white = '#f7f7f2', line = 0.05, top = y + 0.036;
     const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
     for (let i = i0; i <= i1; i += 3) {
@@ -1986,6 +1987,23 @@ function footballPitch(b, glow) {
     // A ball on the centre spot
     b.box(0.13, 0.13, 0.13, cx, y + 0.1, cz, '#ffffff', { outline: true });
     b.box(0.135, 0.05, 0.05, cx, y + 0.1, cz, '#2b2f36');
+    // The net round it: posts with rails at the top, the middle and the bottom, the netting between them, and
+    // a gate in the middle of the side toward the car park
+    const nx0 = x0 - 0.45, nx1 = x1 + 0.45, nz0 = z0 - 0.45, nz1 = z1 + 1.0, tall = 2.4, gate = 1.4, post = '#2d4a3a';
+    const side = (ax, az, bx, bz) => {
+        const length = Math.hypot(bx - ax, bz - az), along = bx !== ax, mx = (ax + bx) / 2, mz = (az + bz) / 2;
+        const run = (w, h, yy, hex) => b.box(along ? length : w, h, along ? w : length, mx, y + yy, mz, hex);
+        [[0.05, tall], [0.03, 1.2], [0.03, 0.08]].forEach(([w, yy]) => run(w, w, yy, post));
+        net.box(along ? length : 0.02, tall, along ? 0.02 : length, mx, y + tall / 2, mz, post);
+        for (let n = 0, posts = Math.max(1, Math.round(length / 1.8)); n <= posts; n++) {
+            b.box(0.08, tall + 0.05, 0.08, ax + (bx - ax) * n / posts, y + (tall + 0.05) / 2, az + (bz - az) * n / posts, post);
+        }
+    };
+    side(nx0, nz1, nx1, nz1);
+    side(nx0, nz0, nx0, nz1);
+    side(nx1, nz0, nx1, nz1);
+    side(nx0, nz0, cx - gate / 2, nz0);
+    side(cx + gate / 2, nz0, nx1, nz0);
 }
 
 // The helipad in a clearing in the forest: a dark square pad with a white edge, a yellow ring and a white H,
@@ -2039,18 +2057,12 @@ function helipad(b, glow) {
     [0.35, 0.35 + Math.PI / 2].forEach(a => turned(b, new THREE.Vector3(cx, y, cz), [0, 0.7 + a, 0])(3.8, 0.03, 0.14, cx, y + 1.74, cz, dark));
 }
 
-// The outdoor gym on the sand to the left, on black rubber mats: a pull-up rig, parallel bars, a bench press
+// The outdoor gym right on the sand to the left: a pull-up rig, parallel bars, a bench press
 // with its bar racked, a squat rack, a rack of dumbbells, kettlebells, a big tyre to flip, and the gym's sign
 function outdoorGym(b) {
     const { i0, i1, k0, k1 } = GYM, y = ground(i0, k0), steel = '#3b3f45', grip = '#ffd166', plate = '#2b2e33';
     const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cz = (z0 + z1) / 2;
-    for (let i = i0; i <= i1; i += 2) {
-        for (let k = k0; k <= k1; k += 2) {
-            const w = Math.min(2, i1 - i + 1) * B, d = Math.min(2, k1 - k + 1) * B;
-            b.box(w - 0.01, 0.04, d - 0.01, (i - 0.5) * B + w / 2, y + 0.02, (k - 0.5) * B + d / 2, (i + k) % 4 ? '#3a3d42' : '#33363b');
-        }
-    }
-    const f = y + 0.04;
+    const f = y;
     // A pull-up rig: three uprights with bars at two heights between them
     const rx = x0 + 0.4;
     [-1.1, 0, 1.1].forEach(dz => b.box(0.09, 2.3, 0.09, rx, f + 1.15, cz + dz, steel));
@@ -2087,7 +2099,7 @@ function outdoorGym(b) {
             [-1, 1].forEach(end => b.box(0.06, s, s, x + end * 0.08, f + 0.55 + s / 2, dzr + dz, plate));
         });
     }
-    // Kettlebells and a tyre on the mats
+    // Kettlebells and a tyre on the sand
     [[0.2, '#2b2e33'], [0.55, '#c8453b'], [0.9, '#2f6fb0']].forEach(([dx, hex], n) => {
         const kx = dx0 + dx, kz = z0 + 0.4, s = 0.18 + n * 0.03;
         b.box(s, s, s, kx, f + s / 2, kz, hex);
@@ -2749,20 +2761,20 @@ function start() {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
 
-    // Light: warm light from above, a peach rim from the low sun, a cool fill from the other side
-    scene.add(new THREE.HemisphereLight('#bdb9e6', '#f0c19a', 1.4));
-    const key = new THREE.DirectionalLight('#ffc690', 2.3);
-    key.position.set(9, 10, 7);
+    // Light: the setting sun in front of us, beyond the bay, casts the shadows, so they fall back toward us
+    // (from higher than the sun itself, so they don't stretch the whole way across the island); soft light
+    // from the sky all round, and a cool fill from behind us so the sides we look at aren't dark
+    scene.add(new THREE.HemisphereLight('#bdb9e6', '#f0c19a', 1.6));
+    const key = new THREE.DirectionalLight('#ffbc80', 2.5);
+    key.position.set(SUN_DIR.x * 14, 11, SUN_DIR.z * 14);
     key.castShadow = true;
     key.shadow.mapSize.set(small ? 1024 : 2048, small ? 1024 : 2048);
     Object.assign(key.shadow.camera, { left: -19, right: 19, top: 19, bottom: -19, near: 1, far: 70 });
     key.shadow.bias = -0.0005;
     key.shadow.normalBias = 0.03;
-    const rim = new THREE.DirectionalLight('#ff9a66', 1.6);
-    rim.position.set(SUN_DIR.x * 20, 5, SUN_DIR.z * 20);
-    const fill = new THREE.DirectionalLight('#c8c8f0', 0.7);
-    fill.position.set(-6, 4, 8);
-    scene.add(key, rim, fill);
+    const fill = new THREE.DirectionalLight('#cbc4ee', 1.1);
+    fill.position.set(-SUN_DIR.x * 10, 6, -SUN_DIR.z * 10);
+    scene.add(key, fill);
 
     const sky = skyBox();
     sky.renderOrder = -10;
@@ -2879,7 +2891,9 @@ function start() {
     carPark(decor, glow);
     pickleball(decor, glow);
     tennisCourt(decor, glow);
-    footballPitch(decor, glow);
+    const pitchNet = new Blocks();
+    footballPitch(decor, glow, pitchNet);
+    island.add(pitchNet.mesh(new THREE.MeshStandardMaterial({ color: '#2f4a3c', transparent: true, opacity: 0.3, roughness: 0.9, depthWrite: false }), { shadow: false }));
     helipad(decor, glow);
     forest(decor, (i, k) => {
         const { r, a } = resortAt(i, k);
