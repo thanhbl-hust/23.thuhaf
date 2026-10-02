@@ -36,36 +36,38 @@ body {
     position: relative;
 }
 
+/* Two soft colour blobs behind the page. They are gradients that fade out to the edge, drawn to look like
+   the 520px and 400px circles blurred by 80px they used to be: a real blur that size had to be redone on
+   every frame of the drift and was too heavy for phones */
 body::before,
 body::after {
     content: '';
     position: fixed;
-    border-radius: 50%;
-    filter: blur(80px);
     opacity: 0.18;
     pointer-events: none;
     z-index: 0;
 }
 
 body::before {
-    width: 520px;
-    height: 520px;
-    background: var(--accent);
-    top: -120px;
-    right: -160px;
+    width: 840px;
+    height: 840px;
+    /* --accent */
+    background: radial-gradient(closest-side, rgb(25 110 160) 24%, rgb(25 110 160 / 0.84) 43%, rgb(25 110 160 / 0.5) 62%, rgb(25 110 160 / 0.16) 81%, rgb(25 110 160 / 0));
+    top: -280px;
+    right: -320px;
     animation: blobDriftA 22s ease-in-out infinite alternate;
 }
 
 body::after {
-    width: 400px;
-    height: 400px;
-    background: #f5c0a8;
-    bottom: -100px;
-    left: -100px;
+    width: 720px;
+    height: 720px;
+    background: radial-gradient(closest-side, rgb(245 192 168) 11%, rgb(245 192 168 / 0.84) 33%, rgb(245 192 168 / 0.5) 56%, rgb(245 192 168 / 0.16) 78%, rgb(245 192 168 / 0));
+    bottom: -260px;
+    left: -260px;
     animation: blobDriftB 27s ease-in-out infinite alternate;
 }
 
-/* The two blurred blobs drift slowly and stretch a little. Only transform changes, so the blur is not redrawn */
+/* The two blobs drift slowly and stretch a little */
 @keyframes blobDriftA {
     0% { transform: translate(0, 0) scale(1) }
     50% { transform: translate(-70px, 60px) scale(1.12, 0.92) }
@@ -1354,18 +1356,5 @@ footer {
 
     .view-toggle-btn .btn-icon {
         font-size: 1.2rem;
-    }
-}
-
-/* People who ask their system for less motion: everything jumps straight to its end state
-   (script.js also skips the count-up, the heart burst, the photo zoom and the confetti) */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-delay: 0s !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
     }
 }

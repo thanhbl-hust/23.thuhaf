@@ -1,6 +1,3 @@
-// People who ask their system for less motion get the page without the animations
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 // ===== LOVE COUNTER =====
 const LOVE_START = new Date('2026-02-06T00:00:00');
 function pad2(n) { return String(n).padStart(2, '0'); }
@@ -24,7 +21,7 @@ function setDigits(el, text) {
 }
 
 // The day count runs up from 0 when the page opens; until then loveTick leaves it alone
-let daysCountingUp = !reduceMotion;
+let daysCountingUp = true;
 function countUpDays(target, duration = 1400) {
     const el = document.getElementById('lcDays');
     const start = performance.now() + 250;
@@ -55,7 +52,6 @@ setInterval(loveTick, 1000);
 document.querySelector('.love-counter').addEventListener('click', e => burstHearts(e.clientX, e.clientY));
 
 function burstHearts(x, y) {
-    if (reduceMotion) return;
     const hearts = ['❤️', '💕', '💖', '💗', '💘'];
     for (let i = 0; i < 16; i++) {
         const heart = document.createElement('span');
@@ -140,7 +136,6 @@ function switchView(view) {
         document.getElementById('btn' + key).classList.toggle('active', k === view);
     });
     placeTabPill(true);
-    if (view === 'map') setTimeout(() => map.invalidateSize(), 50);
     if (view === 'cal') restoreCalendarScroll();
 }
 
@@ -355,7 +350,12 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
-setTimeout(() => map.invalidateSize(), 300);
+
+// Leaflet only fetches tiles for the size it last measured. Measure again whenever the map's box changes
+// (fonts loading, the phone's address bar sliding away, coming back from another tab), but not while hidden
+new ResizeObserver(([entry]) => {
+    if (entry.contentRect.width && entry.contentRect.height) map.invalidateSize();
+}).observe(document.getElementById('hanoi-map'));
 
 // When the page opens the pins drop onto the map one by one, in the order the places were first visited,
 // and the hearts land last. Each pin keeps the drop class only until its animation has played once.
@@ -558,7 +558,7 @@ function openPhotoViewer(src, fromImg) {
         img.src = src;
     }
     viewer.classList.add('open');
-    if (!reduceMotion && fromImg?.naturalWidth) zoomFromThumb(img, fromImg.closest('.map-photo-item') || fromImg);
+    if (fromImg?.naturalWidth) zoomFromThumb(img, fromImg.closest('.map-photo-item') || fromImg);
 }
 
 function zoomFromThumb(img, thumb) {
@@ -583,10 +583,6 @@ function zoomFromThumb(img, thumb) {
 function closePhotoViewer() {
     const viewer = document.getElementById('mapViewer');
     viewerSrc = null;
-    if (reduceMotion) {
-        viewer.classList.remove('open');
-        return;
-    }
     const fade = viewer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-in', fill: 'forwards' });
     fade.finished.then(() => {
         viewer.classList.remove('open');
@@ -640,7 +636,6 @@ function celebrate(message) {
     setTimeout(() => note.classList.add('hide'), 5000);
     note.addEventListener('transitionend', () => note.remove());
 
-    if (reduceMotion) return;
     loadConfetti().then(confetti => {
         const colors = ['#196ea0', '#85b2d7', '#e8455a', '#f5c0a8', '#ffd166'];
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.35 }, colors });
