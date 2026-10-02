@@ -4,8 +4,8 @@
 // jetty and a boat, palms, a lifeguard's chair, an outdoor gym, a beach café and a volleyball court along the
 // sand, a cottage with a garden, a
 // campfire, a swing, a white resort hotel like Vinpearl Ha Long with its pool at the back and a car park
-// behind it and a football pitch behind that, pickleball and tennis courts, a forest with a helipad in it
-// and a pond with ducks and a little bridge, a field of tulips, and
+// behind it and a football pitch behind that, pickleball and tennis courts, a vegetable garden with a gourd
+// trellis and a scarecrow, a forest with a helipad in it and a pond with ducks and a little bridge, a field of tulips, and
 // a windmill. Waves roll into the bay and break on the beach, and near it the water is clear, with fish and a
 // turtle over the sand. Out at sea are a yacht at anchor off the bay, small islands, the lighthouse on its
 // rock, ships big and small, leaping dolphins and far-off hills; above, a
@@ -602,9 +602,10 @@ class VoxelGrid {
 // a cottage and its garden, and at the back the resort with its pool, its car park and a football pitch
 // behind it; to the left an outdoor gym on the sand and a forest round a pond with a helipad in a clearing,
 // to the right a beach café and a volleyball court on the sand, a field of tulips, a
-// windmill on its own hill, and pickleball and tennis courts; the beach ends in rocks at the front left. The island rises
+// windmill on its own hill, pickleball and tennis courts and a vegetable garden behind them, and oaks over
+// the grass beyond; the beach ends in rocks at the front left. The island rises
 // out of a sea that runs to the horizon, so its blocks only go a little way below the water.
-const ISLAND = { ci: 0, ck: 42, ri: 96, rk: 70 };
+const ISLAND = { ci: 0, ck: 52, ri: 110, rk: 80 };
 const ROCK = { i: -31, k: -13 };
 // The lighthouse's rock, out in the sea beyond the bay (in world units)
 const LIGHTHOUSE = { x: -22, z: -27 };
@@ -628,6 +629,8 @@ const TENNIS = { i0: 58, i1: 75, k0: 14, k1: 47 };
 const PITCH = { i0: -21, i1: 21, k0: 64, k1: 91 };
 const HELIPAD = { i0: -70, i1: -58, k0: 40, k1: 52 };
 const GYM = { i0: -55, i1: -42, k0: -3, k1: 3 };
+// The vegetable garden behind the tennis court
+const VEG = { i0: 56, i1: 84, k0: 56, k1: 76 };
 const CAR_PARK = { i0: -16, i1: 16, k0: 49, k1: 60 };
 // On the beach to the right: the café on its deck, and the volleyball court further along
 const CAFE = { i0: 26, i1: 38, k0: 0, k1: 10 };
@@ -696,11 +699,13 @@ function topLevel(i, k) {
     // The resort's terrace is level with the grass, its pool and the pond a block lower
     if (onTerrace(i, k)) return inPool(i, k) ? 1 : RESORT.ground;
     if (isPond(i, k)) return 1;
-    // The courts, the car park, the pitch, the helipad and the tulip field are level, and so is a strip of
-    // grass round them (round the pitch, wide enough for its net)
-    if ([COURT, TENNIS, CAR_PARK, HELIPAD].some(r => inRect(r, i, k, 2)) || inRect(PITCH, i, k, 4) || inRect(TULIPS, i, k, 1)) return 2;
+    // The courts, the car park, the pitch, the helipad, the vegetable garden and the tulip field are level,
+    // and so is a strip of grass round them (round the pitch, wide enough for its net)
+    if ([COURT, TENNIS, CAR_PARK, HELIPAD, VEG].some(r => inRect(r, i, k, 2)) || inRect(PITCH, i, k, 4) || inRect(TULIPS, i, k, 1)) return 2;
     const mill = Math.round(3.4 * Math.exp(-((i - MILL.i) ** 2 + (k - MILL.k) ** 2) / 60));
-    const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && !nearPond(i, k, 2) && hash(i, k, 1) > 0.8 ? 1 : 0;
+    // Odd blocks of the grass stand a block higher, except far out, where the picture is soft and they'd only
+    // cost more to draw
+    const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && Math.hypot(i, k) < 85 && !nearPond(i, k, 2) && hash(i, k, 1) > 0.8 ? 1 : 0;
     return 2 + mill + bump;
 }
 
@@ -715,7 +720,7 @@ function blockId(i, k, j, top) {
         if (isPond(i, k)) return ID.pond;
         if (onTerrace(i, k)) return inPool(i, k) ? ID.pool : ID.deck;
         if (onResortPath(i, k)) return ID.deck;
-        if (onPath(i, k)) return ID.path;
+        if (onPath(i, k) || inRect(VEG, i, k)) return ID.path;
         if (isGrass(i, k)) return hash(i, k, 6) > 0.7 ? ID.grassDark : ID.grass;
         return ID.sand;
     }
@@ -732,10 +737,10 @@ const clearWater = (i, k) => insideIsland(i, k) && isWater(i, k) && topLevel(i, 
     [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([a, c]) => insideIsland(i + a, k + c));
 
 function buildIsland() {
-    const grid = new VoxelGrid(-92, 106, -6, 10, -32, 111);
+    const grid = new VoxelGrid(-105, 121, -6, 10, -33, 130);
     const columns = [];
-    for (let i = -91; i <= 105; i++) {
-        for (let k = -31; k <= 110; k++) {
+    for (let i = -104; i <= 120; i++) {
+        for (let k = -32; k <= 129; k++) {
             if (!insideIsland(i, k)) continue;
             const top = topLevel(i, k);
             if (isWater(i, k)) {
@@ -2119,6 +2124,140 @@ function outdoorGym(b) {
     pixelText(b, 'GYM', gx, f + 1.45, gz - 0.036, 0.07, '#ffffff');
 }
 
+// The vegetable garden behind the tennis court, inside a wooden fence with a gate toward the courts, on
+// paths of trodden earth: raised beds of cabbages, lettuce, carrots, tomatoes on stakes, chillies and water
+// spinach, rows of corn, pumpkins on their vines, a bamboo trellis of gourds in flower with the gourds
+// hanging under it, a scarecrow in a conical hat, and by the shed at the back a wheelbarrow, a watering can
+// and a rain barrel
+function vegetableGarden(b) {
+    const { i0, i1, k0, k1 } = VEG, y = ground(i0, k0);
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cz = (z0 + z1) / 2;
+    const wood = '#8a5f3a', soil = '#5a3b26', leaf = '#5aa953', dark = '#3f7f3a', bamboo = '#c9b46a';
+    // The fence, with the gate in the middle of the -x side
+    const fence = (ax, az, bx, bz) => {
+        const length = Math.hypot(bx - ax, bz - az), along = bx !== ax, mx = (ax + bx) / 2, mz = (az + bz) / 2;
+        [0.14, 0.3].forEach(h => b.box(along ? length : 0.04, 0.05, along ? 0.04 : length, mx, y + h, mz, COLORS.wood));
+        for (let n = 0, posts = Math.max(1, Math.round(length / (2 * B))); n <= posts; n++) {
+            b.box(0.08, 0.42, 0.08, ax + (bx - ax) * n / posts, y + 0.21, az + (bz - az) * n / posts, COLORS.woodLight);
+        }
+    };
+    fence(x0, z0, x1, z0);
+    fence(x0, z1, x1, z1);
+    fence(x1, z0, x1, z1);
+    fence(x0, z0, x0, cz - 0.5);
+    fence(x0, cz + 0.5, x0, z1);
+    // The raised beds: a wooden frame round dark soil, and a crop in each, in two lines along the bed. `at`
+    // puts a box `lift` above the soil
+    const top = y + 0.2, at = (w, h, d, x, lift, z, hex) => b.box(w, h, d, x, top + lift, z, hex);
+    const crops = {
+        cabbage(x, z) {
+            at(0.28, 0.16, 0.28, x, 0.08, z, '#7fbf5a');
+            at(0.18, 0.12, 0.18, x, 0.2, z, '#bfe38f');
+        },
+        lettuce(x, z) {
+            at(0.32, 0.1, 0.12, x, 0.05, z, '#9ed36a');
+            at(0.12, 0.1, 0.32, x, 0.05, z, '#9ed36a');
+            at(0.14, 0.12, 0.14, x, 0.1, z, '#c8ec92');
+        },
+        carrot(x, z) {
+            at(0.08, 0.04, 0.08, x, 0.02, z, '#ff8c2a');
+            [-0.04, 0, 0.04].forEach((d, n) => at(0.025, 0.22, 0.025, x + d, 0.13, z + (n - 1) * 0.02, leaf));
+        },
+        tomato(x, z) {
+            at(0.03, 0.8, 0.03, x + 0.08, 0.4, z, COLORS.woodLight);
+            at(0.22, 0.5, 0.22, x, 0.3, z, dark);
+            [[0.1, 0.25, 0.08], [-0.09, 0.38, 0.05], [0.04, 0.5, -0.1]].forEach(([dx, h, dz]) => at(0.08, 0.08, 0.08, x + dx, h, z + dz, '#e8455a'));
+        },
+        chilli(x, z) {
+            at(0.24, 0.24, 0.24, x, 0.14, z, dark);
+            [[0.12, 0.2, '#e8455a'], [-0.12, 0.16, '#ffd166'], [0.02, 0.3, '#e8455a']].forEach(([dx, h, hex]) => at(0.04, 0.1, 0.04, x + dx, h, z - dx * 0.5, hex));
+        },
+        spinach(x, z) {
+            at(0.3, 0.12, 0.26, x, 0.06, z, '#4f9a4a');
+            at(0.2, 0.08, 0.3, x, 0.14, z, '#6fbf52');
+        }
+    };
+    const bedK0 = k0 + 2, bedK1 = k1 - 4;
+    ['cabbage', 'lettuce', 'carrot', 'tomato', 'chilli', 'spinach'].forEach((name, n) => {
+        const bi = i0 + 1 + n * 3, bx = (bi + 0.5) * B, bz0 = (bedK0 - 0.5) * B, bz1 = (bedK1 + 0.5) * B, bz = (bz0 + bz1) / 2, w = 2 * B;
+        [-1, 1].forEach(side => b.box(0.06, 0.22, bz1 - bz0, bx + side * (w / 2 - 0.03), y + 0.11, bz, wood));
+        [bz0, bz1].forEach(z => b.box(w, 0.22, 0.06, bx, y + 0.11, z + (z === bz0 ? 0.03 : -0.03), wood));
+        b.box(w - 0.12, 0.18, bz1 - bz0 - 0.12, bx, y + 0.11, bz, soil);
+        for (let z = bz0 + 0.35; z < bz1 - 0.2; z += 0.62) [-0.17, 0.17].forEach(dx => crops[name](bx + dx, z));
+    });
+    // Corn in rows at the front right, with pumpkins along the fence in front of it
+    const cornI0 = i0 + 20, cornI1 = i1 - 1, cornK0 = k0 + 1, cornK1 = k0 + 7;
+    for (let i = cornI0; i <= cornI1; i += 2) {
+        for (let k = cornK0; k <= cornK1; k += 2) {
+            const x = i * B, z = k * B, h = 1.15 + hash(i, k, 31) * 0.3, gy = y;
+            b.box(0.05, h, 0.05, x, gy + h / 2, z, '#6fae4f');
+            [0.35, 0.7].forEach((at, n) => b.box(0.32, 0.03, 0.06, x + (n ? -0.1 : 0.1), gy + h * at, z, '#7fbf5a', { rot: [0, n ? 0.6 : -0.6, n ? -0.4 : 0.4] }));
+            b.box(0.08, 0.22, 0.08, x + 0.05, gy + h * 0.55, z, '#ffd166');
+            b.box(0.09, 0.12, 0.09, x + 0.05, gy + h * 0.55 - 0.08, z, '#9ed36a');
+            b.box(0.04, 0.16, 0.04, x, gy + h + 0.08, z, '#d9c39a');
+        }
+    }
+    [[i0 + 21, k0], [i0 + 24, k0 - 0.1], [i0 + 27, k0 + 0.1]].forEach(([i, k], n) => {
+        const x = i * B, z = k * B + 0.05, s = 0.28 + n * 0.04;
+        b.box(0.4, 0.03, 0.05, x - 0.2, y + 0.015, z, leaf);
+        b.box(s, s * 0.75, s, x, y + s * 0.375, z, '#ff8c2a');
+        b.box(0.04, 0.08, 0.04, x, y + s * 0.75 + 0.04, z, '#6b4629');
+    });
+    // The gourd trellis at the back right: bamboo posts and a lattice of poles, leaves over it with yellow
+    // flowers, and long green gourds hanging down
+    const tx0 = (i0 + 19.5) * B, tx1 = x1 - 0.3, tz0 = (k1 - 9.5) * B, tz1 = z1 - 0.3, th = 2.0;
+    [[tx0, tz0], [tx1, tz0], [tx0, tz1], [tx1, tz1], [(tx0 + tx1) / 2, tz0], [(tx0 + tx1) / 2, tz1]].forEach(([x, z]) => b.box(0.07, th, 0.07, x, y + th / 2, z, bamboo));
+    for (let x = tx0; x <= tx1 + 0.01; x += (tx1 - tx0) / 6) b.box(0.04, 0.04, tz1 - tz0, x, y + th, (tz0 + tz1) / 2, bamboo);
+    for (let z = tz0; z <= tz1 + 0.01; z += (tz1 - tz0) / 6) b.box(tx1 - tx0, 0.04, 0.04, (tx0 + tx1) / 2, y + th + 0.03, z, bamboo);
+    for (let x = tx0 + 0.2; x < tx1 - 0.1; x += 0.36) {
+        for (let z = tz0 + 0.2; z < tz1 - 0.1; z += 0.36) {
+            const v = hash(Math.round(x * 10), Math.round(z * 10), 33);
+            if (v < 0.35) continue;
+            b.box(0.34, 0.05, 0.34, x, y + th + 0.08, z, v > 0.7 ? '#6fbf52' : leaf);
+            if (v > 0.88) b.box(0.08, 0.03, 0.08, x + 0.06, y + th + 0.12, z - 0.05, '#ffd166');
+            if (v > 0.6 && v < 0.75) b.box(0.08, 0.5, 0.08, x, y + th - 0.27, z, '#7fbf5a');
+        }
+    }
+    // The scarecrow among the beds, in a red shirt and a conical hat
+    const sx = (i0 + 9.5) * B, sz = (bedK1 + 1.5) * B;
+    b.box(0.06, 1.5, 0.06, sx, y + 0.75, sz, COLORS.woodDark);
+    b.box(0.95, 0.05, 0.05, sx, y + 1.2, sz, COLORS.woodDark);
+    b.box(0.42, 0.45, 0.22, sx, y + 1.08, sz, '#c8453b', { outline: true });
+    b.box(0.9, 0.12, 0.14, sx, y + 1.2, sz, '#c8453b');
+    b.box(0.26, 0.26, 0.24, sx, y + 1.45, sz, '#e8d29a', { outline: true });
+    [[0.56, 0.05], [0.42, 0.06], [0.28, 0.06], [0.14, 0.06]].reduce((h, [w, t]) => {
+        b.box(w, t, w, sx, h + t / 2, sz, '#efe0b0');
+        return h + t;
+    }, y + 1.56);
+    // The shed at the back left, and the things beside it
+    const hx = (i0 + 1.5) * B, hz = z1 - 0.7;
+    b.box(1.0, 1.3, 1.0, hx, y + 0.65, hz, wood, { outline: true });
+    b.box(0.4, 0.8, 0.02, hx + 0.1, y + 0.4, hz - 0.51, '#5a3a2a');
+    turned(b, new THREE.Vector3(hx, y + 1.4, hz), [0.25, 0, 0])(1.2, 0.06, 1.25, hx, y + 1.4, hz, '#8d97a1');
+    b.box(0.34, 0.5, 0.34, hx + 0.85, y + 0.25, hz + 0.2, '#2f6fb0');
+    b.box(0.2, 0.16, 0.13, hx + 0.8, y + 0.08, hz - 0.45, '#3f8a5c');
+    b.box(0.2, 0.03, 0.03, hx + 0.93, y + 0.14, hz - 0.45, '#3f8a5c', { rot: [0, 0, 0.6] });
+    const wx = hx + 1.6, wz = hz - 0.6;
+    b.box(0.32, 0.15, 0.48, wx, y + 0.3, wz, '#c8453b', { rot: [0.15, 0, 0] });
+    b.box(0.05, 0.2, 0.2, wx, y + 0.1, wz + 0.3, '#2b2e33');
+    [-1, 1].forEach(side => {
+        b.box(0.03, 0.03, 0.55, wx + side * 0.13, y + 0.32, wz - 0.4, COLORS.woodDark);
+        b.box(0.03, 0.25, 0.03, wx + side * 0.13, y + 0.13, wz - 0.15, COLORS.woodDark);
+    });
+}
+
+// Oaks scattered over the open grass to the right and at the back, clear of everything else there
+function meadowOaks(b, keepClear) {
+    const rand = random(97), placed = [];
+    for (let n = 0; n < 400 && placed.length < 26; n++) {
+        const i = Math.round(30 + rand() * 90), k = Math.round(40 + rand() * 90);
+        if (islandRadius(i, k) > 0.88 || !isGrass(i, k) || keepClear(i, k)) continue;
+        if (placed.some(([a, c]) => Math.hypot(a - i, c - k) < 8)) continue;
+        placed.push([i, k]);
+        oakTree(b, i, k, 5 + Math.floor(rand() * 3), 120 + n);
+    }
+}
+
 // A little car, nose toward +z before it is turned by `heading`, its wheels on the ground at y, with a dark
 // patch of shade under it
 function car(b, x, y, z, heading, hex) {
@@ -2161,8 +2300,8 @@ function carPark(b, glow) {
 
 function forest(b, keepClear) {
     const rand = random(71), placed = [];
-    for (let n = 0; n < 600 && placed.length < 70; n++) {
-        const i = Math.round(-90 + rand() * 102), k = Math.round(14 + rand() * 96);
+    for (let n = 0; n < 800 && placed.length < 90; n++) {
+        const i = Math.round(-102 + rand() * 114), k = Math.round(14 + rand() * 112);
         if (islandRadius(i, k) > 0.9 || !isGrass(i, k) || keepClear(i, k)) continue;
         if (placed.some(([a, c]) => Math.hypot(a - i, c - k) < 4)) continue;
         placed.push([i, k]);
@@ -2177,18 +2316,19 @@ function islandDetails(b, columns) {
         const busy = (i >= GARDEN.i0 - 1 && i <= GARDEN.i1 + 1 && k >= GARDEN.k0 - 1 && k <= GARDEN.k1 + 1) || onPath(i, k) ||
             (i >= TULIPS.i0 - 1 && i <= TULIPS.i1 + 1 && k >= TULIPS.k0 - 1 && k <= TULIPS.k1 + 1) ||
             nearPond(i, k, 1.5) || Math.hypot(i - MILL.i, k - MILL.k) < 3 || onTerrace(i, k) || onResortPath(i, k) ||
-            [COURT, TENNIS, CAR_PARK, CAFE, PITCH, HELIPAD].some(r => inRect(r, i, k, 1));
+            [COURT, TENNIS, CAR_PARK, CAFE, PITCH, HELIPAD, VEG].some(r => inRect(r, i, k, 1));
         // Grass tufts and flowers on the grassy part, thinning out far from us where the picture is soft anyway,
-        // without the undersides nobody sees
-        const d = Math.hypot(i, k - 8), far = smoothstep(28, 75, d) + 0.25 * smoothstep(75, 110, d), under = { hide: 1 << 3 };
+        // without the undersides nobody sees, nor the tops of the thin blades and stems, too small to see
+        const d = Math.hypot(i, k - 8), far = smoothstep(28, 75, d) + 0.25 * smoothstep(75, 110, d);
+        const under = { hide: 1 << 3 }, thin = { hide: (1 << 3) | (1 << 2) };
         if (isGrass(i, k) && !busy && hash(i, k, 5) > 0.82 + 0.12 * far) {
             for (let n = 0; n < 2; n++) {
                 const h = 0.12 + rand() * 0.18;
-                b.box(0.05, h, 0.05, i * B + (rand() - 0.5) * 0.25, y + h / 2, k * B + (rand() - 0.5) * 0.25, n % 2 ? '#6fae4f' : '#93cf6c', under);
+                b.box(0.05, h, 0.05, i * B + (rand() - 0.5) * 0.25, y + h / 2, k * B + (rand() - 0.5) * 0.25, n % 2 ? '#6fae4f' : '#93cf6c', thin);
             }
         }
         if (isGrass(i, k) && !busy && hash(i, k, 6) > 0.94 + 0.03 * far) {
-            b.box(0.02, 0.16, 0.02, i * B, y + 0.08, k * B, '#5c9a41', under);
+            b.box(0.02, 0.16, 0.02, i * B, y + 0.08, k * B, '#5c9a41', thin);
             b.box(0.08, 0.08, 0.08, i * B, y + 0.19, k * B, ['#f7a8c4', '#ffffff', '#ffd166'][Math.floor(hash(i, k, 7) * 3)], under);
         }
         // Shells along the waterline
@@ -2387,7 +2527,7 @@ function fleet() {
     const anchored = (x, z, heading) => () => [x, z, heading];
     const superyacht = yacht();
     return [
-        [superyacht.b, anchored(-10, -16, 2.25), 0.04, 0.006, superyacht.lights, 1.5],
+        [superyacht.b, anchored(-10.5, -16.8, 2.25), 0.04, 0.006, superyacht.lights, 1.5],
         [containerShip(), across(-135, 200, -700, 1.8, 260), 0.06, 0.006],
         [cruiseShip(), across(-105, -420, 160, 1.5, 230), 0.07, 0.008],
         [sailboat('#3d8fd1', '#f4a6b8'), ring(-34, -58, 9, 0.04, 0.6), 0.12, 0.05],
@@ -2408,7 +2548,7 @@ function fleet() {
 // the lighthouse on its own rock out beyond the bay. Their land goes in `meshes`, their things into the
 // island's blocks, and white water round them into the foam rings
 function seaIslands(meshes, decor, glow, foam) {
-    [[-30, -21, 6, 1], [29, -16, 5, 2], [-11, -36, 4, 3], [44, 22, 4, 4], [LIGHTHOUSE.x, LIGHTHOUSE.z, 6, 5, true]].forEach(([x, z, radius, seed, rocky], n) => {
+    [[-30, -21, 6, 1], [29, -16, 5, 2], [-11, -36, 4, 3], [50, 26, 4, 4], [LIGHTHOUSE.x, LIGHTHOUSE.z, 6, 5, true]].forEach(([x, z, radius, seed, rocky], n) => {
         const { mesh, tops } = buildSeaIsland(radius, seed, rocky);
         mesh.position.set(x, 0, z);
         meshes.push(mesh);
@@ -2882,8 +3022,12 @@ function start() {
     oakTree(decor, -27, 14, 6, 63);
     oakTree(decor, 38, 22, 6, 64);
     [[56, 52, 7], [46, 60, 6], [52, 46, 5], [50, 66, 6], [44, 52, 6], [28, 62, 7], [30, 84, 6], [36, 72, 5],
-        [82, 34, 6], [86, 50, 7], [72, 62, 6], [60, 78, 7], [44, 88, 6], [24, 98, 5]].forEach(([i, k, height], n) =>
+        [82, 34, 6], [86, 50, 7], [44, 88, 6], [24, 98, 5]].forEach(([i, k, height], n) =>
         oakTree(decor, i, k, height, 65 + n));
+    vegetableGarden(decor);
+    meadowOaks(decor, (i, k) => [COURT, TENNIS, VEG, PITCH, CAR_PARK].some(r => inRect(r, i, k, 4)) ||
+        Math.hypot(i - MILL.i, k - MILL.k) < 10 || resortAt(i, k).r < RESORT.r2 + 8 ||
+        [[56, 52], [46, 60], [52, 46], [50, 66], [44, 52], [28, 62], [30, 84], [36, 72], [82, 34], [86, 50], [44, 88], [24, 98]].some(([a, c]) => Math.hypot(a - i, c - k) < 7));
     // At the back, the resort
     const resort = buildResort();
     island.add(resort.mesh);
@@ -2915,7 +3059,7 @@ function start() {
     island.add(millSails);
     // Out at sea: the small islands and the lighthouse, white water round every coast, and far-off hills
     const foamRings = [new Blocks(), new Blocks()], landMeshes = [];
-    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -93, 107, -33, 112);
+    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -106, 122, -34, 131);
     seaIslands(landMeshes, decor, glow, foamRings);
     landMeshes.push(
         farLand(-470, -177, 1.2, 26, 10, 6, 7, 1), farLand(97, -520, -0.2, 24, 9, 5, 7, 2), farLand(230, 330, 0.6, 32, 10, 7, 7, 3));
@@ -2995,7 +3139,7 @@ function start() {
     }
 
     // ----- Camera: always on the two of us. Drag to turn round or up and down, scroll or pinch to zoom -----
-    const PITCH_MIN = 0.05, PITCH_MAX = 1.45, DIST_MIN = 3.2, DIST_MAX = 95;
+    const PITCH_MIN = 0.05, PITCH_MAX = 1.45, DIST_MIN = 3.2, DIST_MAX = 110;
     // It starts a little round to her side, so the sun shows over the bay beside the umbrella, not behind it
     const view = { yaw: SUN_AZIMUTH + 0.3, pitch: 0.3, dist: 9.5 };
     let zoomed = false, interacted = false;
