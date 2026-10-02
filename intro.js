@@ -166,7 +166,8 @@ const tint = (hex, amount) => `#${color(hex).lerp(color('#ffffff'), amount).getH
 // ----- The two of us -----
 // Built facing +z like the portfolio figures, then turned around to look out to sea.
 // Looks taken from our photos: his short black textured crop with a fringe, white tee and navy shorts;
-// her shoulder-length dark brown hair with a side fringe, a slim figure, a light blue bra top and skirt.
+// her shoulder-length dark brown hair with a side fringe, a slim figure, a light blue bra top that comes down
+// over her waist, and denim shorts.
 const HIP_Y = 0.78, SHOULDER_Y = 1.47, NECK_Y = 1.55;
 const HIPS_Y = 0.085, WAIST_Y = 0.295, CHEST_Y = 0.57, COLLAR_Y = 0.745;
 
@@ -185,7 +186,7 @@ const HER = {
     shoulderHalf: 0.31, hipHalf: 0.12, armW: 0.15, legW: 0.18, headW: 0.48,
     skin: '#f2d0b0', skinShade: '#dfb592',
     hair: '#35231a', hairLight: '#5a3b2a',
-    top: '#8cc6e8', bottom: '#8cc6e8'
+    top: '#8cc6e8', bottom: '#5a82b0'
 };
 
 function buildPerson(P) {
@@ -217,16 +218,12 @@ function buildPerson(P) {
     const person = { P, outer, root, torso, head, armRight, armLeft };
 
     if (P.female) {
-        // Her skirt and the long part of her hair hang from their own pivots so the sea breeze can move them
-        const skirt = new THREE.Group();
-        skirt.position.y = HIPS_Y - 0.02;
-        buildSkirt(P).addTo(skirt);
-        torso.add(skirt);
+        // The long part of her hair hangs from its own pivot so the sea breeze can move it
         const hairFlow = new THREE.Group();
         hairFlow.position.set(0, 0.5, -0.05);
         buildHairFlow(P).addTo(hairFlow);
         head.add(hairFlow);
-        Object.assign(person, { skirt, hairFlow });
+        person.hairFlow = hairFlow;
     }
     return person;
 }
@@ -234,7 +231,10 @@ function buildPerson(P) {
 function buildLeg(P, side) {
     const b = new Blocks(), w = P.legW;
     if (P.female) {
-        b.box(w, 0.3, w + 0.02, 0, -0.15, 0, P.skin, { outline: true });
+        // Short denim shorts with a frayed, lighter hem, then bare thigh
+        b.box(w + 0.02, 0.2, w + 0.05, 0, -0.09, 0, P.bottom, { outline: true });
+        b.box(w + 0.03, 0.035, w + 0.06, 0, -0.19, 0, '#8fb0d4');
+        b.box(w, 0.13, w + 0.01, 0, -0.25, 0, P.skin, { outline: true });
     } else {
         // Shorts, with a white stripe down the outside
         b.box(w + 0.02, 0.3, w + 0.05, 0, -0.13, 0, P.bottom, { outline: true });
@@ -253,14 +253,16 @@ function buildLeg(P, side) {
 function buildTorso(P) {
     const b = new Blocks();
     if (P.female) {
-        // Beach outfit: a light blue bra top with thin straps and a white trim, a bare waist, the skirt's
-        // waistband at the hips, and a small gold necklace
-        b.box(P.hipsW, 0.17, P.hipsD, 0, HIPS_Y, 0, P.top, { outline: true });
-        b.box(P.waistW, 0.29, P.waistD, 0, WAIST_Y, 0, P.skin, { outline: true });
+        // Beach outfit: a light blue bra top with thin straps that comes down over her waist to a white hem,
+        // denim shorts with a darker waistband, and a small gold necklace
+        b.box(P.hipsW, 0.17, P.hipsD, 0, HIPS_Y, 0, P.bottom, { outline: true });
+        b.box(P.hipsW + 0.012, 0.04, P.hipsD + 0.012, 0, HIPS_Y + 0.06, 0, shade(P.bottom, 0.2));
+        b.box(P.waistW, 0.29, P.waistD, 0, WAIST_Y, 0, P.top, { outline: true });
+        b.box(P.waistW + 0.016, 0.03, P.waistD + 0.016, 0, WAIST_Y - 0.13, 0, '#ffffff');
         b.box(P.chestW, 0.3, P.chestD, 0, CHEST_Y, 0, P.skin, { outline: true });
-        b.box(P.chestW + 0.014, 0.15, P.chestD + 0.014, 0, CHEST_Y - 0.035, 0, P.top);
-        b.box(P.chestW + 0.018, 0.025, P.chestD + 0.018, 0, CHEST_Y - 0.1, 0, '#ffffff');
-        b.box(0.04, 0.04, 0.012, 0, CHEST_Y - 0.03, P.chestD / 2 + 0.01, '#ffffff');
+        b.box(P.chestW + 0.014, 0.21, P.chestD + 0.014, 0, CHEST_Y - 0.045, 0, P.top);
+        b.box(P.chestW + 0.018, 0.02, P.chestD + 0.018, 0, CHEST_Y + 0.06, 0, '#ffffff');
+        b.box(0.04, 0.04, 0.012, 0, CHEST_Y + 0.04, P.chestD / 2 + 0.01, '#ffffff');
         [1, -1].forEach(side => b.box(0.04, 0.16, P.chestD + 0.016, (P.chestW / 2 - 0.09) * side, CHEST_Y + 0.11, 0, shade(P.top, 0.08)));
         b.box(0.15, 0.014, 0.012, 0, CHEST_Y + 0.13, P.chestD / 2 + 0.002, '#e9c46a');
         b.box(0.03, 0.03, 0.012, 0, CHEST_Y + 0.105, P.chestD / 2 + 0.004, '#f2d38a', { rot: [0, 0, Math.PI / 4] });
@@ -275,17 +277,6 @@ function buildTorso(P) {
         b.box(0.34, 0.05, 0.3, 0, COLLAR_Y, 0, shade(P.top, 0.1));
         b.box(0.2, 0.06, 0.2, 0, COLLAR_Y + 0.02, 0, P.skinShade);
     }
-    return b;
-}
-
-function buildSkirt(P) {
-    const b = new Blocks(), w = P.hipsW, d = P.hipsD;
-    b.box(w + 0.05, 0.2, d + 0.05, 0, -0.08, 0, P.top, { outline: true });
-    b.box(w + 0.16, 0.2, d + 0.16, 0, -0.26, 0, P.top, { outline: true });
-    b.box(w + 0.18, 0.035, d + 0.18, 0, -0.37, 0, '#ffffff');
-    // Pleats, front and back
-    [-0.36, -0.12, 0.12, 0.36].map(f => f * (w + 0.16)).forEach(x => [1, -1].forEach(face =>
-        b.box(0.05, 0.19, 0.01, x, -0.26, ((d + 0.16) / 2 + 0.004) * face, tint(P.top, 0.3))));
     return b;
 }
 
@@ -1452,11 +1443,9 @@ function start() {
             spawnHeart(handsMeet.clone().add(new THREE.Vector3(0, 0.25, 0)));
             spawnHeart(handsMeet.clone().add(new THREE.Vector3(0.1, 0.6, 0.05)), 0.35);
         }
-        // Sea breeze in her hair and her dress
+        // Sea breeze in her hair
         her.hairFlow.rotation.x = 0.1 + Math.sin(t * 1.3) * 0.04 + Math.sin(t * 2.9) * 0.02;
         her.hairFlow.rotation.z = Math.sin(t * 0.8) * 0.03;
-        her.skirt.rotation.x = 0.05 + Math.sin(t * 1.7) * 0.025;
-        her.skirt.rotation.z = Math.sin(t * 1.1) * 0.02;
     }
 
     function placeCamera(t) {
