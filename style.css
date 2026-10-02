@@ -81,7 +81,7 @@ body::after {
 }
 
 /* ===== OPENING SCREEN =====
-   Covers the page on every visit: the beach scene drawn by intro.js, the title and the button in.
+   Covers the page on every visit: the floating beach island drawn by intro.js, the title and the button in.
    The page is built underneath straight away, but its own entrance animations wait, paused, until then */
 .intro-open .app,
 .intro-open .app * {
@@ -98,7 +98,7 @@ body::after {
     justify-content: space-between;
     padding: max(48px, 9vh) 16px max(28px, 5vh);
     /* A painted stand-in for the scene while three.js loads, or where it can't run */
-    background: linear-gradient(180deg, #2b6ea3 0%, #86bfe0 30%, #d4ecf4 44%, #f6cfd3 46%, #a9daea 46.5%, #4fa3cc 56%, #5dbbd8 64%, #efe1c6 66%, #e6d4b6 100%);
+    background: linear-gradient(180deg, #2f74a8 0%, #8cc3e2 26%, #f8d3d2 36%, #ffe0c8 40%, #e9e3ec 48%, #d7e8f5 62%, #e6eff8 100%);
     color: #fff;
     text-align: center;
     overflow: hidden;
@@ -198,19 +198,6 @@ body::after {
 .intro-enter:focus-visible {
     outline: 3px solid #fff;
     outline-offset: 3px;
-}
-
-/* Only once there is a scene to drag */
-.intro-hint {
-    margin-top: 12px;
-    color: var(--text);
-    font-size: 0.78rem;
-    opacity: 0;
-    transition: opacity 1s ease 1.6s;
-}
-
-.intro.drawn .intro-hint {
-    opacity: 0.75;
 }
 
 @keyframes introRise {

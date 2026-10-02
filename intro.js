@@ -1,5 +1,6 @@
 // ===== OPENING SCENE =====
-// The two of us holding hands on a beach, the sun setting over the sea, in the blocky style of the
+// The two of us holding hands on a little floating island of a beach, built entirely from blocks like a
+// voxel diorama, with the sun going down in the sky beyond. The figures follow the blocky style of the
 // portfolio's pickleball scene. script.js owns the overlay and its button; this file only draws behind them.
 // If it can't run (no WebGL, the file didn't load) the overlay keeps its painted sky and still works.
 import * as THREE from './vendor/three/three.module.min.js';
@@ -9,38 +10,39 @@ const host = document.getElementById('introScene');
 
 // --- Colours: the site's blues, with the sunset kept to a soft peach around the sun ---
 const COLORS = {
-    skyTop: '#2b6ea3',
-    skyMid: '#86bfe0',
-    horizon: '#d4ecf4',
-    sunBand: '#f6cfd3',
-    sunGlow: '#ffd6bf',
-    sun: '#fff4e0',
-    seaDeep: '#1f6c9c',
-    seaShallow: '#5dbbd8',
-    seaSky: '#bfe2f0',
-    glint: '#fff1dc',
-    foam: '#ffffff',
-    sheet: '#8fd6e8',
-    sandDry: '#efe1c6',
-    sandWet: '#cfbd9d',
-    footprint: '#d9c5a1',
+    skyTop: '#2f74a8',
+    skyMid: '#8cc3e2',
+    skyBand: '#f8d3d2',
+    skyGlow: '#ffd9bf',
+    skyLow: '#d7e8f5',
+    sand: '#f0dcb0',
+    sandDeep: '#e2c690',
+    sandstone: '#cfae7c',
+    dirt: '#9d7650',
+    stone: '#8d97a1',
+    stoneDark: '#7b858f',
+    seabed: '#dcc493',
+    grass: '#84c25d',
+    waterShallow: '#52b9dc',
+    waterDeep: '#2477b4',
+    foam: '#f4fbff',
+    footprint: '#d8c08f',
     outline: '#173554'
 };
 
-const SEA_Y = -0.12;
-// The sun sits just above the sea, a little to the right of straight ahead
-const SUN_DIR = new THREE.Vector3(0.3, 0.024, -1).normalize();
-const SUN_ANGLE = Math.atan2(SUN_DIR.x, -SUN_DIR.z);
-// The light it gives is lifted higher, so the shadows are long but not endless
-const LIGHT_DIR = new THREE.Vector3(0.3, 0.36, -1).normalize();
-const FOG_NEAR = 50, FOG_FAR = 420;
+// One block of the island
+const B = 0.35;
+// The sun hangs low beyond the far corner of the island; we look across the island at it from the
+// opposite corner, from above, like looking at a diorama
+const SUN_AZIMUTH = 0.75;
+const SUN_DIR = new THREE.Vector3(-Math.sin(SUN_AZIMUTH) * 0.907, -0.42, -Math.cos(SUN_AZIMUTH) * 0.907).normalize();
 
 const color = hex => new THREE.Color(hex);
 const smoothstep = (a, b, x) => { const t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
 const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const easeOut = t => 1 - Math.pow(1 - t, 3);
 
-// Small seeded random numbers, so the clouds and the footprints come out the same on every visit
+// Small seeded random numbers, so the island and the clouds come out the same on every visit
 function random(seed) {
     return () => {
         seed = (seed + 0x6D2B79F5) | 0;
@@ -50,16 +52,10 @@ function random(seed) {
     };
 }
 
-// How far the waterline bends in or out along the beach (0 where we stand). The foam shader repeats it
-const shoreBend = x => Math.sin(x * 0.07) * 1.2 + Math.sin(x * 0.16 + 1) * 0.5 - Math.sin(1) * 0.5;
-
-// Height of the beach: it runs down into the sea in front of us and rises into low dunes behind
-function sandHeight(x, z) {
-    const zs = z - shoreBend(x) * smoothstep(4, -2, z);
-    const slope = zs < 0 ? zs * 0.06 : zs * 0.012;
-    const ripples = (Math.sin(x * 0.9 + z * 0.4) * 0.012 + Math.sin(x * 0.37 - z * 0.8) * 0.016) * smoothstep(-3, 1, z) + 0.004;
-    const dunes = (Math.sin(x * 0.18) * 0.5 + Math.sin(x * 0.07 + 1.3) * 0.8 + 0.9) * smoothstep(7, 26, z);
-    return slope + ripples + dunes;
+// A fixed random number for a block position
+function hash(i, k, salt) {
+    const v = Math.sin(i * 127.1 + k * 311.7 + salt * 74.7) * 43758.5453;
+    return v - Math.floor(v);
 }
 
 // ----- Blocks: many small boxes merged into one mesh (one draw call), plus an outline hull -----
@@ -352,114 +348,322 @@ function buildHairFlow(P) {
     return b;
 }
 
-// ----- Heart shape for the little hearts that float up -----
+// ----- A pixel heart, for the hearts that float up -----
+const HEART_PIXELS = [
+    '.XX.XX.',
+    'XoXXXXX',
+    'XXXXXXX',
+    '.XXXXX.',
+    '..XXX..',
+    '...X...'
+];
+
 function heartGeometry() {
-    const s = new THREE.Shape();
-    s.moveTo(0.25, 0.25);
-    s.bezierCurveTo(0.25, 0.25, 0.2, 0, 0, 0);
-    s.bezierCurveTo(-0.3, 0, -0.3, 0.35, -0.3, 0.35);
-    s.bezierCurveTo(-0.3, 0.55, -0.1, 0.77, 0.25, 0.95);
-    s.bezierCurveTo(0.6, 0.77, 0.8, 0.55, 0.8, 0.35);
-    s.bezierCurveTo(0.8, 0.35, 0.8, 0, 0.5, 0);
-    s.bezierCurveTo(0.35, 0, 0.25, 0.25, 0.25, 0.25);
-    const g = new THREE.ExtrudeGeometry(s, { depth: 0.18, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.05, bevelSegments: 2, curveSegments: 10 });
-    g.center();
-    g.rotateZ(Math.PI);
-    g.scale(0.22, 0.22, 0.22);
-    return g;
+    const b = new Blocks(), px = 0.07;
+    HEART_PIXELS.forEach((row, r) => [...row].forEach((ch, c) => {
+        if (ch !== '.') b.box(px, px, px, (c - 3) * px, (2.5 - r) * px, 0, ch === 'o' ? '#ffd1dc' : r < 3 ? '#ff5d84' : '#f2456f');
+    }));
+    return merge(b.solid);
 }
 
-// ----- Beach props -----
-function palmTree(x, z, height, lean, seed) {
+// ----- The island -----
+// Columns of blocks on a grid: i across, k from the front (the sea) to the back, both counted in blocks,
+// and levels up in blocks. The front is a little bay of water, the beach rises in steps toward the back
+// where it turns to grass, and underneath the island narrows in layers of sand, earth and stone, like a
+// chunk lifted out of the ground.
+const R = 13;
+
+function insideIsland(i, k) {
+    const a = Math.atan2(k, i);
+    const r = R * (1 + 0.07 * Math.sin(3 * a + 1) + 0.05 * Math.sin(5 * a + 2.5));
+    return Math.hypot(i, k * 1.08) <= r;
+}
+
+const shoreK = i => -3 + Math.round(1.4 * Math.sin(i * 0.33 + 0.5));
+const isWater = (i, k) => k < shoreK(i);
+const isGrass = (i, k) => k >= 7 + Math.round(1.5 * Math.sin(i * 0.4 + 1.2));
+
+// Level of the top surface. The water's own surface sits just under level 0
+function topLevel(i, k) {
+    const s = shoreK(i);
+    if (k < s) return -1 - Math.min(Math.floor((s - 1 - k) / 2), 3);
+    return (k - s > 5 ? 2 : 1) + (isGrass(i, k) && hash(i, k, 1) > 0.75 ? 1 : 0);
+}
+
+function bottomLevel(i, k) {
+    const d = Math.hypot(i, k * 1.08) / R;
+    return -Math.round(3 + 9 * Math.pow(Math.max(0, 1 - d), 0.75) + hash(i, k, 2) * 2.2);
+}
+
+// World height of the ground at a point on the island
+function groundY(x, z) {
+    return topLevel(Math.round(x / B), Math.round(z / B)) * B;
+}
+
+function blockColor(i, k, j, top) {
+    const depth = top - 1 - j;
+    let hex;
+    if (depth === 0) hex = isWater(i, k) ? COLORS.seabed : isGrass(i, k) ? COLORS.grass : COLORS.sand;
+    else if (depth === 1 && isGrass(i, k)) hex = COLORS.dirt;
+    else if (depth <= 2 && j >= -2) hex = COLORS.sandDeep;
+    else if (j >= -3) hex = COLORS.sandstone;
+    else if (j >= -7) hex = COLORS.dirt;
+    else hex = hash(i, k, j) > 0.5 ? COLORS.stone : COLORS.stoneDark;
+    // Each block a shade lighter or darker than its neighbours, like the texture of real blocks
+    return color(hex).multiplyScalar(0.93 + hash(i + j * 7, k, 3) * 0.1);
+}
+
+// The six faces of a unit cube, corners in counter-clockwise order seen from outside
+const FACES = [
+    { n: [1, 0, 0], c: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]] },
+    { n: [-1, 0, 0], c: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]] },
+    { n: [0, 1, 0], c: [[0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]] },
+    { n: [0, -1, 0], c: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]] },
+    { n: [0, 0, 1], c: [[1, 0, 1], [1, 1, 1], [0, 1, 1], [0, 0, 1]] },
+    { n: [0, 0, -1], c: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]] }
+];
+
+// One mesh for the whole island, drawing only the block faces that are not hidden by a neighbour
+function buildIsland() {
+    const columns = new Map();
+    for (let i = -R - 2; i <= R + 2; i++) {
+        for (let k = -R - 2; k <= R + 2; k++) {
+            if (insideIsland(i, k)) columns.set(`${i},${k}`, { i, k, top: topLevel(i, k), bottom: bottomLevel(i, k) });
+        }
+    }
+    const solid = (i, k, j) => {
+        const c = columns.get(`${i},${k}`);
+        return !!c && j >= c.bottom && j < c.top;
+    };
+    const position = [], normal = [], colors = [];
+    for (const { i, k, top, bottom } of columns.values()) {
+        for (let j = bottom; j < top; j++) {
+            const c = blockColor(i, k, j, top);
+            for (const face of FACES) {
+                if (solid(i + face.n[0], k + face.n[2], j + face.n[1])) continue;
+                const corners = face.c.map(([cx, cy, cz]) => [(i - 0.5 + cx) * B, (j + cy) * B, (k - 0.5 + cz) * B]);
+                for (const n of [0, 1, 2, 0, 2, 3]) {
+                    position.push(...corners[n]);
+                    normal.push(...face.n);
+                    colors.push(c.r, c.g, c.b);
+                }
+            }
+        }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    // It catches the shadows of everything on it; its own would hardly show and cost the most to draw
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
+    mesh.receiveShadow = true;
+    return { mesh, columns: [...columns.values()] };
+}
+
+// The bay: one column of water blocks over each piece of sea floor. The columns bob, and every few
+// seconds a wave of raised blocks rolls in and breaks white against the beach
+function buildWater(columns) {
+    const cols = columns.filter(c => isWater(c.i, c.k)).map(c => ({ ...c, x: c.i * B, z: c.k * B, base: c.top * B, shore: shoreK(c.i) }));
+    const geometry = new THREE.BoxGeometry(B, 1, B).translate(0, 0.5, 0);
+    const mesh = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color: '#d8ecf6', roughness: 0.3 }), cols.length);
+    mesh.receiveShadow = true;
+    const deep = color(COLORS.waterDeep), shallow = color(COLORS.waterShallow), foam = color(COLORS.foam);
+    const m = new THREE.Matrix4(), c = new THREE.Color();
+    function update(t) {
+        const phase = (t / 5) % 1;
+        cols.forEach((w, n) => {
+            const crest = -R + (w.shore + R) * easeInOut(phase);
+            const wave = Math.exp(-((w.k - crest) ** 2) / 1.2) * smoothstep(1, 0.85, phase);
+            const nearShore = smoothstep(w.shore - 5, w.shore - 1, w.k);
+            const top = -0.06 + Math.sin(t * 1.7 + w.i * 0.5 + w.k * 0.8) * 0.03 + wave * 0.1;
+            m.makeScale(1, top - w.base, 1).setPosition(w.x, w.base, w.z);
+            mesh.setMatrixAt(n, m);
+            c.copy(deep).lerp(shallow, smoothstep(-4, -1, w.top) * 0.8 + nearShore * 0.2)
+                .lerp(foam, Math.min(wave * nearShore * 0.9 + (w.k === w.shore - 1 ? 0.25 : 0), 1));
+            mesh.setColorAt(n, c);
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.instanceColor.needsUpdate = true;
+    }
+    update(0);
+    return { mesh, update };
+}
+
+// ----- Things on the island, all in blocks -----
+function palmTree(i, k, height, lean, seed) {
     const tree = new THREE.Group();
-    tree.position.set(x, sandHeight(x, z) - 0.05, z);
-    const trunk = new Blocks();
-    const segments = Math.round(height / 0.42);
+    tree.position.set(i * B, topLevel(i, k) * B, k * B);
+    const trunk = new Blocks(), s = 0.26;
     let top = new THREE.Vector3();
-    for (let i = 0; i < segments; i++) {
-        const t = i / segments, size = 0.36 - t * 0.1;
-        const px = lean * t * t * height * 0.35;
-        trunk.box(size, 0.44, size, px, i * 0.42 + 0.22, 0, i % 2 ? '#9c7853' : '#876440', { outline: true, rot: [0, 0, -lean * t * 0.5] });
-        top.set(px, i * 0.42 + 0.44, 0);
+    for (let n = 0; n < height; n++) {
+        const step = Math.floor(n / 3) * 0.08;
+        trunk.box(s, s, s, lean[0] * step, n * s + s / 2, lean[1] * step, n % 2 ? '#9c7853' : '#86643f');
+        top.set(lean[0] * step, n * s + s, lean[1] * step);
     }
     trunk.addTo(tree);
     const crown = new THREE.Group();
     crown.position.copy(top);
     const leaves = new Blocks();
-    for (let k = 0; k < 8; k++) {
-        const a = (k / 8) * Math.PI * 2 + seed;
-        for (let j = 0; j < 5; j++) {
-            const r = 0.3 + j * 0.36, droop = j * j * 0.06;
-            leaves.box(0.42, 0.05, 0.2 - j * 0.025, Math.cos(a) * r, -droop + 0.05, Math.sin(a) * r,
-                j > 2 ? '#5aa982' : k % 2 ? '#3f8f6c' : '#337c5d', { rot: [0, -a, -0.1 - j * 0.16] });
+    leaves.box(0.34, 0.2, 0.34, 0, 0.08, 0, '#3f8f6c');
+    [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([dx, dz], f) => {
+        for (let n = 1; n <= 4; n++) {
+            const droop = Math.max(0, n - 2) * 0.13;
+            leaves.box(0.24, 0.1, 0.24, dx * n * 0.22, 0.12 - droop, dz * n * 0.22, n === 4 ? '#62b085' : (n + f) % 2 ? '#3f8f6c' : '#347d5c');
         }
-    }
-    [[0.12, 0.08], [-0.1, 0.1], [0.02, -0.13]].forEach(([cx, cz]) => leaves.box(0.14, 0.14, 0.14, cx, -0.12, cz, '#6b4a2b'));
+    });
+    [[0.12, 0.1], [-0.1, 0.12], [0.02, -0.14]].forEach(([cx, cz]) => leaves.box(0.13, 0.13, 0.13, cx, -0.1, cz, '#6b4a2b'));
     leaves.addTo(crown);
     tree.add(crown);
     return { tree, crown, seed };
 }
 
-// Long thin bands low over the sea, lit peach from below by the setting sun
-function cloudBand(x, y, z, length, seed) {
-    const rand = random(seed);
-    const b = new Blocks();
-    ['#ffcdb9', '#fbd9df', '#fff0ec', '#ffffff'].slice(0, 3 + Math.floor(rand() * 2)).forEach((hex, i) =>
-        b.box(length * (0.45 + rand() * 0.55), 1.4 + rand() * 1.6, 10, (rand() - 0.5) * length * 0.35, i * 2.1, rand() * 6, hex));
-    return cloudMesh(b, x, y, z, 0.85);
-}
-
-// A few heaped clouds higher up, stepped like the blocks they are made of
-function cloudHeap(x, y, z, scale, seed) {
-    const rand = random(seed);
-    const b = new Blocks();
-    ['#ffe0d2', '#eef5fc', '#ffffff'].forEach((hex, layer) => {
-        const count = 4 - layer;
-        for (let i = 0; i < count; i++) {
-            const w = (9 + rand() * 5) * scale;
-            b.box(w, 4 * scale, (7 + rand() * 4) * scale, (i - (count - 1) / 2) * 8 * scale + (rand() - 0.5) * 3 * scale, layer * 3.6 * scale, rand() * 3, hex);
+function beachUmbrella(i, k) {
+    const group = new THREE.Group();
+    group.position.set(i * B, topLevel(i, k) * B, k * B);
+    const b = new Blocks(), cell = 0.2;
+    b.box(0.07, 1.6, 0.07, 0, 0.8, 0, '#f4f4f4');
+    [[7, 1.3], [5, 1.42], [3, 1.54], [1, 1.66]].forEach(([n, y]) => {
+        for (let a = 0; a < n; a++) {
+            for (let c = 0; c < n; c++) b.box(cell, 0.12, cell, (a - (n - 1) / 2) * cell, y, (c - (n - 1) / 2) * cell, a % 2 ? '#ffffff' : '#3d8fd1');
         }
     });
-    return cloudMesh(b, x, y, z, 0.95);
+    // A striped towel in its shade
+    ['#ffffff', '#5fb0e0', '#ffffff', '#f4a6b8', '#ffffff', '#5fb0e0'].forEach((hex, n) => b.box(0.62, 0.03, 0.2, 0.55, 0.015, -0.5 + n * 0.2, hex));
+    b.addTo(group);
+    return group;
 }
 
-function cloudMesh(b, x, y, z, opacity) {
-    const mesh = new THREE.Mesh(merge(b.solid), new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, transparent: true, opacity }));
+function sandcastle(i, k) {
+    const group = new THREE.Group();
+    group.position.set(i * B, topLevel(i, k) * B, k * B);
+    const b = new Blocks(), s = 0.12, light = '#ecd6a6', dark = '#d9bd86';
+    for (let a = 0; a < 3; a++) for (let c = 0; c < 3; c++) b.box(s, s * 2, s, (a - 1) * s, s, (c - 1) * s, (a + c) % 2 ? light : dark);
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, c]) => b.box(s, s, s, a * s, s * 2.5, c * s, light));
+    b.box(s, s * 2, s, 0, s * 3, 0, dark);
+    b.box(0.02, 0.22, 0.02, 0, s * 4 + 0.11, 0, '#f4f4f4');
+    b.box(0.1, 0.07, 0.02, 0.05, s * 4 + 0.18, 0, '#e8455a');
+    b.addTo(group);
+    return group;
+}
+
+// A wooden jetty out over the bay, with a little boat tied at the end
+function jetty(i, kFrom, kTo) {
+    const group = new THREE.Group();
+    const b = new Blocks();
+    const x = (i + 0.5) * B;
+    for (let k = kFrom; k >= kTo; k--) {
+        b.box(2 * B - 0.02, 0.08, B - 0.03, x, 0.31, k * B, k % 2 ? '#a8794e' : '#93673f');
+        if (k % 2 === 0) [-1, 1].forEach(side => b.box(0.09, 0.75, 0.09, x + side * (B - 0.05), -0.08, k * B, '#6b4a2e'));
+    }
+    b.addTo(group);
+    const boat = new THREE.Group();
+    const hull = new Blocks();
+    hull.box(0.6, 0.1, 1.2, 0, 0, 0, '#a8794e');
+    [-1, 1].forEach(side => hull.box(0.08, 0.22, 1.2, side * 0.3, 0.11, 0, '#b88a5c'));
+    [-1, 1].forEach(end => hull.box(0.6, 0.22, 0.08, 0, 0.11, end * 0.6, '#b88a5c'));
+    hull.box(0.62, 0.04, 1.22, 0, 0.2, 0, '#f4f4f4');
+    hull.box(0.52, 0.05, 0.16, 0, 0.12, 0.1, '#8a5f3a');
+    hull.addTo(boat);
+    boat.position.set(x + 2.3 * B, -0.04, kTo * B + 0.3);
+    group.add(boat);
+    return { group, boat };
+}
+
+function islandDetails(columns, him, her) {
+    const b = new Blocks();
+    const rand = random(11);
+    for (const { i, k, top } of columns) {
+        const y = top * B;
+        // Beach grass and a few flowers on the grassy back of the island
+        if (isGrass(i, k) && hash(i, k, 5) > 0.55) {
+            for (let n = 0; n < 3; n++) {
+                const h = 0.12 + rand() * 0.18;
+                b.box(0.05, h, 0.05, i * B + (rand() - 0.5) * 0.25, y + h / 2, k * B + (rand() - 0.5) * 0.25, n % 2 ? '#6fae4f' : '#93cf6c');
+            }
+        }
+        if (isGrass(i, k) && hash(i, k, 6) > 0.9) {
+            b.box(0.02, 0.16, 0.02, i * B, y + 0.08, k * B, '#5c9a41');
+            b.box(0.08, 0.08, 0.08, i * B, y + 0.19, k * B, ['#f7a8c4', '#ffffff', '#ffd166'][Math.floor(hash(i, k, 7) * 3)]);
+        }
+        // Shells along the waterline
+        if (!isWater(i, k) && k === shoreK(i) && hash(i, k, 8) > 0.75) {
+            b.box(0.09, 0.04, 0.11, i * B + (hash(i, k, 9) - 0.5) * 0.2, y + 0.02, k * B, hash(i, k, 10) > 0.5 ? '#fbe4ec' : '#fff4e6');
+        }
+    }
+    // Rocks at the edge of the bay
+    [[-9, -5], [-10, -3], [-8, -6], [10, -4]].forEach(([i, k], n) => {
+        const y = Math.max(topLevel(i, k), 0) * B;
+        b.box(0.32, 0.24, 0.3, i * B, y + 0.06, k * B, '#8d97a1');
+        b.box(0.2, 0.16, 0.2, i * B + 0.12, y + 0.24, k * B - 0.05, n % 2 ? '#a3acb4' : '#7b858f');
+    });
+    // A starfish
+    const sx = -3 * B, sz = -3 * B, sy = groundY(sx, sz) + 0.015;
+    [[0, 0], [1, 0], [2, 0], [-1, 0], [-2, 0], [0, 1], [0, 2], [0, -1], [1, -2], [-1, -2]].forEach(([a, c]) =>
+        b.box(0.05, 0.03, 0.05, sx + a * 0.05, sy, sz + c * 0.05, '#f2896d'));
+    // Our footprints, walking up the beach to where we stand
+    for (const [person, side] of [[him, 1], [her, -1]]) {
+        const facing = new THREE.Vector3(Math.sin(person.outer.rotation.y), 0, Math.cos(person.outer.rotation.y));
+        const across = new THREE.Vector3(facing.z, 0, -facing.x);
+        for (let d = 0.6, n = 0; d < 4.6; d += 0.42, n++) {
+            const p = person.outer.position.clone().addScaledVector(facing, -d).addScaledVector(across, (n % 2 ? 0.08 : -0.08) + Math.sin(d) * 0.1 * side);
+            if (!insideIsland(Math.round(p.x / B), Math.round(p.z / B))) break;
+            b.box(0.08, 0.02, 0.13, p.x, groundY(p.x, p.z) + 0.01, p.z, COLORS.footprint, { rot: [0, person.outer.rotation.y, 0] });
+        }
+    }
+    return b;
+}
+
+// ----- The sky -----
+// A cloud of white blocks, a little blue underneath
+function voxelCloud(x, y, z, size, seed) {
+    const rand = random(seed);
+    const b = new Blocks();
+    const nx = 4 + Math.floor(rand() * 3), nz = 2 + Math.floor(rand() * 2);
+    for (let a = 0; a < nx; a++) {
+        for (let c = 0; c < nz; c++) {
+            if ((a === 0 || a === nx - 1) && rand() < 0.4) continue;
+            const levels = rand() < 0.35 && a > 0 && a < nx - 1 ? 2 : 1;
+            for (let l = 0; l < levels; l++) b.box(size, size, size, (a - (nx - 1) / 2) * size, l * size, (c - (nz - 1) / 2) * size, l ? '#ffffff' : '#eef5fc');
+        }
+    }
+    const mesh = new THREE.Mesh(merge(b.solid), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, transparent: true, opacity: 0.94 }));
     mesh.position.set(x, y, z);
     return mesh;
 }
 
+// A square sun, like the sun in a block game, with square layers of glow around it
+function voxelSun() {
+    const sun = new THREE.Group();
+    [[46, '#ffe2a8', 1], [70, '#ffc890', 0.5], [100, '#ffb9a0', 0.25]].forEach(([size, hex, opacity], n) => {
+        const square = new THREE.Mesh(new THREE.PlaneGeometry(size, size),
+            new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity, depthWrite: false, toneMapped: false }));
+        square.position.z = -n * 2;
+        square.renderOrder = -1 - n;
+        sun.add(square);
+    });
+    sun.position.copy(SUN_DIR).multiplyScalar(400);
+    sun.lookAt(0, 0, 0);
+    return sun;
+}
+
 function seagull() {
     const bird = new THREE.Group();
-    const material = new THREE.MeshBasicMaterial({ color: '#3d6e90', fog: false });
-    bird.add(new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.16, 0.22), material));
+    const material = new THREE.MeshStandardMaterial({ color: '#f4f6f8', roughness: 1 });
+    bird.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 0.11), material));
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.03), new THREE.MeshStandardMaterial({ color: '#f2b13d' }));
+    head.position.set(0.2, 0.01, 0);
+    bird.add(head);
     const wings = [1, -1].map(side => {
         const pivot = new THREE.Group();
-        pivot.position.set(0, 0.04, 0);
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 1.0), material);
-        wing.position.z = 0.5 * side;
+        pivot.position.set(0, 0.03, 0);
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.42), material);
+        wing.position.z = 0.21 * side;
         pivot.add(wing);
         bird.add(pivot);
         return { pivot, side };
     });
     return { bird, wings };
 }
-
-// ----- Sky, sea, foam -----
-const GLSL_NOISE = `
-    float hash(vec2 p) { p = fract(p * vec2(234.34, 435.345)); p += dot(p, p + 34.23); return fract(p.x * p.y); }
-    float noise(vec2 p) {
-        vec2 i = floor(p), f = fract(p), u = f * f * (3.0 - 2.0 * f);
-        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-    }`;
-
-const WORLD_VERTEX = `
-    varying vec3 vWorld;
-    void main() {
-        vec4 w = modelMatrix * vec4(position, 1.0);
-        vWorld = w.xyz;
-        gl_Position = projectionMatrix * viewMatrix * w;
-    }`;
 
 function skyMaterial() {
     return new THREE.ShaderMaterial({
@@ -468,94 +672,29 @@ function skyMaterial() {
         toneMapped: false,
         uniforms: {
             sunDir: { value: SUN_DIR },
-            top: { value: color(COLORS.skyTop) }, mid: { value: color(COLORS.skyMid) }, horizon: { value: color(COLORS.horizon) },
-            band: { value: color(COLORS.sunBand) }, glow: { value: color(COLORS.sunGlow) }, sun: { value: color(COLORS.sun) }
+            top: { value: color(COLORS.skyTop) }, mid: { value: color(COLORS.skyMid) }, band: { value: color(COLORS.skyBand) },
+            glow: { value: color(COLORS.skyGlow) }, low: { value: color(COLORS.skyLow) }
         },
-        vertexShader: WORLD_VERTEX,
+        vertexShader: `
+            varying vec3 vWorld;
+            void main() {
+                vec4 w = modelMatrix * vec4(position, 1.0);
+                vWorld = w.xyz;
+                gl_Position = projectionMatrix * viewMatrix * w;
+            }`,
         fragmentShader: `
-            uniform vec3 sunDir, top, mid, horizon, band, glow, sun;
+            uniform vec3 sunDir, top, mid, band, glow, low;
             varying vec3 vWorld;
             void main() {
                 vec3 d = normalize(vWorld - cameraPosition);
-                float h = max(d.y, 0.0);
-                vec3 col = mix(horizon, mid, smoothstep(0.0, 0.12, h));
-                col = mix(col, top, smoothstep(0.1, 0.45, h));
-                float s = max(dot(d, sunDir), 0.0);
+                // Blue overhead, a warm band of sunset at the sun's height, soft pale blue below it
+                vec3 col = mix(mid, top, smoothstep(-0.22, 0.1, d.y));
+                col = mix(low, col, smoothstep(-0.55, -0.3, d.y));
                 float towardSun = max(dot(normalize(d.xz + 1e-5), normalize(sunDir.xz)), 0.0);
-                float low = 1.0 - smoothstep(0.0, 0.12, h);
-                col = mix(col, band, low * (0.18 + 0.6 * pow(towardSun, 5.0)));
-                col = mix(col, glow, pow(s, 14.0) * (1.0 - smoothstep(0.0, 0.45, h)));
-                col += sun * (pow(s, 700.0) * 0.9 + smoothstep(0.99915, 0.9994, s) * 1.4);
+                float inBand = exp(-pow((d.y - sunDir.y) / 0.09, 2.0));
+                col = mix(col, band, inBand * (0.25 + 0.6 * pow(towardSun, 3.0)));
+                col = mix(col, glow, pow(max(dot(d, sunDir), 0.0), 10.0) * 0.85);
                 gl_FragColor = vec4(col, 1.0);
-                #include <colorspace_fragment>
-            }`
-    });
-}
-
-function seaMaterial() {
-    return new THREE.ShaderMaterial({
-        toneMapped: false,
-        uniforms: {
-            time: { value: 0 }, sunDir: { value: SUN_DIR },
-            deep: { value: color(COLORS.seaDeep) }, shallow: { value: color(COLORS.seaShallow) },
-            skyRef: { value: color(COLORS.seaSky) }, horizon: { value: color(COLORS.horizon) }, glint: { value: color(COLORS.glint) },
-            fogRange: { value: new THREE.Vector2(FOG_NEAR, FOG_FAR) }
-        },
-        vertexShader: WORLD_VERTEX,
-        fragmentShader: `
-            uniform float time;
-            uniform vec3 sunDir, deep, shallow, skyRef, horizon, glint;
-            uniform vec2 fogRange;
-            varying vec3 vWorld;
-            ${GLSL_NOISE}
-            float waves(vec2 p) {
-                return noise(p * 0.5 + vec2(time * 0.15, time * 0.3)) * 0.6
-                     + noise(p * 1.4 - vec2(time * 0.35, time * 0.12)) * 0.3
-                     + noise(p * 3.3 + vec2(0.0, time * 0.6)) * 0.1;
-            }
-            void main() {
-                vec3 toCam = cameraPosition - vWorld;
-                float dist = length(toCam);
-                vec3 V = toCam / dist;
-                vec2 p = vWorld.xz;
-                // Sample further apart in the distance so far-off ripples don't flicker
-                float e = 0.08 + dist * 0.004;
-                float h0 = waves(p), hx = waves(p + vec2(e, 0.0)), hz = waves(p + vec2(0.0, e));
-                vec3 N = normalize(vec3((h0 - hx) / e * 0.55, 1.0, (h0 - hz) / e * 0.55));
-                float fres = pow(1.0 - max(dot(N, V), 0.0), 4.0);
-                vec3 col = mix(shallow, deep, smoothstep(-1.5, -30.0, vWorld.z));
-                col = mix(col, skyRef, clamp(fres, 0.0, 0.75));
-                // The sun's path on the water, broken up by the ripples
-                vec3 R = reflect(-V, N);
-                col += glint * pow(max(dot(R, sunDir), 0.0), 220.0) * 2.4;
-                col = mix(col, horizon, smoothstep(fogRange.x, fogRange.y, dist));
-                gl_FragColor = vec4(col, 1.0);
-                #include <colorspace_fragment>
-            }`
-    });
-}
-
-// The wash of each wave up the sand: a thin sheet of water with a foam edge that runs up and slides back
-function foamMaterial() {
-    return new THREE.ShaderMaterial({
-        transparent: true,
-        depthWrite: false,
-        toneMapped: false,
-        uniforms: { time: { value: 0 }, foam: { value: color(COLORS.foam) }, water: { value: color(COLORS.sheet) } },
-        vertexShader: WORLD_VERTEX,
-        fragmentShader: `
-            uniform float time;
-            uniform vec3 foam, water;
-            varying vec3 vWorld;
-            void main() {
-                float x = vWorld.x, z = vWorld.z;
-                float bend = sin(x * 0.07) * 1.2 + sin(x * 0.16 + 1.0) * 0.5 - sin(1.0) * 0.5;
-                float reach = 0.5 + 0.5 * sin(time * 0.55);
-                float edge = -2.0 + bend + 0.9 * reach + 0.12 * sin(x * 1.3 + time * 0.8) + 0.06 * sin(x * 3.1 - time * 1.4);
-                if (z > edge) discard;
-                float band = 1.0 - smoothstep(0.0, 0.16 + 0.1 * reach, edge - z);
-                float alpha = mix(0.4, 0.95, band) * smoothstep(-2.3, -2.0, z - bend);
-                gl_FragColor = vec4(mix(water, foam, band), alpha);
                 #include <colorspace_fragment>
             }`
     });
@@ -573,78 +712,58 @@ function start() {
     renderer.toneMappingExposure = 1.1;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
-    renderer.setClearColor(COLORS.horizon);
+    renderer.setClearColor(COLORS.skyLow);
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(COLORS.horizon, FOG_NEAR, FOG_FAR);
-    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 2000);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
 
-    // Light: warm low sun from across the sea, a cool fill from our side, sky and sand bounce
-    scene.add(new THREE.HemisphereLight('#c4e2f5', '#f3e2c4', 2.0));
-    const sunLight = new THREE.DirectionalLight('#ffd9bd', 2.8);
-    sunLight.position.copy(LIGHT_DIR).multiplyScalar(30);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.set(1024, 1024);
-    Object.assign(sunLight.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 70 });
-    sunLight.shadow.bias = -0.0004;
-    sunLight.shadow.normalBias = 0.02;
-    scene.add(sunLight, sunLight.target);
-    const fill = new THREE.DirectionalLight('#e4f0fb', 1.7);
-    fill.position.set(-2, 4, 9);
-    scene.add(fill);
+    // Light: warm afternoon light from above, a peach rim from the low sun, a cool fill from our side
+    scene.add(new THREE.HemisphereLight('#d2e8f7', '#f1dcc0', 1.7));
+    const key = new THREE.DirectionalLight('#ffe3c9', 2.6);
+    key.position.set(5, 11, 4);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    Object.assign(key.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 40 });
+    key.shadow.bias = -0.0005;
+    key.shadow.normalBias = 0.03;
+    const rim = new THREE.DirectionalLight('#ffc6a6', 1.1);
+    rim.position.set(SUN_DIR.x * 20, 5, SUN_DIR.z * 20);
+    const fill = new THREE.DirectionalLight('#d8e9f8', 0.9);
+    fill.position.set(-6, 4, 8);
+    scene.add(key, rim, fill);
 
     const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), skyMaterial());
-    sky.renderOrder = -1;
-    scene.add(sky);
+    sky.renderOrder = -10;
+    scene.add(sky, voxelSun());
 
-    const sea = new THREE.Mesh(new THREE.PlaneGeometry(1600, 800).rotateX(-Math.PI / 2), seaMaterial());
-    sea.position.set(0, SEA_Y, -399);
-    scene.add(sea);
+    // The island floats a little, up and down
+    const island = new THREE.Group();
+    scene.add(island);
+    const { mesh: ground, columns } = buildIsland();
+    island.add(ground);
+    const water = buildWater(columns);
+    island.add(water.mesh);
 
-    // Sand: wet and darker where the waves reach, with a little grain. The grid is fine around us and
-    // stretched out further away, so the beach reaches the fog in every direction without a visible edge
-    const sandGeometry = new THREE.PlaneGeometry(240, 140, 240, 140).rotateX(-Math.PI / 2).translate(0, 0, 58);
-    const pos = sandGeometry.attributes.position;
-    const sandColors = new Float32Array(pos.count * 3);
-    const dry = color(COLORS.sandDry), wet = color(COLORS.sandWet), grainRand = random(7), c = new THREE.Color();
-    for (let i = 0; i < pos.count; i++) {
-        const gx = pos.getX(i), gz = pos.getZ(i);
-        const x = gx * (1 + (gx / 45) ** 2);
-        const z = gz > 20 ? 20 + (gz - 20) * (1 + ((gz - 20) / 40) ** 2) : gz;
-        pos.setXYZ(i, x, sandHeight(x, z), z);
-        c.copy(dry).lerp(wet, smoothstep(-0.6, -1.3, z - shoreBend(x))).multiplyScalar(0.97 + grainRand() * 0.05);
-        sandColors.set([c.r, c.g, c.b], i * 3);
-    }
-    sandGeometry.setAttribute('color', new THREE.BufferAttribute(sandColors, 3));
-    sandGeometry.computeVertexNormals();
-    const sand = new THREE.Mesh(sandGeometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
-    sand.receiveShadow = true;
-    scene.add(sand);
-
-    const foamGeometry = new THREE.PlaneGeometry(200, 1.8, 400, 6).rotateX(-Math.PI / 2).translate(0, 0, -1.6);
-    const fpos = foamGeometry.attributes.position;
-    for (let i = 0; i < fpos.count; i++) {
-        const x = fpos.getX(i), z = fpos.getZ(i) + shoreBend(fpos.getX(i));
-        fpos.setXYZ(i, x, sandHeight(x, z) + 0.02, z);
-    }
-    const foam = new THREE.Mesh(foamGeometry, foamMaterial());
-    scene.add(foam);
-
-    // Us: him on the left, her on the right (seen from behind), turned a little toward each other
+    // Us, on the beach facing the sun: him on the left, her on the right, turned a little toward each other
+    const facingSun = Math.atan2(SUN_DIR.x, SUN_DIR.z);
+    const right = new THREE.Vector3(-Math.cos(facingSun), 0, Math.sin(facingSun));
+    const spot = new THREE.Vector3(0, 0, -0.3);
     const him = buildPerson(HIM), her = buildPerson(HER);
-    him.outer.position.set(-0.66, sandHeight(-0.66, 0) - 0.02, 0);
-    him.outer.rotation.y = Math.PI - 0.12;
-    her.outer.position.set(0.62, sandHeight(0.62, 0) - 0.02, 0);
-    her.outer.rotation.y = Math.PI + 0.12;
+    him.outer.position.copy(spot).addScaledVector(right, -0.66);
+    her.outer.position.copy(spot).addScaledVector(right, 0.62);
+    for (const p of [him, her]) p.outer.position.y = groundY(p.outer.position.x, p.outer.position.z);
+    him.outer.rotation.y = facingSun - 0.12;
+    her.outer.rotation.y = facingSun + 0.12;
     her.outer.scale.setScalar(0.93);
-    scene.add(him.outer, her.outer);
+    island.add(him.outer, her.outer);
 
     // Point his right arm and her left arm at the same spot between us, so the hands meet
     scene.updateMatrixWorld(true);
     const shoulderR = him.armRight.getWorldPosition(new THREE.Vector3());
     const shoulderL = her.armLeft.getWorldPosition(new THREE.Vector3());
-    const handsMeet = shoulderR.clone().lerp(shoulderL, 0.5).setY(0.79).add(new THREE.Vector3(0, 0, -0.06));
+    const forward = new THREE.Vector3(Math.sin(facingSun), 0, Math.cos(facingSun));
+    const handsMeet = shoulderR.clone().lerp(shoulderL, 0.5).setY(him.outer.position.y + 0.79).addScaledVector(forward, 0.06);
     const down = new THREE.Vector3(0, -1, 0);
     for (const arm of [him.armRight, her.armLeft]) {
         const target = arm.parent.worldToLocal(handsMeet.clone()).sub(arm.position).normalize();
@@ -654,98 +773,77 @@ function start() {
     him.armLeft.rotation.z = 0.07;
     her.armRight.rotation.z = -0.07;
 
-    // Our footprints, walking up the beach to where we stand
-    const prints = [];
-    for (const [person, stride, startX] of [[him, 0.48, -0.66], [her, 0.42, 0.62]]) {
-        for (let z = 1.0, i = 0; z < 16; z += stride, i++) {
-            const x = startX + Math.sin(z * 0.3) * 0.5 * (z / 16) + (i % 2 ? 0.12 : -0.12) * (person === her ? 0.9 : 1);
-            prints.push([x, z, Math.sin(z * 0.3) * 0.2]);
-        }
-    }
-    const printGeometry = new THREE.CircleGeometry(0.07, 12).rotateX(-Math.PI / 2).scale(0.8, 1, 1.5);
-    const printMaterial = new THREE.MeshStandardMaterial({ color: COLORS.footprint, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2 });
-    const footprints = new THREE.InstancedMesh(printGeometry, printMaterial, prints.length);
-    const m = new THREE.Matrix4();
-    prints.forEach(([x, z, r], i) => footprints.setMatrixAt(i, m.makeRotationY(r).setPosition(x, sandHeight(x, z) + 0.004, z)));
-    footprints.receiveShadow = true;
-    scene.add(footprints);
+    islandDetails(columns, him, her).addTo(island);
+    const palms = [palmTree(-10, -1, 9, [-1, 0], 0.3), palmTree(11, -3, 11, [1, 0], 1.4), palmTree(-10, 4, 7, [-1, 0], 2.2)];
+    palms.forEach(p => island.add(p.tree));
+    const umbrella = beachUmbrella(-6, 2);
+    umbrella.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
+    island.add(umbrella, sandcastle(4, 1));
+    const pier = jetty(6, -1, -8);
+    island.add(pier.group);
 
-    // Shells and a starfish by the water
-    const shells = new Blocks();
-    const star = (x, z, rot) => {
-        const y = sandHeight(x, z) + 0.02;
-        for (let k = 0; k < 5; k++) {
-            const a = rot + (k / 5) * Math.PI * 2;
-            shells.box(0.2, 0.03, 0.06, x + Math.cos(a) * 0.09, y, z + Math.sin(a) * 0.09, '#f2896d', { rot: [0, -a, 0] });
-        }
-    };
-    star(1.9, -0.3, 0.4);
-    star(-3.2, 1.8, 1.1);
-    [[1.2, 0.6, '#fbe4ec'], [-1.6, -0.2, '#fff4e6'], [2.6, 1.4, '#fbe4ec'], [-2.4, 0.9, '#f9e7d2']].forEach(([x, z, hex]) =>
-        shells.box(0.1, 0.04, 0.12, x, sandHeight(x, z) + 0.02, z, hex, { rot: [0, x, 0] }));
-    shells.addTo(scene, { shadow: false });
-
-    const palms = [palmTree(-5.6, 2.6, 4.4, -1.0, 0.3), palmTree(-8.8, 9, 5.2, -0.6, 1.1), palmTree(7.6, 6.5, 4.8, 0.9, 2.2), palmTree(10.5, 13, 5.6, 0.5, 0.7)];
-    palms.forEach(p => {
-        p.tree.traverse(o => { if (o.isMesh) o.castShadow = true; });
-        scene.add(p.tree);
-    });
-
+    // Clouds around and below the island, and a few far off by the sun
+    const sunPoint = (distance, dx, dy) => SUN_DIR.clone().multiplyScalar(distance).add(new THREE.Vector3(dx, dy, 0));
     const clouds = [
-        cloudBand(40, 12, -350, 140, 1), cloudBand(190, 20, -380, 110, 2), cloudBand(-120, 16, -340, 120, 3), cloudBand(100, 32, -420, 160, 4),
-        cloudHeap(-180, 65, -300, 1.5, 5), cloudHeap(320, 75, -240, 1.8, 6), cloudHeap(-300, 55, 160, 1.6, 7), cloudHeap(260, 65, 220, 1.8, 8)
+        voxelCloud(-12, -1.5, -6, 1.0, 1), voxelCloud(12, -3.5, -8, 1.2, 2), voxelCloud(-11, -7, 6, 1.1, 3), voxelCloud(13, -0.5, 7, 0.9, 4),
+        voxelCloud(...sunPoint(120, -30, -9).toArray(), 4.5, 5), voxelCloud(...sunPoint(140, 34, 10).toArray(), 4, 6),
+        voxelCloud(...sunPoint(170, 40, -18).toArray(), 6, 7), voxelCloud(-34, -16, 10, 2.4, 8), voxelCloud(30, -14, 20, 2.2, 9)
     ];
-    clouds.forEach(cl => scene.add(cl));
+    clouds.forEach(c => scene.add(c));
 
-    const gulls = [0, 1, 2].map(i => {
+    const gulls = [0, 1].map(n => {
         const g = seagull();
-        g.bird.scale.setScalar(1.3 - i * 0.2);
-        scene.add(g.bird);
-        return { ...g, offset: i * 9, height: 13 + i * 2.5, depth: -55 - i * 12 };
+        island.add(g.bird);
+        return { ...g, offset: n * 2.6, radius: 6.5 + n * 1.4, height: 4.2 + n * 0.8 };
     });
 
-    // Hearts that float up from our hands now and then (and when the scene is tapped)
+    // Bits of earth drifting down under the island
+    const specks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), new THREE.MeshStandardMaterial({ color: '#b89a74' }), 40);
+    const speckRand = random(21);
+    const speckData = Array.from({ length: 40 }, () => ({ x: (speckRand() - 0.5) * 7, y: -1.5 - speckRand() * 5, z: (speckRand() - 0.5) * 7, v: 0.12 + speckRand() * 0.2 }));
+    island.add(specks);
+
+    // Pixel hearts that float up from our hands now and then (and when the scene is tapped)
     const heartShape = heartGeometry();
     const hearts = [];
     function spawnHeart(from, delay = 0) {
-        const material = new THREE.MeshStandardMaterial({ color: '#ff6f91', emissive: '#ff3e6c', emissiveIntensity: 0.45, roughness: 0.35, transparent: true });
+        const material = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: '#ff3e6c', emissiveIntensity: 0.3, roughness: 0.6, transparent: true });
         const heart = new THREE.Mesh(heartShape, material);
         heart.position.copy(from);
         heart.scale.setScalar(0.001);
-        scene.add(heart);
+        island.add(heart);
         hearts.push({ heart, born: clock + delay, drift: (Math.random() - 0.5) * 0.6, spin: (Math.random() - 0.5) * 2, from: from.clone() });
     }
     function updateHearts() {
-        for (let i = hearts.length - 1; i >= 0; i--) {
-            const h = hearts[i], age = clock - h.born;
+        for (let n = hearts.length - 1; n >= 0; n--) {
+            const h = hearts[n], age = clock - h.born;
             if (age < 0) continue;
-            const life = 2.8, t = age / life;
+            const t = age / 2.8;
             if (t >= 1) {
-                scene.remove(h.heart);
+                island.remove(h.heart);
                 h.heart.material.dispose();
-                hearts.splice(i, 1);
+                hearts.splice(n, 1);
                 continue;
             }
-            h.heart.position.set(h.from.x + Math.sin(age * 3) * 0.08 + h.drift * t, h.from.y + easeOut(t) * 1.15, h.from.z);
+            h.heart.position.set(h.from.x + Math.sin(age * 3) * 0.08 + h.drift * t, h.from.y + easeOut(t) * 1.2, h.from.z);
             h.heart.rotation.y = h.spin * age;
-            h.heart.scale.setScalar(Math.min(age / 0.3, 1) * (0.85 - t * 0.3));
+            h.heart.scale.setScalar(Math.min(age / 0.3, 1) * (1 - t * 0.3));
             h.heart.material.opacity = 1 - smoothstep(0.6, 1, t);
         }
     }
 
-    // ----- Camera: settles in from above on arrival, then drifts slowly; drag to look around -----
-    const target = new THREE.Vector3(0, 1.2, -0.3);
-    let width = 1, height = 1, dist = 6.3;
-    let userYaw = 0, yawVelocity = 0;
-    let flight = null;
+    // ----- Camera: swings in on arrival, then sways slowly round the island; drag to turn it -----
+    const target = new THREE.Vector3(0, 0.6, 0);
+    const PITCH = THREE.MathUtils.degToRad(32);
+    let dist = 19, userYaw = 0, yawVelocity = 0, flight = null;
     function resize() {
-        width = host.clientWidth || window.innerWidth;
-        height = host.clientHeight || window.innerHeight;
+        const width = host.clientWidth || window.innerWidth;
+        const height = host.clientHeight || window.innerHeight;
         renderer.setSize(width, height, false);
         camera.aspect = width / height;
-        // Keep both of us in view on narrow (portrait) screens by stepping back
+        // Step back on narrow (portrait) screens so the island still fits across
         const halfWidth = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
-        dist = Math.max(6.3, 2.1 / Math.tan(halfWidth));
+        dist = Math.max(19, (camera.aspect < 1 ? 4.6 : 6.4) / Math.tan(halfWidth));
         camera.updateProjectionMatrix();
     }
     resize();
@@ -756,7 +854,7 @@ function start() {
     intro.addEventListener('pointerdown', onPointerDown);
     function onPointerDown(e) {
         if (e.target.closest('button') || flight) return;
-        dragging = { x: e.clientX, start: e.clientX, y: e.clientY, moved: 0, last: performance.now() };
+        dragging = { x: e.clientX, y: e.clientY, moved: 0 };
         intro.setPointerCapture(e.pointerId);
         intro.addEventListener('pointermove', onPointerMove);
         intro.addEventListener('pointerup', onPointerUp, { once: true });
@@ -767,22 +865,22 @@ function start() {
         dragging.moved += Math.abs(dx) + Math.abs(e.clientY - dragging.y);
         dragging.x = e.clientX;
         dragging.y = e.clientY;
-        const delta = -dx * 0.006;
-        userYaw = THREE.MathUtils.clamp(userYaw + delta, -3.0, 2.2);
-        yawVelocity = delta;
+        yawVelocity = -dx * 0.006;
+        userYaw += yawVelocity;
     }
     function onPointerUp() {
         intro.removeEventListener('pointermove', onPointerMove);
         // A tap rather than a drag sends up a few hearts
-        if (dragging && dragging.moved < 8) for (let i = 0; i < 4; i++) spawnHeart(handsMeet.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.2, 0)), i * 0.15);
+        if (dragging && dragging.moved < 8) for (let n = 0; n < 4; n++) spawnHeart(handsMeet.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.2, 0)), n * 0.15);
         dragging = null;
     }
 
     const startTime = performance.now();
-    let clock = 0, lastHeartCycle = -1, frameId = 0, drawn = false;
+    let clock = 0, lastClock = 0, lastHeartCycle = -1, frameId = 0, drawn = false;
     const lookAt = new THREE.Vector3();
     const swingAxis = new THREE.Vector3(1, 0, 0), swing = new THREE.Quaternion();
     const partnerHead = new THREE.Vector3();
+    const m = new THREE.Matrix4();
 
     function lookToward(person, other, amount) {
         other.head.getWorldPosition(partnerHead);
@@ -822,18 +920,21 @@ function start() {
 
     function placeCamera(t) {
         if (!dragging) {
-            userYaw = THREE.MathUtils.clamp(userYaw + yawVelocity, -3.0, 2.2);
+            userYaw += yawVelocity;
             yawVelocity *= 0.92;
         }
-        // Straight behind us the sun sets in the gap between us; the drift swings it slowly from side to side
-        const arrive = easeInOut(Math.min(t / 3.2, 1));
-        const yaw = -SUN_ANGLE + Math.sin(t * 0.13) * 0.15 + userYaw + (1 - arrive) * 0.9;
-        const d = dist * (1 + (1 - arrive) * 1.4);
-        const rise = d * 0.11 + (1 - arrive) * 5;
-        camera.position.set(target.x + Math.sin(yaw) * d, target.y + rise, target.z + Math.cos(yaw) * d);
-        lookAt.copy(target).add(new THREE.Vector3(0, 0.2, 0));
+        // From behind us, the sun sits in the sky just beyond the far side of the island
+        const arrive = easeInOut(Math.min(t / 3.4, 1));
+        const yaw = SUN_AZIMUTH + Math.sin(t * 0.1) * 0.35 + userYaw + (1 - arrive) * 1.4;
+        const pitch = PITCH + (1 - arrive) * 0.25;
+        const d = dist * (1 + (1 - arrive) * 0.9);
+        camera.position.set(
+            target.x + Math.sin(yaw) * Math.cos(pitch) * d,
+            target.y + Math.sin(pitch) * d,
+            target.z + Math.cos(yaw) * Math.cos(pitch) * d);
+        lookAt.copy(target);
         if (flight) {
-            // Off over our heads toward the sun
+            // Down to just behind us, looking out at the sun
             const f = easeInOut(Math.min((performance.now() - flight.start) / 1600, 1));
             camera.position.lerpVectors(flight.from, flight.to, f);
             lookAt.lerpVectors(flight.lookFrom, flight.lookTo, f);
@@ -844,17 +945,28 @@ function start() {
     function frame() {
         frameId = requestAnimationFrame(frame);
         clock = (performance.now() - startTime) / 1000;
-        sea.material.uniforms.time.value = clock;
-        foam.material.uniforms.time.value = clock;
+        const dt = Math.min(clock - lastClock, 0.1);
+        lastClock = clock;
+        island.position.y = Math.sin(clock * 0.6) * 0.08;
+        water.update(clock);
         animatePeople(clock);
         updateHearts();
-        palms.forEach(p => { p.crown.rotation.z = Math.sin(clock * 0.9 + p.seed) * 0.05; p.crown.rotation.x = Math.sin(clock * 0.7 + p.seed) * 0.03; });
-        clouds.forEach((cl, i) => { cl.position.x += 0.02 * (i % 2 ? 1 : -1); });
+        palms.forEach(p => { p.crown.rotation.z = Math.sin(clock * 0.9 + p.seed) * 0.04; p.crown.rotation.x = Math.sin(clock * 0.7 + p.seed) * 0.03; });
+        pier.boat.position.y = -0.04 + Math.sin(clock * 1.5) * 0.03;
+        pier.boat.rotation.z = Math.sin(clock * 1.2) * 0.04;
+        clouds.forEach((c, n) => { c.position.x += (n % 2 ? 0.004 : -0.004) * (n > 3 ? 4 : 1); });
         gulls.forEach(g => {
-            const s = (clock * 3 + g.offset * 10) % 200;
-            g.bird.position.set(-100 + s, g.height + Math.sin(clock * 0.8 + g.offset) * 1.2, g.depth);
-            g.wings.forEach(w => { w.pivot.rotation.x = w.side * (0.35 + Math.sin(clock * 5 + g.offset) * 0.45); });
+            const a = clock * 0.35 + g.offset;
+            g.bird.position.set(Math.cos(a) * g.radius, g.height + Math.sin(clock * 0.9 + g.offset) * 0.3, Math.sin(a) * g.radius);
+            g.bird.rotation.y = -a - Math.PI / 2;
+            g.wings.forEach(w => { w.pivot.rotation.x = w.side * Math.sin(clock * 6 + g.offset) * 0.5; });
         });
+        speckData.forEach((s, n) => {
+            s.y -= s.v * dt;
+            if (s.y < -7) s.y = -1.5;
+            specks.setMatrixAt(n, m.makeTranslation(s.x, s.y, s.z));
+        });
+        specks.instanceMatrix.needsUpdate = true;
         placeCamera(clock);
         renderer.render(scene, camera);
         if (!drawn) {
@@ -866,12 +978,13 @@ function start() {
 
     window.openingScene = {
         flyAway() {
+            const behind = spot.clone().addScaledVector(forward, -2.8).add(new THREE.Vector3(0, 1.9, 0));
             flight = {
                 start: performance.now(),
                 from: camera.position.clone(),
-                to: new THREE.Vector3(SUN_DIR.x * 6, 3.4, -16),
+                to: behind.add(island.position),
                 lookFrom: lookAt.clone(),
-                lookTo: new THREE.Vector3(SUN_DIR.x * 200, 4, -200)
+                lookTo: SUN_DIR.clone().multiplyScalar(100)
             };
         },
         dispose() {
@@ -882,6 +995,7 @@ function start() {
                 if (o.geometry) o.geometry.dispose();
                 if (o.material) o.material.dispose();
             });
+            heartShape.dispose();
             renderer.dispose();
             renderer.forceContextLoss();
             renderer.domElement.remove();
