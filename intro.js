@@ -1016,10 +1016,15 @@ function buildWater(columns) {
     const cols = columns.filter(c => isWater(c.i, c.k)).map(c => ({ ...c, x: c.i * B, z: c.k * B, base: c.top * B, shore: shoreK(c.i) }));
     const mouth = Math.min(...cols.map(w => w.k));
     const geometry = new THREE.BoxGeometry(B, 1, B).translate(0, 0.5, 0);
+    // The sides of the water blocks are lit and catch the sunset just like their tops, so where a wave lifts
+    // some blocks above the ones in front, their edges don't show as dark lines across the bay that flicker
+    // as the wave passes
+    const water = geometry.clone(), normal = water.attributes.normal;
+    for (let n = 0; n < normal.count; n++) if (normal.getY(n) === 0) normal.setXYZ(n, 0, 1, 0);
     const clear = cols.filter(w => clearWater(w.i, w.k));
     const parts = [[clear.filter(w => w.top >= -2), 0.5], [clear.filter(w => w.top < -2), 0.72], [cols.filter(w => !clearWater(w.i, w.k)), 1]].map(([list, opacity]) => {
         const material = new THREE.MeshStandardMaterial({ color: '#d8ecf6', roughness: 0.3, transparent: opacity < 1, opacity });
-        const mesh = new THREE.InstancedMesh(geometry, material, list.length);
+        const mesh = new THREE.InstancedMesh(water, material, list.length);
         mesh.receiveShadow = true;
         return { list, mesh, clear: opacity < 1 };
     });
@@ -1316,12 +1321,13 @@ function surfboard(b, i, k) {
     b.box(0.165, 0.04, 0.055, x + 0.03, y + 0.66, z, '#f4a6b8', { rot: [0.12, 0.4, 0.1] });
 }
 
-// A wooden jetty out over the bay, with a little boat tied at the end
+// A wooden jetty out over the bay, with a little boat tied at the end. Its deck starts on the beach, a little
+// above the sand, so the two don't flicker through each other
 function jetty(b, i, kFrom, kTo) {
-    const x = (i + 0.5) * B;
+    const x = (i + 0.5) * B, deck = ground(i, kFrom) + 0.07, postTop = deck - 0.04, postFoot = -0.55;
     for (let k = kFrom; k >= kTo; k--) {
-        b.box(2 * B - 0.02, 0.08, B - 0.03, x, 0.31, k * B, k % 2 ? COLORS.wood : '#93673f');
-        if (k % 2 === 0) [-1, 1].forEach(side => b.box(0.09, 0.85, 0.09, x + side * (B - 0.05), -0.13, k * B, COLORS.woodDark));
+        b.box(2 * B - 0.02, 0.08, B - 0.03, x, deck, k * B, k % 2 ? COLORS.wood : '#93673f');
+        if (k % 2 === 0) [-1, 1].forEach(side => b.box(0.09, postTop - postFoot, 0.09, x + side * (B - 0.05), (postTop + postFoot) / 2, k * B, COLORS.woodDark));
     }
     // A lamp at the end
     b.box(0.06, 0.9, 0.06, x + B - 0.05, 0.75, kTo * B, '#3b3f45');
