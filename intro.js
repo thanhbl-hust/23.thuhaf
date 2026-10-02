@@ -2,8 +2,9 @@
 // An island built entirely from blocks, in a sea of blocks that runs to the horizon, with the two of us lying
 // on two loungers under a beach umbrella at sunset, holding hands, our little dog beside her: a bay with a
 // jetty and a boat, palms, beach huts and a lifeguard's chair along the sand, a cottage with a garden, a
-// campfire, a swing, pines on a hill and a forest, a field of tulips, a pond with ducks and a little bridge,
-// and a windmill. Out at sea are small islands, the lighthouse on its rock, ships big and small, and far-off
+// campfire, a swing, a white resort hotel like Vinpearl Ha Long with its pool at the back, a forest round a
+// pond with ducks and a little bridge, a field of tulips, and a windmill. Out at sea are small islands, the
+// lighthouse on its rock, ships big and small, and far-off
 // hills; above, a hot-air balloon, clouds and gulls. Like a photo, it is sharp round us and softer and hazier
 // the further away things are.
 // The camera always looks at the two of us: drag to turn it round or up and down, scroll or pinch to zoom.
@@ -36,6 +37,13 @@ const COLORS = {
     waterShallow: '#52b9dc',
     waterDeep: '#2477b4',
     pond: '#5cc0e2',
+    deck: '#ebe4d6',
+    pool: '#5fd3ea',
+    wall: '#f5f0e6',
+    trim: '#ffffff',
+    glass: '#7fa9c8',
+    glassDark: '#4f6f8c',
+    slate: '#5d6b7d',
     foam: '#f4fbff',
     footprint: '#d8c08f',
     wood: '#a8794e',
@@ -520,7 +528,10 @@ const FACES = [
     { n: [0, 0, -1], c: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]] }
 ].map(({ n, c }) => ({ n, corners: [0, 1, 2, 0, 2, 3].flatMap(m => c[m]) }));
 
-const ID = { sand: 1, sandDeep: 2, sandstone: 3, dirt: 4, stone: 5, stoneDark: 6, seabed: 7, grass: 8, grassDark: 9, path: 10, rock: 11, pond: 12 };
+const ID = {
+    sand: 1, sandDeep: 2, sandstone: 3, dirt: 4, stone: 5, stoneDark: 6, seabed: 7, grass: 8, grassDark: 9, path: 10, rock: 11, pond: 12,
+    deck: 13, pool: 14, wall: 15, trim: 16, glass: 17, glassDark: 18, slate: 19
+};
 const PALETTE = [];
 for (const [name, id] of Object.entries(ID)) PALETTE[id] = color(COLORS[name]);
 
@@ -541,8 +552,9 @@ class VoxelGrid {
         this.cells[((i - this.i0) * this.nj + (j - this.j0)) * this.nk + (k - this.k0)] = id;
     }
 
-    // With `undersides: false` the faces looking down are left out too, for land the camera never goes below
-    mesh({ undersides = true } = {}) {
+    // With `undersides: false` the faces looking down are left out too, for land the camera never goes below;
+    // `variation` is how much lighter or darker one block can be than the next
+    mesh({ undersides = true, variation = 0.1 } = {}) {
         const position = [], normal = [], colors = [], s = this.size;
         const faces = FACES.filter(face => undersides || face.n[1] >= 0);
         for (let a = 0; a < this.ni; a++) {
@@ -552,7 +564,7 @@ class VoxelGrid {
                     if (!id) continue;
                     const i = a + this.i0, j = b + this.j0, k = c + this.k0;
                     // Each block a shade lighter or darker than its neighbours, like the texture of real blocks
-                    const tint = 0.93 + hash(i + j * 7, k, 3) * 0.1, p = PALETTE[id];
+                    const tint = 1 - variation * 0.7 + hash(i + j * 7, k, 3) * variation, p = PALETTE[id];
                     const red = p.r * tint, green = p.g * tint, blue = p.b * tint;
                     for (const { n, corners } of faces) {
                         if (this.get(i + n[0], j + n[1], k + n[2])) continue;
@@ -578,18 +590,24 @@ class VoxelGrid {
 // ----- The island -----
 // Columns of blocks: i across, k from the front (the bay, toward the sun) to the back, levels up, all in
 // blocks. We lie on two loungers near the front with the bay before us; behind us the beach rises to grass,
-// a cottage and its garden, a hill of pines and a forest; to the right are beach huts, a field of tulips, a
-// pond and a windmill on its own hill; the beach ends in rocks at the front left. The island rises out of a
-// sea that runs to the horizon, so its blocks only go a little way below the water.
+// a cottage and its garden, and at the back the resort with its pool; to the left is a forest round a pond, to
+// the right beach huts, a field of tulips and a windmill on its own hill; the beach ends in rocks at the front
+// left. The island rises out of a sea that runs to the horizon, so its blocks only go a little way below the
+// water.
 const ISLAND = { ci: 0, ck: 9, ri: 46, rk: 36 };
 const ROCK = { i: -31, k: -13 };
 // The lighthouse's rock, out in the sea beyond the bay (in world units)
 const LIGHTHOUSE = { x: -22, z: -27 };
 const COTTAGE = { i0: -15, i1: -9, k0: 14, k1: 19 };
 const GARDEN = { i0: -19, i1: -6, k0: 12, k1: 22 };
-const HILL = { i: -4, k: 31 };
 const MILL = { i: 25, k: 35 };
-const POND = { i: 9, k: 34, ri: 6.5, rk: 4 };
+const POND = { i: -26, k: 30, ri: 6.5, rk: 4 };
+// The resort at the back of the island, like Vinpearl on Reu island in Ha Long Bay: a white neoclassical hotel
+// whose wings curve round toward the sea, stepping down from its tall middle. Its curve is round block
+// (ci, ck): the facade r1 blocks out from there and the back r2, the wings reaching `wing` degrees either side;
+// the paved terrace in front starts `terrace` blocks out, at the grass's level `ground`
+const RESORT = { ci: 0, ck: 2, r1: 32, r2: 38, wing: 28, terrace: 22, ground: 2 };
+const DEG = Math.PI / 180;
 const TULIPS = { i0: 14, i1: 29, k0: 16, k1: 26 };
 
 // 0 at the middle of the island, 1 at its edge
@@ -605,7 +623,33 @@ const grassK = i => 11 + Math.round(2 * Math.sin(i * 0.3 + 1.2));
 const isRock = (i, k) => ((i - ROCK.i) / 6) ** 2 + ((k - ROCK.k) / 5) ** 2 < 1;
 const isWater = (i, k) => !isRock(i, k) && k < shoreK(i);
 const isGrass = (i, k) => !isRock(i, k) && k >= grassK(i);
-const isPond = (i, k) => ((i - POND.i) / POND.ri) ** 2 + ((k - POND.k) / POND.rk) ** 2 < 1;
+// In the pond, or within `margin` blocks of it
+const nearPond = (i, k, margin) => ((i - POND.i) / (POND.ri + margin)) ** 2 + ((k - POND.k) / (POND.rk + margin)) ** 2 < 1;
+const isPond = (i, k) => nearPond(i, k, 0);
+
+// Block (i, k) seen from the middle of the resort's curve: how far out, at what angle (0 straight out through
+// the middle of the hotel), and how far along the facade that is, in blocks
+function resortAt(i, k) {
+    const a = Math.atan2(i - RESORT.ci, k - RESORT.ck);
+    return { r: Math.hypot(i - RESORT.ci, k - RESORT.ck), a, u: a * RESORT.r1 };
+}
+
+// The paved terrace under and in front of the hotel: wide in front of the middle, a walk in front of the wings
+function onTerrace(i, k) {
+    // Quickly out if it's nowhere near
+    if (k < RESORT.ck + RESORT.terrace * Math.cos(20 * DEG) || Math.abs(i - RESORT.ci) > RESORT.r2 * Math.sin(RESORT.wing * DEG) + 1) return false;
+    const { r, a } = resortAt(i, k), side = Math.abs(a);
+    return side <= RESORT.wing * DEG && r <= RESORT.r2 && ((r >= RESORT.terrace && side <= 20 * DEG) || r >= RESORT.r1 - 3);
+}
+
+// The pool, curving like the hotel, sunk a block into the terrace
+function inPool(i, k) {
+    const { r, a } = resortAt(i, k);
+    return Math.abs(a) <= 16 * DEG && r >= 23.5 && r <= 28.5;
+}
+
+// The paved path from the beach straight up to the terrace
+const onResortPath = (i, k) => Math.abs(i - RESORT.ci) <= 1 && k >= 10 && k < RESORT.ck + RESORT.terrace + 1;
 
 // The gravel path from the beach up to the cottage door
 function onPath(i, k) {
@@ -622,12 +666,12 @@ function topLevel(i, k) {
     const s = shoreK(i);
     if (k < s) return -1 - Math.min(Math.floor((s - 1 - k) / 2), 5);
     if (!isGrass(i, k)) return k - s > 10 ? 2 : 1;
-    // The pond lies a block below the grass around it
+    // The resort's terrace is level with the grass, its pool and the pond a block lower
+    if (onTerrace(i, k)) return inPool(i, k) ? 1 : RESORT.ground;
     if (isPond(i, k)) return 1;
-    const hill = Math.round(3.2 * Math.exp(-((i - HILL.i) ** 2 + (k - HILL.k) ** 2) / 45));
     const mill = Math.round(3.4 * Math.exp(-((i - MILL.i) ** 2 + (k - MILL.k) ** 2) / 60));
-    const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && !isPond(i, k) && hash(i, k, 1) > 0.8 ? 1 : 0;
-    return 2 + hill + mill + bump;
+    const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && !nearPond(i, k, 2) && hash(i, k, 1) > 0.8 ? 1 : 0;
+    return 2 + mill + bump;
 }
 
 // World height of the ground at a block
@@ -639,6 +683,8 @@ function blockId(i, k, j, top) {
     if (depth === 0) {
         if (isWater(i, k)) return ID.seabed;
         if (isPond(i, k)) return ID.pond;
+        if (onTerrace(i, k)) return inPool(i, k) ? ID.pool : ID.deck;
+        if (onResortPath(i, k)) return ID.deck;
         if (onPath(i, k)) return ID.path;
         if (isGrass(i, k)) return hash(i, k, 6) > 0.7 ? ID.grassDark : ID.grass;
         return ID.sand;
@@ -663,6 +709,86 @@ function buildIsland() {
         }
     }
     return { mesh: grid.mesh({ undersides: false }), columns };
+}
+
+// The resort's hotel, in white blocks. Every floor has a white balcony rail along the front with the windows
+// set back behind it and piers between the rooms; the ground floor is an arcade; a cornice runs under the
+// roof. The wings have grey mansard roofs with dormer windows, the tower in the middle stands forward and is
+// taller, with a rounded vault for a roof and a big arched window in its front. Also returns how high it
+// reaches over each block, to keep the camera above it
+function buildResort() {
+    const { r1, r2, ground: g } = RESORT, wing = RESORT.wing * DEG;
+    const grid = new VoxelGrid(-22, 22, g, g + 22, 24, 44), roofTop = new Map();
+    for (let i = -22; i <= 22; i++) {
+        for (let k = 24; k <= 44; k++) {
+            const { r, a, u } = resortAt(i, k), along = Math.abs(u);
+            const tower = along <= 3.2, front = tower ? r1 - 1 : r1, d = r - front;
+            if (Math.abs(a) > wing || d < 0 || r > r2) continue;
+            const floors = tower ? 7 : along <= 7.5 ? 6 : 6 - Math.ceil((along - 7.5) / 3.2);
+            const walls = g + floors * 2, back = r2 - r < 1, pier = Math.floor(u + 99) % 3 === 0;
+            let highest = 0;
+            const put = (j, id) => {
+                if (!id) return;
+                grid.set(i, j, k, id);
+                highest = Math.max(highest, j + 1);
+            };
+            for (let j = g; j < walls; j++) {
+                const floor = Math.floor((j - g) / 2), upper = (j - g) % 2 === 1;
+                if (d < 1) put(j, j === walls - 1 ? ID.trim : floor === 0 ? (pier ? ID.trim : 0) : !upper ? ID.trim : pier || (tower && along > 2.4) ? ID.wall : 0);
+                else if (d < 2) put(j, floor === 0 ? ID.glassDark : pier ? ID.wall : ID.glass);
+                else put(j, back && upper && !pier ? ID.glass : ID.wall);
+            }
+            if (tower) {
+                const rise = Math.round(3.5 * Math.sqrt(Math.max(0, 1 - (u / 3.8) ** 2)));
+                for (let q = 0; q < rise; q++) put(walls + q, d >= 1 ? ID.slate : along < 1.2 && q < 2 ? ID.glass : ID.trim);
+            } else {
+                const depth = r2 - front;
+                if (d >= 1 && d < depth - 1) put(walls, d < 2 && Math.floor(u + 99) % 3 === 1 ? ID.glass : ID.slate);
+                if (d >= 2 && d < depth - 2) put(walls + 1, ID.slate);
+            }
+            roofTop.set(`${i},${k}`, highest);
+        }
+    }
+    // Smoother white than the island's blocks
+    const mesh = grid.mesh({ undersides: false, variation: 0.035 });
+    mesh.castShadow = true;
+    return { mesh, roofTop };
+}
+
+// The resort's finishing touches: a clock on the front of the tower's vault and a little dome with a flag on
+// top, loungers and white umbrellas behind the pool looking out to sea, and lamps up the path from the beach
+function resortDetails(b, glow) {
+    const { ci, ck, r1, r2, ground: g } = RESORT;
+    const spot = (r, deg) => [(ci + r * Math.sin(deg * DEG)) * B, (ck + r * Math.cos(deg * DEG)) * B];
+    const eaves = (g + 14) * B, face = (ck + r1 - 1.5) * B, middle = (ck + (r1 - 1 + r2) / 2) * B;
+    b.box(0.56, 0.56, 0.04, 0, eaves + 2.5 * B, face - 0.02, '#d8b45a');
+    b.box(0.44, 0.44, 0.04, 0, eaves + 2.5 * B, face - 0.04, '#fbf7ec');
+    b.box(0.03, 0.17, 0.03, 0, eaves + 2.5 * B + 0.07, face - 0.07, '#2b2b2f');
+    b.box(0.13, 0.03, 0.03, 0.05, eaves + 2.5 * B, face - 0.07, '#2b2b2f');
+    const top = eaves + 4 * B;
+    b.box(0.7, 0.45, 0.7, 0, top + 0.22, middle, '#ffffff', { outline: true });
+    [[0.62, 0.18], [0.44, 0.16], [0.24, 0.14]].reduce((y, [w, h]) => {
+        b.box(w, h, w, 0, y + h / 2, middle, COLORS.slate);
+        return y + h;
+    }, top + 0.45);
+    b.box(0.05, 0.9, 0.05, 0, top + 1.38, middle, '#d8b45a');
+    b.box(0.34, 0.2, 0.02, 0.18, top + 1.7, middle, '#3d8fd1');
+    // Loungers and umbrellas on the terrace behind the pool
+    const lounger = (deg, cushion) => {
+        const [x, z] = spot(30, deg), y = g * B, turn = turned(b, new THREE.Vector3(x, y, z), [0, deg * DEG, 0]);
+        turn(0.3, 0.08, 0.72, x, y + 0.12, z, '#ffffff');
+        turn(0.26, 0.05, 0.56, x, y + 0.185, z - 0.06, cushion);
+        turn(0.26, 0.09, 0.14, x, y + 0.23, z + 0.26, '#ffffff');
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => turn(0.04, 0.08, 0.04, x + sx * 0.12, y + 0.04, z + sz * 0.3, '#d9d4c7'));
+    };
+    [-14, -10.5, -7, 7, 10.5, 14].forEach((deg, n) => lounger(deg, n % 2 ? '#3d8fd1' : '#f4a6b8'));
+    [-12.25, 12.25].forEach(deg => {
+        const [x, z] = spot(30.6, deg), y = g * B;
+        b.box(0.04, 1.0, 0.04, x, y + 0.5, z, '#ffffff');
+        b.box(0.8, 0.08, 0.8, x, y + 1.0, z, '#ffffff', { outline: true });
+        b.box(0.5, 0.08, 0.5, x, y + 1.08, z, '#ffffff');
+    });
+    [[-2, 15], [2, 15], [-2, 20], [2, 20]].forEach(([i, k]) => lampPost(b, glow, i, k));
 }
 
 // A small island out in the sea: grass inside a rim of sand, or a heap of bare rock
@@ -1188,11 +1314,11 @@ function tulipField(b) {
 // arches across its middle
 function pondLife(b) {
     const y = B;
-    [[5, 33], [7, 36], [11, 35], [13, 33], [6, 32]].forEach(([i, k], n) => {
+    [[-4, -1], [-2, 2], [2, 1], [4, -1], [-3, -2]].map(([i, k]) => [POND.i + i, POND.k + k]).forEach(([i, k], n) => {
         b.box(0.24, 0.02, 0.2, i * B + 0.05, y + 0.01, k * B, '#4f9a4a', { rot: [0, n, 0] });
         if (n % 2 === 0) b.box(0.08, 0.06, 0.08, i * B + 0.05, y + 0.05, k * B, '#f7a8c4');
     });
-    [[12, 32, 0.4], [6, 35, 2.6]].forEach(([i, k, turn]) => {
+    [[3, -2, 0.4], [-3, 1, 2.6]].map(([i, k, turn]) => [POND.i + i, POND.k + k, turn]).forEach(([i, k, turn]) => {
         const duck = turned(b, new THREE.Vector3(i * B, y, k * B), [0, turn, 0]);
         duck(0.24, 0.12, 0.15, i * B, y + 0.06, k * B, '#ffffff');
         duck(0.09, 0.1, 0.09, i * B + 0.09, y + 0.17, k * B, '#ffffff');
@@ -1273,7 +1399,7 @@ function islandDetails(b, columns) {
         const y = top * B;
         const busy = (i >= GARDEN.i0 - 1 && i <= GARDEN.i1 + 1 && k >= GARDEN.k0 - 1 && k <= GARDEN.k1 + 1) || onPath(i, k) ||
             (i >= TULIPS.i0 - 1 && i <= TULIPS.i1 + 1 && k >= TULIPS.k0 - 1 && k <= TULIPS.k1 + 1) ||
-            ((i - POND.i) / (POND.ri + 1.5)) ** 2 + ((k - POND.k) / (POND.rk + 1.5)) ** 2 < 1 || Math.hypot(i - MILL.i, k - MILL.k) < 3;
+            nearPond(i, k, 1.5) || Math.hypot(i - MILL.i, k - MILL.k) < 3 || onTerrace(i, k) || onResortPath(i, k);
         // Grass tufts and flowers on the grassy part
         if (isGrass(i, k) && !busy && hash(i, k, 5) > 0.82) {
             for (let n = 0; n < 2; n++) {
@@ -1894,7 +2020,8 @@ function start() {
     const palms = [
         palmTree(decor, -9, 2, 11, [-1, 0], 0.3), palmTree(decor, 20, 0, 10, [1, -1], 2.2),
         palmTree(decor, -18, 3, 12, [-1, 1], 0.9), palmTree(decor, 24, -1, 9, [1, 0], 1.8), palmTree(decor, -27, 4, 11, [-1, 0], 2.7),
-        palmTree(decor, 33, -1, 11, [1, 1], 0.6), palmTree(decor, 42, 6, 10, [1, 0], 3.1), palmTree(decor, -36, 8, 10, [-1, 1], 1.1)
+        palmTree(decor, 33, -1, 11, [1, 1], 0.6), palmTree(decor, 42, 6, 10, [1, 0], 3.1), palmTree(decor, -36, 8, 10, [-1, 1], 1.1),
+        palmTree(decor, -8, 27, 9, [-1, 0], 1.3), palmTree(decor, 8, 27, 9, [1, 0], 2.5)
     ];
     palms.forEach(p => island.add(p.crown));
     sandcastle(decor, 5, -4);
@@ -1912,16 +2039,23 @@ function start() {
     decor.box(0.06, 0.6, 0.06, -6 * B, ground(-6, 11) + 0.3, 11 * B, COLORS.woodDark);
     decor.box(0.2, 0.16, 0.28, -6 * B, ground(-6, 11) + 0.66, 11 * B, '#3d8fd1');
     const swingTree = oakTree(decor, -24, 19, 6, 61);
-    oakTree(decor, 17, 31, 7, 62);
+    oakTree(decor, -13, 25, 7, 62);
     oakTree(decor, -27, 14, 6, 63);
     oakTree(decor, 38, 22, 6, 64);
-    [[-4, 32, 5], [-8, 34, 4], [0, 35, 4], [-2, 28, 5], [-7, 29, 4], [2, 31, 3]].forEach(([i, k, h]) => pineTree(decor, i, k, h));
-    forest(decor, (i, k) => Math.hypot(i - HILL.i, k - HILL.k) < 8 || Math.hypot(i + 24, k - 19) < 5 ||
-        (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3));
+    // At the back, the resort
+    const resort = buildResort();
+    island.add(resort.mesh);
+    resortDetails(decor, glow);
+    forest(decor, (i, k) => {
+        const { r, a } = resortAt(i, k);
+        return (r > 18 && r < 42 && Math.abs(a) < 32 * DEG) || Math.hypot(i + 24, k - 19) < 5 || nearPond(i, k, 3) ||
+            (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3);
+    });
     // Along the beach: a lifeguard's chair to the left, beach huts to the right
     lifeguardChair(decor, -18, -2);
     [[27, '#5fb0e0'], [31, '#f4a6b8'], [35, '#ffd166'], [39, '#7fd1b9']].forEach(([i, hex]) => beachHut(decor, i, 8, hex));
-    // Over the grass to the right: tulips, a picnic under an oak, the pond and the windmill on its hill
+    // Over the grass to the right: tulips, a picnic under an oak and the windmill on its hill; the pond, in the
+    // forest at the back left
     tulipField(decor);
     picnic(decor, 35, 19);
     pondLife(decor);
@@ -1976,7 +2110,7 @@ function start() {
     const gulls = [0, 1, 2].map(n => {
         const g = seagull();
         island.add(g.bird);
-        return { ...g, offset: n * 2.1, radius: 11 + n * 3, height: 5 + n * 1.4, speed: 0.3 - n * 0.05 };
+        return { ...g, offset: n * 2.1, radius: 11 + n * 3, height: 9.8 + n * 1.3, speed: 0.3 - n * 0.05 };
     });
 
     // Pixel hearts that float up from our hands now and then (and when the scene is tapped)
@@ -2155,7 +2289,8 @@ function start() {
             focus.z + Math.cos(yaw) * Math.cos(pitch) * d);
         // Stay above the ground when skimming low over the island
         const ci = Math.round(camera.position.x / B), ck = Math.round(camera.position.z / B);
-        camera.position.y = Math.max(camera.position.y, (insideIsland(ci, ck) ? Math.max(topLevel(ci, ck), 0) * B : SEA_Y) + 0.45);
+        const below = insideIsland(ci, ck) ? Math.max(topLevel(ci, ck), resort.roofTop.get(`${ci},${ck}`) ?? 0, 0) * B : SEA_Y;
+        camera.position.y = Math.max(camera.position.y, below + 0.45);
         // Low down it looks a little above us, so the sea and the sky fill the top of the picture
         lookAt.copy(focus).setY(focus.y + 1.4 * (1 - smoothstep(0.25, 1, pitch)));
         if (flight) {
