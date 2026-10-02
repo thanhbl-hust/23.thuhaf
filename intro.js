@@ -1,10 +1,10 @@
 // ===== OPENING SCENE =====
 // An island built entirely from blocks, in a sea of blocks that runs to the horizon, with the two of us lying
 // on two loungers under a beach umbrella at sunset, holding hands, our little dog beside her: a bay with a
-// jetty and a boat, palms, a lifeguard's chair, a beach café and friends playing volleyball along the sand,
-// a cottage with a garden, a
+// jetty and a boat, palms, a lifeguard's chair, a beach café and a volleyball court along the sand, a
+// cottage with a garden, a
 // campfire, a swing, a white resort hotel like Vinpearl Ha Long with its pool at the back and a car park
-// behind it, a pickleball court, a forest round a pond with ducks and a little bridge, a field of tulips, and
+// behind it, pickleball and tennis courts, a forest round a pond with ducks and a little bridge, a field of tulips, and
 // a windmill. Waves roll into the bay and break on the beach, and near it the water is clear, with fish and a
 // turtle over the sand. Out at sea are a yacht at anchor off the bay, small islands, the lighthouse on its
 // rock, ships big and small, leaping dolphins and far-off hills; above, a
@@ -600,7 +600,7 @@ class VoxelGrid {
 // blocks. We lie on two loungers near the front with the bay before us; behind us the beach rises to grass,
 // a cottage and its garden, and at the back the resort with its pool and its car park behind it; to the left
 // is a forest round a pond, to the right a beach café and a volleyball court on the sand, a field of tulips, a
-// windmill on its own hill and a pickleball court; the beach ends in rocks at the front left. The island rises
+// windmill on its own hill, and pickleball and tennis courts; the beach ends in rocks at the front left. The island rises
 // out of a sea that runs to the horizon, so its blocks only go a little way below the water.
 const ISLAND = { ci: 0, ck: 30, ri: 80, rk: 58 };
 const ROCK = { i: -31, k: -13 };
@@ -617,8 +617,10 @@ const POND = { i: -26, k: 30, ri: 6.5, rk: 4 };
 const RESORT = { ci: 0, ck: 2, r1: 32, r2: 46, wing: 28, terrace: 22, ground: 2 };
 const DEG = Math.PI / 180;
 const TULIPS = { i0: 14, i1: 29, k0: 16, k1: 26 };
-// The pickleball court in its fence on the grass to the right, and the car park behind the resort
+// The pickleball court in its fence on the grass to the right, the tennis court beside it, and the car park
+// behind the resort
 const COURT = { i0: 41, i1: 54, k0: 14, k1: 39 };
+const TENNIS = { i0: 58, i1: 75, k0: 14, k1: 47 };
 const CAR_PARK = { i0: -16, i1: 16, k0: 49, k1: 60 };
 // On the beach to the right: the café on its deck, and the volleyball court further along
 const CAFE = { i0: 26, i1: 38, k0: 0, k1: 10 };
@@ -687,8 +689,8 @@ function topLevel(i, k) {
     // The resort's terrace is level with the grass, its pool and the pond a block lower
     if (onTerrace(i, k)) return inPool(i, k) ? 1 : RESORT.ground;
     if (isPond(i, k)) return 1;
-    // The court and the car park are level, and so is a strip of grass round them
-    if (inRect(COURT, i, k, 1) || inRect(CAR_PARK, i, k, 1)) return 2;
+    // The courts and the car park are level, and so is a strip of grass round them
+    if (inRect(COURT, i, k, 1) || inRect(TENNIS, i, k, 1) || inRect(CAR_PARK, i, k, 1)) return 2;
     const mill = Math.round(3.4 * Math.exp(-((i - MILL.i) ** 2 + (k - MILL.k) ** 2) / 60));
     const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && !nearPond(i, k, 2) && hash(i, k, 1) > 0.8 ? 1 : 0;
     return 2 + mill + bump;
@@ -1585,12 +1587,8 @@ function pondLife(b) {
 // roof with its gable to the front
 // ----- People on the beach -----
 // Simpler than the two of us, in the same blocks and proportions: facing +z with the feet at y = 0, or sitting
-// with the seat at y = 0.45. Each box belongs to the body or to the arms, which turn together at the shoulders
+// with the seat at y = 0.45. The arms' boxes are given from the shoulders
 const LOOKS = [
-    { skin: '#e8bb93', hair: '#1b1715', top: '#e8455a', bottom: '#24375a' },
-    { skin: '#f0c9a4', hair: '#2b1d16', top: '#ffd166', bottom: '#3f6f9f', long: true },
-    { skin: '#d9a67a', hair: '#141110', top: '#f7f6f1', bottom: '#2f4f3a' },
-    { skin: '#f2d0b0', hair: '#4a3022', top: '#7fd1b9', bottom: '#5a82b0', long: true },
     { skin: '#e2b58c', hair: '#1b1715', top: '#3d8fd1', bottom: '#d9c39a' },
     { skin: '#efc6a0', hair: '#30221a', top: '#f4a6b8', bottom: '#f7f6f1', long: true },
     { skin: '#d8a47a', hair: '#141110', top: '#2b2f36', bottom: '#8a5f3a' },
@@ -1646,18 +1644,6 @@ function beachgoer(b, x, y, z, turn, look, sitting) {
         const [ox, oy, oz] = part === 'arms' ? shoulder : [0, 0, 0];
         t(w, h, d, x + bx + ox, y + by + oy, z + bz + oz, hex, opts);
     }
-}
-
-// Someone who moves: a group to move about, with the arms in a pivot of their own to raise
-function mover(look) {
-    const group = new THREE.Group(), body = new Blocks(), arms = new Blocks(), shoulders = new THREE.Group();
-    const { boxes, shoulder } = beachgoerBoxes(look);
-    for (const { part, args } of boxes) (part === 'arms' ? arms : body).box(...args);
-    body.addTo(group);
-    shoulders.position.set(...shoulder);
-    arms.addTo(shoulders);
-    group.add(shoulders);
-    return { group, shoulders };
 }
 
 // Words in little square pixels, three wide and five high, on a sign facing -z, centred on (x, y)
@@ -1728,8 +1714,8 @@ function beachCafe(b, glow) {
     b.box(1.9, 0.04, 0.012, kx, signY - 0.2, signZ - 0.056, cream);
     pixelText(b, 'COFFEE', kx, signY + 0.02, signZ - 0.056, 0.055, cream);
     // The barista behind the counter, and someone at it ordering
-    beachgoer(b, kx - 0.1, f, kz0 + 0.5, Math.PI, LOOKS[8]);
-    beachgoer(b, kx + 0.55, f, kz0 - 0.38, 0, LOOKS[7]);
+    beachgoer(b, kx - 0.1, f, kz0 + 0.5, Math.PI, LOOKS[4]);
+    beachgoer(b, kx + 0.55, f, kz0 - 0.38, 0, LOOKS[3]);
     // Tables under umbrellas, chairs round them and friends sitting at them with their coffees
     const lifted = { box: (w, h, d, x, by, z, hex, opts) => b.box(w, h, d, x, by + f, z, hex, opts) };
     const chair = (x, z, turn) => {
@@ -1738,7 +1724,7 @@ function beachCafe(b, glow) {
         [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => t(0.04, 0.45, 0.04, x + sx * 0.16, f + 0.225, z + sz * 0.16, dark));
         t(0.38, 0.42, 0.05, x, f + 0.68, z - 0.17, wood);
     };
-    [[29, 2.9, [[-1, LOOKS[4]], [1, LOOKS[5]]]], [32.5, 2.6, [[0, LOOKS[6]], [-1, null]]], [36, 2.9, [[-1, LOOKS[9]], [0, LOOKS[10]]]]].forEach(([i, k, seats]) => {
+    [[29, 2.9, [[-1, LOOKS[0]], [1, LOOKS[1]]]], [32.5, 2.6, [[0, LOOKS[2]], [-1, null]]], [36, 2.9, [[-1, LOOKS[5]], [0, LOOKS[6]]]]].forEach(([i, k, seats]) => {
         const x = i * B, z = k * B;
         b.box(0.62, 0.05, 0.62, x, f + 0.72, z, wood);
         b.box(0.08, 0.7, 0.08, x, f + 0.35, z, dark);
@@ -1766,57 +1752,19 @@ function beachCafe(b, glow) {
     });
 }
 
-// Beach volleyball further along: a court roped out on the sand, the net on two posts, and four friends
-// keeping a rally going, the ball flying over the net from one to the next. Whoever it's coming to jumps and
-// lifts their arms to it; the others shift about on their feet
-function beachVolleyball(b) {
+// A beach volleyball court further along the sand: roped out in blue, with the net high on two posts
+function volleyballCourt(b) {
     const { i0, i1, k0, k1 } = VOLLEY, y = ground(i0, k0);
     const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
     [z0, z1].forEach(z => b.box(x1 - x0 + 0.05, 0.02, 0.05, cx, y + 0.01, z, '#3d8fd1'));
     [x0, x1].forEach(x => b.box(0.05, 0.02, z1 - z0 + 0.05, x, y + 0.01, cz, '#3d8fd1'));
-    // The net, above their heads: a white band along the top and a mesh of cords under it
+    // The net: a white band along the top and a mesh of cords under it
     const netTop = y + 2.0, span = z1 - z0 + 0.5;
     [z0 - 0.3, z1 + 0.3].forEach(z => b.box(0.08, 2.15, 0.08, cx, y + 1.075, z, '#e8e8e8'));
     b.box(0.03, 0.06, span, cx, netTop, cz, '#ffffff');
     for (let n = 1; n <= 4; n++) b.box(0.012, 0.02, span, cx, netTop - n * 0.13, cz, '#2b2f36');
     for (let z = z0 - 0.2; z <= z1 + 0.2; z += 0.22) b.box(0.012, 0.52, 0.015, cx, netTop - 0.29, z, '#2b2f36');
     [z0, z1].forEach(z => { for (let n = 0; n < 4; n++) b.box(0.02, 0.1, 0.02, cx, netTop + 0.08 + n * 0.1, z, n % 2 ? '#ffffff' : '#e8455a'); });
-    const group = new THREE.Group();
-    const team = [[46, -2, 1], [47.5, 1.5, 1], [53.5, -1.5, -1], [55, 2, -1]].map(([i, k, side], n) => {
-        const p = mover(LOOKS[n]);
-        p.group.scale.setScalar(0.92);
-        p.home = new THREE.Vector3(i * B, y, k * B);
-        p.group.rotation.y = side * Math.PI / 2;
-        p.side = side;
-        group.add(p.group);
-        return p;
-    });
-    const ballBlocks = new Blocks(), ball = new THREE.Group();
-    ballBlocks.box(0.2, 0.2, 0.2, 0, 0, 0, '#ffd166', { outline: true });
-    ballBlocks.box(0.205, 0.07, 0.205, 0, 0, 0, '#3d8fd1');
-    ballBlocks.box(0.07, 0.205, 0.205, 0, 0, 0, '#ffffff');
-    ballBlocks.addTo(ball);
-    group.add(ball);
-    // The ball goes round in this order, over the net every time, touched at the top of each player's jump
-    const order = [0, 2, 1, 3], FLIGHT = 1.5, ARC = 2.2, JUMP = 0.3;
-    const hand = p => p.home.clone().add(new THREE.Vector3(p.side * 0.25, 2.0 + JUMP, 0));
-    function update(t) {
-        const n = Math.floor(t / FLIGHT), u = t / FLIGHT - n;
-        const from = hand(team[order[n % 4]]), to = hand(team[order[(n + 1) % 4]]);
-        ball.position.lerpVectors(from, to, u).y += 4 * u * (1 - u) * ARC;
-        ball.rotation.set(t * 5, t * 3, 0);
-        team.forEach((p, m) => {
-            // Seconds from this player's nearest touch of the ball
-            const cycle = 4 * FLIGHT, since = (((t - order.indexOf(m) * FLIGHT) % cycle) + cycle) % cycle;
-            const near = Math.min(since, cycle - since);
-            p.group.position.copy(p.home);
-            p.group.position.y += JUMP * Math.max(0, 1 - (near / 0.32) ** 2);
-            p.group.position.z += Math.sin(t * 1.7 + m * 2) * 0.12;
-            p.shoulders.rotation.x = -0.1 - 2.6 * smoothstep(0.6, 0.05, near);
-        });
-    }
-    update(0);
-    return { group, update };
 }
 
 // A lifeguard's tall chair, white and red, with a ladder at the back, a little roof and a flag
@@ -1865,9 +1813,24 @@ function pickleball(b, glow) {
     [-1, 1].forEach(side => b.box(0.06, 0.4, 0.06, cx + side * (W / 2 + 0.15), y + 0.2, cz, '#2b2f36'));
     b.box(W + 0.3, 0.24, 0.015, cx, y + 0.2, cz, '#39414c');
     b.box(W + 0.3, 0.04, 0.03, cx, y + 0.34, cz, white);
-    // The fence: posts, a rail along the top, and a green windscreen along the bottom, with a gate toward the
-    // resort
-    const fence = '#2d4a3a', screen = '#2f6b4a', gate = 1.2;
+    const gate = 1.2;
+    courtFence(b, glow, y, x0, z0, x1, z1, gate);
+    // A bench inside the fence by the gate, two paddles on it and a ball on the court
+    const bx = x0 + 0.3, bz = cz + gate / 2 + 0.7;
+    b.box(0.26, 0.05, 0.9, bx, y + 0.24, bz, COLORS.woodLight);
+    [-0.35, 0.35].forEach(dz => b.box(0.22, 0.22, 0.05, bx, y + 0.11, bz + dz, '#3b3f45'));
+    [['#e8455a', -0.18], ['#ffd166', 0.18]].forEach(([hex, dz]) => {
+        b.box(0.16, 0.02, 0.2, bx, y + 0.275, bz + dz, hex);
+        b.box(0.04, 0.02, 0.12, bx + 0.12, y + 0.275, bz + dz, '#2b2f36');
+    });
+    b.box(0.06, 0.06, 0.06, cx + 0.5, y + 0.08, cz + L / 2 - 0.6, '#d7f24a');
+}
+
+// The fence round a court from (x0, z0) to (x1, z1) on the ground at y: posts, a rail along the top and a green
+// windscreen along the bottom, with a gate `gate` wide in the middle of the -x side toward the resort; and
+// lights over the corners, leaning in over the court
+function courtFence(b, glow, y, x0, z0, x1, z1, gate) {
+    const fence = '#2d4a3a', screen = '#2f6b4a', cz = (z0 + z1) / 2;
     const run = (ax, az, bx, bz) => {
         const length = Math.hypot(bx - ax, bz - az), along = bx !== ax;
         const mx = (ax + bx) / 2, mz = (az + bz) / 2;
@@ -1882,21 +1845,57 @@ function pickleball(b, glow) {
     run(x1, z0, x1, z1);
     run(x0, z0, x0, cz - gate / 2);
     run(x0, cz + gate / 2, x0, z1);
-    // Lights over the corners, leaning in over the court
     [[x0, z0, 1, 1], [x1, z0, -1, 1], [x0, z1, 1, -1], [x1, z1, -1, -1]].forEach(([x, z, sx, sz]) => {
         b.box(0.07, 1.9, 0.07, x + sx * 0.12, y + 0.95, z + sz * 0.12, '#3b3f45');
         b.box(0.3, 0.06, 0.06, x + sx * 0.25, y + 1.88, z + sz * 0.12, '#3b3f45');
         glow.box(0.18, 0.05, 0.14, x + sx * 0.36, y + 1.84, z + sz * 0.16, COLORS.glow);
     });
-    // A bench inside the fence by the gate, two paddles on it and a ball on the court
-    const bx = x0 + 0.3, bz = cz + gate / 2 + 0.7;
-    b.box(0.26, 0.05, 0.9, bx, y + 0.24, bz, COLORS.woodLight);
-    [-0.35, 0.35].forEach(dz => b.box(0.22, 0.22, 0.05, bx, y + 0.11, bz + dz, '#3b3f45'));
-    [['#e8455a', -0.18], ['#ffd166', 0.18]].forEach(([hex, dz]) => {
-        b.box(0.16, 0.02, 0.2, bx, y + 0.275, bz + dz, hex);
-        b.box(0.04, 0.02, 0.12, bx + 0.12, y + 0.275, bz + dz, '#2b2f36');
+}
+
+// A clay tennis court beside the pickleball court: red clay inside the fence with the court's white lines,
+// the net with its white band and the strap in the middle, the umpire's tall chair at the net with the players'
+// benches either side of it, a basket of balls, and a few balls lying about
+function tennisCourt(b, glow) {
+    const { i0, i1, k0, k1 } = TENNIS, y = ground(i0, k0);
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B;
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, W = 12 * B, L = 26 * B, singles = 9 * B, service = 7 * B;
+    const line = 0.04, white = '#f7f7f2', top = y + 0.036, green = '#2b5a3a', ball = '#d7f24a';
+    b.box(x1 - x0, 0.03, z1 - z0, cx, y + 0.015, cz, '#c8673e');
+    [-1, 1].forEach(side => {
+        b.box(line, 0.012, L, cx + side * W / 2, top, cz, white);
+        b.box(line, 0.012, L, cx + side * singles / 2, top, cz, white);
+        b.box(W + line, 0.012, line, cx, top, cz + side * L / 2, white);
+        b.box(singles, 0.012, line, cx, top, cz + side * service, white);
+        b.box(line, 0.012, service, cx, top, cz + side * service / 2, white);
+        b.box(line, 0.012, 0.15, cx, top, cz + side * (L / 2 - 0.075), white);
     });
-    b.box(0.06, 0.06, 0.06, cx + 0.5, y + 0.08, cz + L / 2 - 0.6, '#d7f24a');
+    // The net across the middle, a little lower in the middle where the strap holds it down
+    const span = W + 0.6;
+    [-1, 1].forEach(side => b.box(0.07, 0.46, 0.07, cx + side * span / 2, y + 0.23, cz, green));
+    b.box(span, 0.05, 0.03, cx, y + 0.4, cz, white);
+    [0.31, 0.22, 0.13].forEach(h => b.box(span, 0.015, 0.012, cx, y + h, cz, '#2b2f36'));
+    for (let x = -span / 2 + 0.2; x < span / 2; x += 0.22) b.box(0.012, 0.36, 0.012, cx + x, y + 0.2, cz, '#2b2f36');
+    b.box(0.05, 0.38, 0.03, cx, y + 0.2, cz, white);
+    // The umpire's chair, on the +x side at the net, and a bench either side of it
+    const ux = cx + W / 2 + 0.75;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => b.box(0.04, 1.0, 0.04, ux + sx * 0.15, y + 0.5, cz + sz * 0.15, green));
+    [0.3, 0.55, 0.8].forEach(h => b.box(0.04, 0.03, 0.34, ux - 0.15, y + h, cz, green));
+    b.box(0.38, 0.05, 0.38, ux, y + 1.02, cz, green);
+    b.box(0.05, 0.4, 0.38, ux + 0.17, y + 1.24, cz, green);
+    b.box(0.05, 0.05, 0.38, ux - 0.2, y + 1.15, cz, green);
+    [-1, 1].forEach(side => {
+        const bz = cz + side * 1.1;
+        b.box(0.26, 0.05, 0.9, ux - 0.05, y + 0.24, bz, COLORS.woodLight);
+        [-0.35, 0.35].forEach(dz => b.box(0.22, 0.22, 0.05, ux - 0.05, y + 0.11, bz + dz, '#3b3f45'));
+        b.box(0.12, 0.2, 0.12, ux - 0.05, y + 0.36, bz + side * 0.25, side > 0 ? '#3d8fd1' : '#e8455a');
+    });
+    // A basket of balls behind the far baseline, and a few balls on the court
+    const bx = cx - W / 2 - 0.4, bz = cz + L / 2 + 0.5;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => b.box(0.03, 0.35, 0.03, bx + sx * 0.13, y + 0.175, bz + sz * 0.13, '#8d97a1'));
+    b.box(0.3, 0.2, 0.3, bx, y + 0.42, bz, '#8d97a1');
+    [[-0.07, -0.07], [0.07, -0.07], [-0.07, 0.07], [0.07, 0.07], [0, 0]].forEach(([dx, dz], n) => b.box(0.07, 0.07, 0.07, bx + dx, y + 0.55 + (n === 4 ? 0.05 : 0), bz + dz, ball));
+    [[0.9, 2.2], [-1.3, -3.1], [1.6, -4.4]].forEach(([dx, dz]) => b.box(0.07, 0.07, 0.07, cx + dx, y + 0.065, cz + dz, ball));
+    courtFence(b, glow, y, x0, z0, x1, z1, 1.2);
 }
 
 // A little car, nose toward +z before it is turned by `heading`, its wheels on the ground at y, with a dark
@@ -1957,7 +1956,7 @@ function islandDetails(b, columns) {
         const busy = (i >= GARDEN.i0 - 1 && i <= GARDEN.i1 + 1 && k >= GARDEN.k0 - 1 && k <= GARDEN.k1 + 1) || onPath(i, k) ||
             (i >= TULIPS.i0 - 1 && i <= TULIPS.i1 + 1 && k >= TULIPS.k0 - 1 && k <= TULIPS.k1 + 1) ||
             nearPond(i, k, 1.5) || Math.hypot(i - MILL.i, k - MILL.k) < 3 || onTerrace(i, k) || onResortPath(i, k) ||
-            inRect(COURT, i, k, 1) || inRect(CAR_PARK, i, k, 1) || inRect(CAFE, i, k, 1);
+            inRect(COURT, i, k, 1) || inRect(TENNIS, i, k, 1) || inRect(CAR_PARK, i, k, 1) || inRect(CAFE, i, k, 1);
         // Grass tufts and flowers on the grassy part, thinning out far from us where the picture is soft anyway,
         // without the undersides nobody sees
         const far = smoothstep(28, 75, Math.hypot(i, k - 8)), under = { hide: 1 << 3 };
@@ -2661,7 +2660,7 @@ function start() {
     oakTree(decor, -13, 25, 7, 62);
     oakTree(decor, -27, 14, 6, 63);
     oakTree(decor, 38, 22, 6, 64);
-    [[63, 24, 7], [71, 36, 6], [60, 48, 7], [68, 14, 5], [44, 52, 6], [28, 62, 7], [12, 70, 6], [36, 72, 5]].forEach(([i, k, height], n) =>
+    [[56, 52, 7], [46, 60, 6], [52, 46, 5], [50, 66, 6], [44, 52, 6], [28, 62, 7], [12, 70, 6], [36, 72, 5]].forEach(([i, k, height], n) =>
         oakTree(decor, i, k, height, 65 + n));
     // At the back, the resort
     const resort = buildResort();
@@ -2669,16 +2668,16 @@ function start() {
     resortDetails(decor, glow);
     carPark(decor, glow);
     pickleball(decor, glow);
+    tennisCourt(decor, glow);
     forest(decor, (i, k) => {
         const { r, a } = resortAt(i, k);
         return (r > 18 && r < RESORT.r2 + 6 && Math.abs(a) < 32 * DEG) || Math.hypot(i + 24, k - 19) < 5 || nearPond(i, k, 3) ||
             (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3) || inRect(CAR_PARK, i, k, 4) || (i > -16 && k < 60);
     });
-    // Along the beach: a lifeguard's chair to the left; to the right the café, and a game of volleyball
+    // Along the beach: a lifeguard's chair to the left; to the right the café and a volleyball court
     lifeguardChair(decor, -18, -2);
     beachCafe(decor, glow);
-    const volley = beachVolleyball(decor);
-    island.add(volley.group);
+    volleyballCourt(decor);
     // Over the grass to the right: tulips, a picnic under an oak and the windmill on its hill; the pond, in the
     // forest at the back left
     tulipField(decor);
@@ -2943,7 +2942,6 @@ function start() {
         water.update(clock);
         life.update(clock);
         pod.update(clock);
-        volley.update(clock);
         sea.uniforms.time.value = clock;
         foamMaterials.forEach((m, n) => { m.opacity = 0.55 + 0.3 * Math.sin(clock * 1.3 - n * 1.4) - n * 0.15; });
         animatePeople(clock);
