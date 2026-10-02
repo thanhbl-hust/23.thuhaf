@@ -406,11 +406,29 @@ function restoreCalendarScroll() {
 const map = L.map('hanoi-map', { center: [21.034281533880666, 105.81246668161833], zoom: 13, maxZoom: 19 });
 
 // Base map: plain OpenStreetMap image tiles. They move with the pins at no extra cost while dragging;
-// a vector map (MapLibre) looked nicer but redrew itself about 30 times a second and made dragging stutter
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+// a vector map (MapLibre) looked nicer but redrew itself about 30 times a second and made dragging stutter.
+// Some networks block OpenStreetMap's own tile server (on one home network its name led nowhere and the map
+// stayed grey), so when a tile from it fails the map moves on to the same map hosted elsewhere
+const tileServers = [
+    { host: 'tile.openstreetmap.org', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' },
+    { host: 'tile.openstreetmap.de', url: 'https://tile.openstreetmap.de/{z}/{x}/{y}.png' },
+    {
+        host: 'tile.openstreetmap.fr', url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        credit: 'Tiles by <a href="https://www.hotosm.org/">HOT</a>, hosted by <a href="https://openstreetmap.fr/">OSM France</a>'
+    }
+];
+let tileServer = 0;
+const baseMap = L.tileLayer(tileServers[0].url, {
     maxZoom: 19,
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
+baseMap.on('tileerror', ({ tile }) => {
+    // Errors still arriving from a server already given up on don't count against the next one
+    if (tileServer === tileServers.length - 1 || !tile.src.includes(tileServers[tileServer].host)) return;
+    const next = tileServers[++tileServer];
+    if (next.credit) map.attributionControl.addAttribution(next.credit);
+    baseMap.setUrl(next.url);
+});
 
 // Leaflet only fetches tiles for the size it last measured. Measure again whenever the map's box changes
 // (fonts loading, the phone's address bar sliding away, coming back from another tab), but not while hidden
