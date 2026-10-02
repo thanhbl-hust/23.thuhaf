@@ -1,7 +1,8 @@
 // ===== OPENING SCENE =====
 // An island built entirely from blocks, in a sea of blocks that runs to the horizon, with the two of us lying
 // on two loungers under a beach umbrella at sunset, holding hands, our little dog beside her: a bay with a
-// jetty and a boat, palms, beach huts and a lifeguard's chair along the sand, a cottage with a garden, a
+// jetty and a boat, palms, a lifeguard's chair, a beach café and friends playing volleyball along the sand,
+// a cottage with a garden, a
 // campfire, a swing, a white resort hotel like Vinpearl Ha Long with its pool at the back and a car park
 // behind it, a pickleball court, a forest round a pond with ducks and a little bridge, a field of tulips, and
 // a windmill. Waves roll into the bay and break on the beach, and near it the water is clear, with fish and a
@@ -598,9 +599,9 @@ class VoxelGrid {
 // Columns of blocks: i across, k from the front (the bay, toward the sun) to the back, levels up, all in
 // blocks. We lie on two loungers near the front with the bay before us; behind us the beach rises to grass,
 // a cottage and its garden, and at the back the resort with its pool and its car park behind it; to the left
-// is a forest round a pond, to the right beach huts, a field of tulips, a windmill on its own hill and a
-// pickleball court; the beach ends in rocks at the front left. The island rises out of a sea that runs to the horizon, so its blocks only go a little way below the
-// water.
+// is a forest round a pond, to the right a beach café and a volleyball court on the sand, a field of tulips, a
+// windmill on its own hill and a pickleball court; the beach ends in rocks at the front left. The island rises
+// out of a sea that runs to the horizon, so its blocks only go a little way below the water.
 const ISLAND = { ci: 0, ck: 30, ri: 80, rk: 58 };
 const ROCK = { i: -31, k: -13 };
 // The lighthouse's rock, out in the sea beyond the bay (in world units)
@@ -619,6 +620,9 @@ const TULIPS = { i0: 14, i1: 29, k0: 16, k1: 26 };
 // The pickleball court in its fence on the grass to the right, and the car park behind the resort
 const COURT = { i0: 41, i1: 54, k0: 14, k1: 39 };
 const CAR_PARK = { i0: -16, i1: 16, k0: 49, k1: 60 };
+// On the beach to the right: the café on its deck, and the volleyball court further along
+const CAFE = { i0: 26, i1: 38, k0: 0, k1: 10 };
+const VOLLEY = { i0: 43, i1: 57, k0: -4, k1: 3 };
 const inRect = (r, i, k, margin = 0) => i >= r.i0 - margin && i <= r.i1 + margin && k >= r.k0 - margin && k <= r.k1 + margin;
 
 // 0 at the middle of the island, 1 at its edge
@@ -676,6 +680,9 @@ function topLevel(i, k) {
     }
     const s = shoreK(i);
     if (k < s) return -1 - Math.min(Math.floor((s - 1 - k) / 2), 5);
+    // The café's deck is level with the top of the beach, the volleyball court with the bottom
+    if (inRect(CAFE, i, k)) return 2;
+    if (inRect(VOLLEY, i, k, 1)) return 1;
     if (!isGrass(i, k)) return k - s > 10 ? 2 : 1;
     // The resort's terrace is level with the grass, its pool and the pond a block lower
     if (onTerrace(i, k)) return inPool(i, k) ? 1 : RESORT.ground;
@@ -1576,19 +1583,240 @@ function pondLife(b) {
 
 // A little beach hut: upright boards in a colour and white, a door to the sea with a step, and a pitched
 // roof with its gable to the front
-function beachHut(b, i, k, hex) {
-    const x = i * B, z = k * B, y = ground(i, k), w = 1.4, h = 1.6, boards = 7, bw = w / boards;
-    for (let n = 0; n < boards; n++) {
-        const along = -w / 2 + (n + 0.5) * bw, board = n % 2 ? '#ffffff' : hex;
-        [-1, 1].forEach(end => b.box(bw, h, 0.08, x + along, y + h / 2, z + end * w / 2, board));
-        [-1, 1].forEach(side => b.box(0.08, h, bw, x + side * w / 2, y + h / 2, z + along, board));
+// ----- People on the beach -----
+// Simpler than the two of us, in the same blocks and proportions: facing +z with the feet at y = 0, or sitting
+// with the seat at y = 0.45. Each box belongs to the body or to the arms, which turn together at the shoulders
+const LOOKS = [
+    { skin: '#e8bb93', hair: '#1b1715', top: '#e8455a', bottom: '#24375a' },
+    { skin: '#f0c9a4', hair: '#2b1d16', top: '#ffd166', bottom: '#3f6f9f', long: true },
+    { skin: '#d9a67a', hair: '#141110', top: '#f7f6f1', bottom: '#2f4f3a' },
+    { skin: '#f2d0b0', hair: '#4a3022', top: '#7fd1b9', bottom: '#5a82b0', long: true },
+    { skin: '#e2b58c', hair: '#1b1715', top: '#3d8fd1', bottom: '#d9c39a' },
+    { skin: '#efc6a0', hair: '#30221a', top: '#f4a6b8', bottom: '#f7f6f1', long: true },
+    { skin: '#d8a47a', hair: '#141110', top: '#2b2f36', bottom: '#8a5f3a' },
+    { skin: '#f0c9a4', hair: '#2b1d16', top: '#c3a6e6', bottom: '#24375a', long: true },
+    { skin: '#eec4a0', hair: '#1b1715', top: '#9b2226', bottom: '#2b2f36' },
+    { skin: '#e6b48a', hair: '#1b1715', top: '#ff9f43', bottom: '#2f4f6b' },
+    { skin: '#f2cfae', hair: '#3a281e', top: '#ffffff', bottom: '#9b6a4a', long: true }
+];
+
+function beachgoerBoxes(look, sitting = false) {
+    const { skin, hair, top, bottom, long } = look, boxes = [];
+    const add = (part, w, h, d, x, y, z, hex, outline) => boxes.push({ part, args: [w, h, d, x, y, z, hex, outline ? { outline: true } : undefined] });
+    const lift = sitting ? -0.17 : 0, back = sitting ? -0.05 : 0;
+    [-1, 1].forEach(side => {
+        const x = side * 0.11;
+        if (sitting) {
+            add('body', 0.21, 0.2, 0.3, x, 0.55, 0, bottom, true);
+            add('body', 0.19, 0.18, 0.26, x, 0.55, 0.27, skin, true);
+            add('body', 0.18, 0.48, 0.18, x, 0.24, 0.35, skin, true);
+            add('body', 0.19, 0.07, 0.26, x, 0.035, 0.42, skin);
+        } else {
+            add('body', 0.19, 0.6, 0.2, x, 0.32, 0, skin, true);
+            add('body', 0.2, 0.07, 0.28, x, 0.035, 0.04, skin);
+        }
+    });
+    add('body', 0.48, sitting ? 0.22 : 0.3, 0.28, 0, sitting ? 0.56 : 0.75, back, bottom, true);
+    add('body', 0.5, 0.56, 0.28, 0, 1.18 + lift, back, top, true);
+    add('body', 0.16, 0.08, 0.14, 0, 1.49 + lift, back, skin);
+    add('body', 0.4, 0.4, 0.38, 0, 1.72 + lift, back, skin, true);
+    add('body', 0.42, 0.1, 0.4, 0, 1.9 + lift, back - 0.01, hair);
+    add('body', 0.42, 0.06, 0.06, 0, 1.86 + lift, back + 0.18, hair);
+    add('body', 0.42, long ? 0.5 : 0.26, 0.09, 0, (long ? 1.66 : 1.78) + lift, back - 0.17, hair);
+    if (long) [-1, 1].forEach(side => add('body', 0.06, 0.34, 0.2, side * 0.21, 1.72 + lift, back - 0.07, hair));
+    [-1, 1].forEach(side => add('body', 0.05, 0.05, 0.02, side * 0.09, 1.73 + lift, back + 0.19, '#2b2320'));
+    // The arms, from the shoulders: hanging down, or for someone sitting, forearms forward as if on a table
+    [-1, 1].forEach(side => {
+        const x = side * 0.33;
+        add('arms', 0.17, 0.14, 0.18, x, -0.03, 0, top);
+        if (sitting) {
+            add('arms', 0.15, 0.32, 0.16, x, -0.16, 0, skin, true);
+            add('arms', 0.14, 0.13, 0.32, x, -0.33, 0.12, skin, true);
+        } else {
+            add('arms', 0.15, 0.56, 0.16, x, -0.27, 0, skin, true);
+        }
+    });
+    return { boxes, shoulder: [0, 1.42 + lift, back] };
+}
+
+// Someone standing or sitting still, put straight into a set of blocks at (x, y, z), turned by `turn`
+function beachgoer(b, x, y, z, turn, look, sitting) {
+    const { boxes, shoulder } = beachgoerBoxes(look, sitting), t = turned(b, new THREE.Vector3(x, y, z), [0, turn, 0]);
+    for (const { part, args: [w, h, d, bx, by, bz, hex, opts] } of boxes) {
+        const [ox, oy, oz] = part === 'arms' ? shoulder : [0, 0, 0];
+        t(w, h, d, x + bx + ox, y + by + oy, z + bz + oz, hex, opts);
     }
-    b.box(0.48, 1.04, 0.04, x, y + 0.58, z - w / 2 - 0.05, '#ffffff');
-    b.box(0.38, 0.94, 0.03, x, y + 0.56, z - w / 2 - 0.07, shade(hex, 0.15));
-    b.box(0.04, 0.04, 0.03, x + 0.12, y + 0.55, z - w / 2 - 0.09, '#ffd166');
-    b.box(0.64, 0.08, 0.3, x, y + 0.04, z - w / 2 - 0.18, COLORS.woodLight);
-    for (let n = 1; n <= 3; n++) [-1, 1].forEach(end => b.box(w - n * 0.36, 0.14, 0.08, x, y + h + (n - 0.5) * 0.14, z + end * w / 2, n % 2 ? hex : '#ffffff'));
-    [-1, 1].forEach(side => b.box(w * 0.62, 0.07, w + 0.24, x + side * w * 0.256, y + h + 0.25, z, COLORS.roof, { rot: [0, 0, -side * 0.6], outline: true }));
+}
+
+// Someone who moves: a group to move about, with the arms in a pivot of their own to raise
+function mover(look) {
+    const group = new THREE.Group(), body = new Blocks(), arms = new Blocks(), shoulders = new THREE.Group();
+    const { boxes, shoulder } = beachgoerBoxes(look);
+    for (const { part, args } of boxes) (part === 'arms' ? arms : body).box(...args);
+    body.addTo(group);
+    shoulders.position.set(...shoulder);
+    arms.addTo(shoulders);
+    group.add(shoulders);
+    return { group, shoulders };
+}
+
+// Words in little square pixels, three wide and five high, on a sign facing -z, centred on (x, y)
+const PIXEL_FONT = {
+    C: ['XXX', 'X..', 'X..', 'X..', 'XXX'], O: ['XXX', 'X.X', 'X.X', 'X.X', 'XXX'],
+    F: ['XXX', 'X..', 'XX.', 'X..', 'X..'], E: ['XXX', 'X..', 'XX.', 'X..', 'XXX']
+};
+function pixelText(b, text, x, y, z, size, hex) {
+    const columns = text.length * 4 - 1;
+    [...text].forEach((letter, n) => PIXEL_FONT[letter].forEach((row, r) => [...row].forEach((ch, c) => {
+        // Seen from -z, left is +x
+        if (ch === 'X') b.box(size, size, 0.012, x + ((columns - 1) / 2 - (n * 4 + c)) * size, y + (2 - r) * size, z, hex);
+    })));
+}
+
+// The beach café where the beach huts were, in the dark red and cream of a Highlands Coffee: a kiosk with a
+// counter under a striped awning hung with lights, a lit menu on its back wall over the coffee machine, iced
+// coffees on the counter and its name on the roof, the barista behind the counter; in front a wooden deck
+// with tables under red umbrellas where friends sit over their coffees, someone ordering, a chalkboard and
+// potted palms
+function beachCafe(b, glow) {
+    const { i0, i1, k0, k1 } = CAFE, y = ground(i0, k0), f = y + 0.05;
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cx = (x0 + x1) / 2;
+    const red = '#9b2226', cream = '#f3e3c3', dark = '#5a3a2a', wood = '#b88a5c', cup = '#7a4a2a';
+    // The deck, its planks running toward the sea, boarded in at the front and sides over the step down to
+    // the sand, with steps in the middle
+    for (let i = i0; i <= i1; i++) b.box(B - 0.01, 0.05, z1 - z0, i * B, y + 0.025, (z0 + z1) / 2, i % 2 ? wood : '#a8794e');
+    b.box(x1 - x0 + 0.12, 0.42, 0.06, cx, y - 0.16, z0 - 0.03, dark);
+    [x0 - 0.03, x1 + 0.03].forEach(x => b.box(0.06, 0.42, z1 - z0, x, y - 0.16, (z0 + z1) / 2, dark));
+    b.box(1.0, 0.34, 0.25, cx, y - 0.18, z0 - 0.185, wood);
+    b.box(1.0, 0.17, 0.25, cx, y - 0.265, z0 - 0.435, wood);
+    // The kiosk at the back of the deck
+    const kx0 = 28.5 * B, kx1 = 35.5 * B, kz0 = z1 - 3 * B, kx = (kx0 + kx1) / 2, kw = kx1 - kx0, kd = z1 - kz0, kz = (kz0 + z1) / 2;
+    b.box(kw, 2.3, 0.1, kx, f + 1.15, z1 - 0.05, dark);
+    [kx0 + 0.05, kx1 - 0.05].forEach(x => b.box(0.1, 2.3, kd, x, f + 1.15, kz, dark));
+    b.box(kw, 0.95, 0.12, kx, f + 0.475, kz0 + 0.06, red);
+    b.box(kw, 0.07, 0.02, kx, f + 0.62, kz0 - 0.005, cream);
+    b.box(kw + 0.1, 0.06, 0.36, kx, f + 0.98, kz0 + 0.12, wood);
+    [kx0 + 0.06, kx1 - 0.06].forEach(x => b.box(0.12, 1.3, 0.12, x, f + 1.65, kz0 + 0.06, dark));
+    b.box(kw + 0.3, 0.12, kd + 0.3, kx, f + 2.36, kz, '#3b2a24', { outline: true });
+    // Inside: the back counter, the coffee machine, and the menu lit up above it
+    b.box(kw - 0.2, 0.95, 0.3, kx, f + 0.475, z1 - 0.25, '#6b4629');
+    b.box(0.45, 0.4, 0.28, kx - 0.55, f + 1.15, z1 - 0.25, '#b8bec6');
+    b.box(0.08, 0.12, 0.08, kx - 0.6, f + 1.0, z1 - 0.42, '#2b2f36');
+    glow.box(1.3, 0.42, 0.02, kx + 0.3, f + 1.75, z1 - 0.115, '#fff1d6');
+    [0.1, 0, -0.1].forEach(dy => b.box(1.0, 0.025, 0.012, kx + 0.3, f + 1.75 + dy, z1 - 0.13, '#5a3a2a'));
+    // Iced coffees with straws on the counter
+    [[-0.85, '#3d8fd1'], [-0.6, '#3d8fd1'], [0.65, '#e8455a']].forEach(([dx, straw]) => {
+        b.box(0.08, 0.14, 0.08, kx + dx, f + 1.08, kz0 + 0.12, cup);
+        b.box(0.09, 0.03, 0.09, kx + dx, f + 1.165, kz0 + 0.12, '#ffffff');
+        b.box(0.015, 0.08, 0.015, kx + dx + 0.02, f + 1.21, kz0 + 0.12, straw);
+    });
+    // The awning over the counter, red and cream stripes sloping out, with a row of lights along its edge
+    const tilt = 0.35, reach = 0.7, awning = turned(b, new THREE.Vector3(kx, f + 2.25, kz0), [-tilt, 0, 0]), stripes = 9;
+    for (let n = 0; n < stripes; n++) {
+        const x = kx0 + (n + 0.5) * kw / stripes, hex = n % 2 ? cream : red;
+        awning(kw / stripes + 0.005, 0.05, reach, x, f + 2.25, kz0 - reach / 2, hex);
+        awning(kw / stripes - 0.05, 0.1, 0.04, x, f + 2.18, kz0 - reach + 0.02, hex);
+    }
+    const edgeY = f + 2.25 - reach * Math.sin(tilt) - 0.16, edgeZ = kz0 - reach * Math.cos(tilt) - 0.02;
+    for (let n = 0; n <= 12; n++) {
+        const u = n / 12;
+        glow.box(0.05, 0.06, 0.05, kx0 + u * kw, edgeY - Math.sin((u * 3 % 1) * Math.PI) * 0.06, edgeZ, n % 2 ? '#ffd58a' : '#ffb36b');
+    }
+    // Its name on the roof
+    const signY = f + 2.72, signZ = kz0 + 0.25;
+    b.box(2.0, 0.5, 0.1, kx, signY, signZ, red, { outline: true });
+    b.box(1.9, 0.04, 0.012, kx, signY - 0.2, signZ - 0.056, cream);
+    pixelText(b, 'COFFEE', kx, signY + 0.02, signZ - 0.056, 0.055, cream);
+    // The barista behind the counter, and someone at it ordering
+    beachgoer(b, kx - 0.1, f, kz0 + 0.5, Math.PI, LOOKS[8]);
+    beachgoer(b, kx + 0.55, f, kz0 - 0.38, 0, LOOKS[7]);
+    // Tables under umbrellas, chairs round them and friends sitting at them with their coffees
+    const lifted = { box: (w, h, d, x, by, z, hex, opts) => b.box(w, h, d, x, by + f, z, hex, opts) };
+    const chair = (x, z, turn) => {
+        const t = turned(b, new THREE.Vector3(x, f, z), [0, turn, 0]);
+        t(0.38, 0.05, 0.38, x, f + 0.45, z, wood);
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => t(0.04, 0.45, 0.04, x + sx * 0.16, f + 0.225, z + sz * 0.16, dark));
+        t(0.38, 0.42, 0.05, x, f + 0.68, z - 0.17, wood);
+    };
+    [[29, 2.9, [[-1, LOOKS[4]], [1, LOOKS[5]]]], [32.5, 2.6, [[0, LOOKS[6]], [-1, null]]], [36, 2.9, [[-1, LOOKS[9]], [0, LOOKS[10]]]]].forEach(([i, k, seats]) => {
+        const x = i * B, z = k * B;
+        b.box(0.62, 0.05, 0.62, x, f + 0.72, z, wood);
+        b.box(0.08, 0.7, 0.08, x, f + 0.35, z, dark);
+        parasol(lifted, x, z, 2.15, 0.75, [0, 0, 0], red);
+        seats.forEach(([side, look], n) => {
+            // A chair to the left or right of the table facing it, or behind it facing the sea
+            const turn = side === 0 ? Math.PI : -side * Math.PI / 2;
+            const sx = x + side * 0.58, sz = z + (side === 0 ? 0.58 : 0);
+            chair(sx, sz, turn);
+            if (!look) return;
+            beachgoer(b, sx, f, sz, turn, look, true);
+            b.box(0.08, 0.14, 0.08, x - Math.sin(turn) * 0.18 + n * 0.05, f + 0.82, z - Math.cos(turn) * 0.18, cup);
+            b.box(0.09, 0.03, 0.09, x - Math.sin(turn) * 0.18 + n * 0.05, f + 0.905, z - Math.cos(turn) * 0.18, '#ffffff');
+        });
+    });
+    // A chalkboard at the top of the steps, and palms in pots at the front corners
+    const board = turned(b, new THREE.Vector3(cx + 1.0, f + 0.75, z0 + 0.35), [0.2, 0, 0]);
+    board(0.56, 0.78, 0.04, cx + 1.0, f + 0.4, z0 + 0.35, dark);
+    board(0.48, 0.66, 0.012, cx + 1.0, f + 0.42, z0 + 0.325, '#2b2f2b');
+    [0.2, 0.08, -0.04, -0.16].forEach((dy, n) => board(0.36 - n * 0.05, 0.025, 0.012, cx + 1.0 - n * 0.02, f + 0.42 + dy, z0 + 0.315, '#f2f2ea'));
+    [x0 + 0.3, x1 - 0.3].forEach(x => {
+        b.box(0.28, 0.3, 0.28, x, f + 0.15, z0 + 0.3, '#c8673e', { outline: true });
+        b.box(0.05, 0.4, 0.05, x, f + 0.5, z0 + 0.3, '#6b4629');
+        [[0.18, 0], [-0.18, 0], [0, 0.18], [0, -0.18]].forEach(([dx, dz]) => b.box(0.3, 0.05, 0.12, x + dx, f + 0.72, z0 + 0.3 + dz, '#4f9a4a', { rot: [0, Math.atan2(dz, dx), 0.4 * Math.sign(dx || 1)] }));
+    });
+}
+
+// Beach volleyball further along: a court roped out on the sand, the net on two posts, and four friends
+// keeping a rally going, the ball flying over the net from one to the next. Whoever it's coming to jumps and
+// lifts their arms to it; the others shift about on their feet
+function beachVolleyball(b) {
+    const { i0, i1, k0, k1 } = VOLLEY, y = ground(i0, k0);
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    [z0, z1].forEach(z => b.box(x1 - x0 + 0.05, 0.02, 0.05, cx, y + 0.01, z, '#3d8fd1'));
+    [x0, x1].forEach(x => b.box(0.05, 0.02, z1 - z0 + 0.05, x, y + 0.01, cz, '#3d8fd1'));
+    // The net, above their heads: a white band along the top and a mesh of cords under it
+    const netTop = y + 2.0, span = z1 - z0 + 0.5;
+    [z0 - 0.3, z1 + 0.3].forEach(z => b.box(0.08, 2.15, 0.08, cx, y + 1.075, z, '#e8e8e8'));
+    b.box(0.03, 0.06, span, cx, netTop, cz, '#ffffff');
+    for (let n = 1; n <= 4; n++) b.box(0.012, 0.02, span, cx, netTop - n * 0.13, cz, '#2b2f36');
+    for (let z = z0 - 0.2; z <= z1 + 0.2; z += 0.22) b.box(0.012, 0.52, 0.015, cx, netTop - 0.29, z, '#2b2f36');
+    [z0, z1].forEach(z => { for (let n = 0; n < 4; n++) b.box(0.02, 0.1, 0.02, cx, netTop + 0.08 + n * 0.1, z, n % 2 ? '#ffffff' : '#e8455a'); });
+    const group = new THREE.Group();
+    const team = [[46, -2, 1], [47.5, 1.5, 1], [53.5, -1.5, -1], [55, 2, -1]].map(([i, k, side], n) => {
+        const p = mover(LOOKS[n]);
+        p.group.scale.setScalar(0.92);
+        p.home = new THREE.Vector3(i * B, y, k * B);
+        p.group.rotation.y = side * Math.PI / 2;
+        p.side = side;
+        group.add(p.group);
+        return p;
+    });
+    const ballBlocks = new Blocks(), ball = new THREE.Group();
+    ballBlocks.box(0.2, 0.2, 0.2, 0, 0, 0, '#ffd166', { outline: true });
+    ballBlocks.box(0.205, 0.07, 0.205, 0, 0, 0, '#3d8fd1');
+    ballBlocks.box(0.07, 0.205, 0.205, 0, 0, 0, '#ffffff');
+    ballBlocks.addTo(ball);
+    group.add(ball);
+    // The ball goes round in this order, over the net every time, touched at the top of each player's jump
+    const order = [0, 2, 1, 3], FLIGHT = 1.5, ARC = 2.2, JUMP = 0.3;
+    const hand = p => p.home.clone().add(new THREE.Vector3(p.side * 0.25, 2.0 + JUMP, 0));
+    function update(t) {
+        const n = Math.floor(t / FLIGHT), u = t / FLIGHT - n;
+        const from = hand(team[order[n % 4]]), to = hand(team[order[(n + 1) % 4]]);
+        ball.position.lerpVectors(from, to, u).y += 4 * u * (1 - u) * ARC;
+        ball.rotation.set(t * 5, t * 3, 0);
+        team.forEach((p, m) => {
+            // Seconds from this player's nearest touch of the ball
+            const cycle = 4 * FLIGHT, since = (((t - order.indexOf(m) * FLIGHT) % cycle) + cycle) % cycle;
+            const near = Math.min(since, cycle - since);
+            p.group.position.copy(p.home);
+            p.group.position.y += JUMP * Math.max(0, 1 - (near / 0.32) ** 2);
+            p.group.position.z += Math.sin(t * 1.7 + m * 2) * 0.12;
+            p.shoulders.rotation.x = -0.1 - 2.6 * smoothstep(0.6, 0.05, near);
+        });
+    }
+    update(0);
+    return { group, update };
 }
 
 // A lifeguard's tall chair, white and red, with a ladder at the back, a little roof and a flag
@@ -1706,7 +1934,7 @@ function carPark(b, glow) {
     b.box(0.06, 1.05, 0.06, sx, y + 0.52, sz, '#8d97a1');
     b.box(0.46, 0.46, 0.04, sx, sy, sz, '#2f6fb0');
     ['XXX.', 'X..X', 'XXX.', 'X...', 'X...'].forEach((row, r) => [...row].forEach((ch, c) => {
-        if (ch === 'X') [-1, 1].forEach(side => b.box(0.06, 0.06, 0.012, sx + (c - 1.5) * 0.06, sy + (2 - r) * 0.06, sz + side * 0.024, '#ffffff'));
+        if (ch === 'X') [-1, 1].forEach(side => b.box(0.06, 0.06, 0.012, sx + side * (c - 1.5) * 0.06, sy + (2 - r) * 0.06, sz + side * 0.024, '#ffffff'));
     }));
     [-11, 0, 11].forEach(i => lampPost(b, glow, i, k1 + 1));
 }
@@ -1729,7 +1957,7 @@ function islandDetails(b, columns) {
         const busy = (i >= GARDEN.i0 - 1 && i <= GARDEN.i1 + 1 && k >= GARDEN.k0 - 1 && k <= GARDEN.k1 + 1) || onPath(i, k) ||
             (i >= TULIPS.i0 - 1 && i <= TULIPS.i1 + 1 && k >= TULIPS.k0 - 1 && k <= TULIPS.k1 + 1) ||
             nearPond(i, k, 1.5) || Math.hypot(i - MILL.i, k - MILL.k) < 3 || onTerrace(i, k) || onResortPath(i, k) ||
-            inRect(COURT, i, k, 1) || inRect(CAR_PARK, i, k, 1);
+            inRect(COURT, i, k, 1) || inRect(CAR_PARK, i, k, 1) || inRect(CAFE, i, k, 1);
         // Grass tufts and flowers on the grassy part, thinning out far from us where the picture is soft anyway,
         // without the undersides nobody sees
         const far = smoothstep(28, 75, Math.hypot(i, k - 8)), under = { hide: 1 << 3 };
@@ -2409,9 +2637,9 @@ function start() {
     const palms = [
         palmTree(decor, -9, 2, 11, [-1, 0], 0.3), palmTree(decor, 20, 0, 10, [1, -1], 2.2),
         palmTree(decor, -18, 3, 12, [-1, 1], 0.9), palmTree(decor, 24, -1, 9, [1, 0], 1.8), palmTree(decor, -27, 4, 11, [-1, 0], 2.7),
-        palmTree(decor, 33, -1, 11, [1, 1], 0.6), palmTree(decor, 42, 6, 10, [1, 0], 3.1), palmTree(decor, -36, 8, 10, [-1, 1], 1.1),
+        palmTree(decor, 40, -2, 11, [1, 1], 0.6), palmTree(decor, 42, 6, 10, [1, 0], 3.1), palmTree(decor, -36, 8, 10, [-1, 1], 1.1),
         palmTree(decor, -8, 27, 9, [-1, 0], 1.3), palmTree(decor, 8, 27, 9, [1, 0], 2.5),
-        palmTree(decor, 53, 1, 11, [1, -1], 1.6), palmTree(decor, 62, 7, 10, [1, 0], 0.2), palmTree(decor, -47, 2, 11, [-1, -1], 2.3),
+        palmTree(decor, 52, 7, 11, [1, -1], 1.6), palmTree(decor, 62, 7, 10, [1, 0], 0.2), palmTree(decor, -47, 2, 11, [-1, -1], 2.3),
         palmTree(decor, -57, 9, 10, [-1, 0], 0.8)
     ];
     palms.forEach(p => island.add(p.crown));
@@ -2446,9 +2674,11 @@ function start() {
         return (r > 18 && r < RESORT.r2 + 6 && Math.abs(a) < 32 * DEG) || Math.hypot(i + 24, k - 19) < 5 || nearPond(i, k, 3) ||
             (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3) || inRect(CAR_PARK, i, k, 4) || (i > -16 && k < 60);
     });
-    // Along the beach: a lifeguard's chair to the left, beach huts to the right
+    // Along the beach: a lifeguard's chair to the left; to the right the café, and a game of volleyball
     lifeguardChair(decor, -18, -2);
-    [[27, '#5fb0e0'], [31, '#f4a6b8'], [35, '#ffd166'], [39, '#7fd1b9']].forEach(([i, hex]) => beachHut(decor, i, 8, hex));
+    beachCafe(decor, glow);
+    const volley = beachVolleyball(decor);
+    island.add(volley.group);
     // Over the grass to the right: tulips, a picnic under an oak and the windmill on its hill; the pond, in the
     // forest at the back left
     tulipField(decor);
@@ -2713,6 +2943,7 @@ function start() {
         water.update(clock);
         life.update(clock);
         pod.update(clock);
+        volley.update(clock);
         sea.uniforms.time.value = clock;
         foamMaterials.forEach((m, n) => { m.opacity = 0.55 + 0.3 * Math.sin(clock * 1.3 - n * 1.4) - n * 0.15; });
         animatePeople(clock);
