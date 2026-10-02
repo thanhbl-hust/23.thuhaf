@@ -2,10 +2,11 @@
 // An island built entirely from blocks, in a sea of blocks that runs to the horizon, with the two of us lying
 // on two loungers under a beach umbrella at sunset, holding hands, our little dog beside her: a bay with a
 // jetty and a boat, palms, beach huts and a lifeguard's chair along the sand, a cottage with a garden, a
-// campfire, a swing, a white resort hotel like Vinpearl Ha Long with its pool at the back, a forest round a
-// pond with ducks and a little bridge, a field of tulips, and a windmill. Waves roll into the bay and break on
-// the beach, and near it the water is clear, with fish and a turtle over the sand. Out at sea are small
-// islands, the lighthouse on its rock, ships big and small, leaping dolphins and far-off hills; above, a
+// campfire, a swing, a white resort hotel like Vinpearl Ha Long with its pool at the back and a car park
+// behind it, a pickleball court, a forest round a pond with ducks and a little bridge, a field of tulips, and
+// a windmill. Waves roll into the bay and break on the beach, and near it the water is clear, with fish and a
+// turtle over the sand. Out at sea are a yacht at anchor off the bay, small islands, the lighthouse on its
+// rock, ships big and small, leaping dolphins and far-off hills; above, a
 // hot-air balloon, clouds and gulls. Like a photo, it is sharp round us and softer and hazier the further away
 // things are.
 // The camera always looks at the two of us: drag to turn it round or up and down, scroll or pinch to zoom.
@@ -48,6 +49,7 @@ const COLORS = {
     glass: '#7fa9c8',
     glassDark: '#4f6f8c',
     slate: '#5d6b7d',
+    roofFlat: '#97a3b3',
     foam: '#f4fbff',
     footprint: '#d8c08f',
     wood: '#a8794e',
@@ -534,7 +536,8 @@ const FACES = [
 
 const ID = {
     sand: 1, sandDeep: 2, sandstone: 3, dirt: 4, stone: 5, stoneDark: 6, seabed: 7, grass: 8, grassDark: 9, path: 10, rock: 11, pond: 12,
-    deck: 13, pool: 14, wall: 15, trim: 16, glass: 17, glassDark: 18, slate: 19, seabedDeep: 20, seabedDark: 21
+    deck: 13, pool: 14, wall: 15, trim: 16, glass: 17, glassDark: 18, slate: 19, seabedDeep: 20, seabedDark: 21,
+    roofFlat: 22
 };
 const PALETTE = [];
 for (const [name, id] of Object.entries(ID)) PALETTE[id] = color(COLORS[name]);
@@ -594,11 +597,11 @@ class VoxelGrid {
 // ----- The island -----
 // Columns of blocks: i across, k from the front (the bay, toward the sun) to the back, levels up, all in
 // blocks. We lie on two loungers near the front with the bay before us; behind us the beach rises to grass,
-// a cottage and its garden, and at the back the resort with its pool; to the left is a forest round a pond, to
-// the right beach huts, a field of tulips and a windmill on its own hill; the beach ends in rocks at the front
-// left. The island rises out of a sea that runs to the horizon, so its blocks only go a little way below the
+// a cottage and its garden, and at the back the resort with its pool and its car park behind it; to the left
+// is a forest round a pond, to the right beach huts, a field of tulips, a windmill on its own hill and a
+// pickleball court; the beach ends in rocks at the front left. The island rises out of a sea that runs to the horizon, so its blocks only go a little way below the
 // water.
-const ISLAND = { ci: 0, ck: 9, ri: 46, rk: 36 };
+const ISLAND = { ci: 0, ck: 20, ri: 64, rk: 48 };
 const ROCK = { i: -31, k: -13 };
 // The lighthouse's rock, out in the sea beyond the bay (in world units)
 const LIGHTHOUSE = { x: -22, z: -27 };
@@ -610,9 +613,13 @@ const POND = { i: -26, k: 30, ri: 6.5, rk: 4 };
 // whose wings curve round toward the sea, stepping down from its tall middle. Its curve is round block
 // (ci, ck): the facade r1 blocks out from there and the back r2, the wings reaching `wing` degrees either side;
 // the paved terrace in front starts `terrace` blocks out, at the grass's level `ground`
-const RESORT = { ci: 0, ck: 2, r1: 32, r2: 38, wing: 28, terrace: 22, ground: 2 };
+const RESORT = { ci: 0, ck: 2, r1: 32, r2: 46, wing: 28, terrace: 22, ground: 2 };
 const DEG = Math.PI / 180;
 const TULIPS = { i0: 14, i1: 29, k0: 16, k1: 26 };
+// The pickleball court in its fence on the grass to the right, and the car park behind the resort
+const COURT = { i0: 41, i1: 54, k0: 14, k1: 39 };
+const CAR_PARK = { i0: -16, i1: 16, k0: 49, k1: 60 };
+const inRect = (r, i, k, margin = 0) => i >= r.i0 - margin && i <= r.i1 + margin && k >= r.k0 - margin && k <= r.k1 + margin;
 
 // 0 at the middle of the island, 1 at its edge
 function islandRadius(i, k) {
@@ -673,6 +680,8 @@ function topLevel(i, k) {
     // The resort's terrace is level with the grass, its pool and the pond a block lower
     if (onTerrace(i, k)) return inPool(i, k) ? 1 : RESORT.ground;
     if (isPond(i, k)) return 1;
+    // The court and the car park are level, and so is a strip of grass round them
+    if (inRect(COURT, i, k, 1) || inRect(CAR_PARK, i, k, 1)) return 2;
     const mill = Math.round(3.4 * Math.exp(-((i - MILL.i) ** 2 + (k - MILL.k) ** 2) / 60));
     const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && !nearPond(i, k, 2) && hash(i, k, 1) > 0.8 ? 1 : 0;
     return 2 + mill + bump;
@@ -706,10 +715,10 @@ const clearWater = (i, k) => insideIsland(i, k) && isWater(i, k) && topLevel(i, 
     [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([a, c]) => insideIsland(i + a, k + c));
 
 function buildIsland() {
-    const grid = new VoxelGrid(-56, 56, -6, 10, -36, 54);
+    const grid = new VoxelGrid(-62, 71, -6, 10, -32, 67);
     const columns = [];
-    for (let i = -55; i <= 55; i++) {
-        for (let k = -35; k <= 53; k++) {
+    for (let i = -61; i <= 70; i++) {
+        for (let k = -31; k <= 66; k++) {
             if (!insideIsland(i, k)) continue;
             const top = topLevel(i, k);
             if (isWater(i, k)) {
@@ -730,19 +739,23 @@ function buildIsland() {
 
 // The resort's hotel, in white blocks. Every floor has a white balcony rail along the front with the windows
 // set back behind it and piers between the rooms; the ground floor is an arcade; a cornice runs under the
-// roof. The wings have grey mansard roofs with dormer windows, the tower in the middle stands forward and is
-// taller, with a rounded vault for a roof and a big arched window in its front. Also returns how high it
-// reaches over each block, to keep the camera above it
+// roof. The ends of the wings and the back have rows of windows too, with the door from the car park in the
+// middle of the back. The wings have grey mansard roofs rising in steps to a paler flat top, with dormer
+// windows on both slopes; the tower in the middle stands forward and is taller, with a rounded vault for a
+// roof and a big arched window in its front. Also returns how high it reaches over each block, to keep the
+// camera above it
 function buildResort() {
     const { r1, r2, ground: g } = RESORT, wing = RESORT.wing * DEG;
-    const grid = new VoxelGrid(-22, 22, g, g + 22, 24, 44), roofTop = new Map();
-    for (let i = -22; i <= 22; i++) {
-        for (let k = 24; k <= 44; k++) {
+    const grid = new VoxelGrid(-23, 23, g, g + 22, 24, 49), roofTop = new Map();
+    for (let i = -23; i <= 23; i++) {
+        for (let k = 24; k <= 49; k++) {
             const { r, a, u } = resortAt(i, k), along = Math.abs(u);
             const tower = along <= 3.2, front = tower ? r1 - 1 : r1, d = r - front;
             if (Math.abs(a) > wing || d < 0 || r > r2) continue;
             const floors = tower ? 7 : along <= 7.5 ? 6 : 6 - Math.ceil((along - 7.5) / 3.2);
             const walls = g + floors * 2, back = r2 - r < 1, pier = Math.floor(u + 99) % 3 === 0;
+            // How far in from the end of its wing, and whether this is between the windows there
+            const fromEnd = (wing - Math.abs(a)) * r, endPier = Math.floor(d + 99) % 3 === 0;
             let highest = 0;
             const put = (j, id) => {
                 if (!id) return;
@@ -753,15 +766,17 @@ function buildResort() {
                 const floor = Math.floor((j - g) / 2), upper = (j - g) % 2 === 1;
                 if (d < 1) put(j, j === walls - 1 ? ID.trim : floor === 0 ? (pier ? ID.trim : 0) : !upper ? ID.trim : pier || (tower && along > 2.4) ? ID.wall : 0);
                 else if (d < 2) put(j, floor === 0 ? ID.glassDark : pier ? ID.wall : ID.glass);
-                else put(j, back && upper && !pier ? ID.glass : ID.wall);
+                else if (floor === 0 && back && along < 1.6) put(j, ID.glassDark);
+                else put(j, upper && (back ? !pier : fromEnd < 1 && !endPier) ? ID.glass : ID.wall);
             }
             if (tower) {
                 const rise = Math.round(3.5 * Math.sqrt(Math.max(0, 1 - (u / 3.8) ** 2)));
                 for (let q = 0; q < rise; q++) put(walls + q, d >= 1 ? ID.slate : along < 1.2 && q < 2 ? ID.glass : ID.trim);
             } else {
-                const depth = r2 - front;
-                if (d >= 1 && d < depth - 1) put(walls, d < 2 && Math.floor(u + 99) % 3 === 1 ? ID.glass : ID.slate);
-                if (d >= 2 && d < depth - 2) put(walls + 1, ID.slate);
+                const depth = r2 - front, dormer = Math.floor(u + 99) % 3 === 1;
+                for (let q = 0; q < 3; q++) {
+                    if (d >= 1 + q && d < depth - 1 - q && fromEnd >= q) put(walls + q, q === 0 && dormer && (d < 2 || d >= depth - 2) ? ID.glass : q === 2 ? ID.roofFlat : ID.slate);
+                }
             }
             roofTop.set(`${i},${k}`, highest);
         }
@@ -806,6 +821,11 @@ function resortDetails(b, glow) {
         b.box(0.5, 0.08, 0.5, x, y + 1.08, z, '#ffffff');
     });
     [[-2, 15], [2, 15], [-2, 20], [2, 20]].forEach(([i, k]) => lampPost(b, glow, i, k));
+    // Over the door at the back, from the car park, a canopy on white columns
+    const back = (ck + r2 + 0.5) * B, y = g * B;
+    b.box(1.7, 0.08, 1.0, 0, y + 0.8, back + 0.5, '#ffffff', { outline: true });
+    [-0.75, 0.75].forEach(x => b.box(0.08, 0.76, 0.08, x, y + 0.38, back + 0.9, '#ffffff'));
+    glow.box(0.5, 0.03, 0.3, 0, y + 0.75, back + 0.4, COLORS.glow);
 }
 
 // On the sand under the clear water: shells, starfish and pebbles, and where it's deep enough for them, tufts of
@@ -899,11 +919,11 @@ function sealife() {
     return { meshes: [bodies, tails, turtle], update };
 }
 
-// Two dolphins out beyond the bay that leap one after the other every few seconds, splashing as they come out
-// of the water and go back in
+// Two dolphins at the mouth of the bay, in front of the yacht, that leap one after the other every few seconds,
+// splashing as they come out of the water and go back in
 function dolphins() {
     const group = new THREE.Group(), PERIOD = 8, LEAP = 1.8, REACH = 3.4, HEIGHT = 1.6;
-    const pod = [[-9, -16, 0], [-12, -18.5, 1.1]].map(([x, z, delay]) => {
+    const pod = [[-3, -9.5, 0], [-6, -11, 1.1]].map(([x, z, delay]) => {
         const body = new THREE.Group(), b = new Blocks(), grey = '#5f7f99';
         body.rotation.order = 'YXZ';
         b.box(0.3, 0.28, 1.0, 0, 0, 0, grey, { outline: true });
@@ -1596,10 +1616,105 @@ function picnic(b, i, k) {
 }
 
 // A forest of pines over the back left of the island
+// The pickleball court on the grass to the right: a blue court with its white lines and the kitchen either side
+// of the net, a green surround in a fence with a green windscreen and a gate, lights at the corners, and a
+// bench with two paddles and a ball
+function pickleball(b, glow) {
+    const { i0, i1, k0, k1 } = COURT, y = ground(i0, k0);
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B;
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, W = 8 * B, L = 18 * B, kitchen = 3 * B, line = 0.035, white = '#f7f7f2';
+    b.box(x1 - x0, 0.03, z1 - z0, cx, y + 0.015, cz, '#3f8a5c');
+    b.box(W, 0.03, L, cx, y + 0.03, cz, '#2f6fb0');
+    b.box(W, 0.03, kitchen * 2, cx, y + 0.035, cz, '#3f86c6');
+    const top = y + 0.056;
+    [-1, 1].forEach(side => {
+        b.box(line, 0.012, L, cx + side * W / 2, top, cz, white);
+        b.box(W + line, 0.012, line, cx, top, cz + side * L / 2, white);
+        b.box(W, 0.012, line, cx, top, cz + side * kitchen, white);
+        b.box(line, 0.012, L / 2 - kitchen, cx, top, cz + side * (kitchen + (L / 2 - kitchen) / 2), white);
+    });
+    // The net
+    [-1, 1].forEach(side => b.box(0.06, 0.4, 0.06, cx + side * (W / 2 + 0.15), y + 0.2, cz, '#2b2f36'));
+    b.box(W + 0.3, 0.24, 0.015, cx, y + 0.2, cz, '#39414c');
+    b.box(W + 0.3, 0.04, 0.03, cx, y + 0.34, cz, white);
+    // The fence: posts, a rail along the top, and a green windscreen along the bottom, with a gate toward the
+    // resort
+    const fence = '#2d4a3a', screen = '#2f6b4a', gate = 1.2;
+    const run = (ax, az, bx, bz) => {
+        const length = Math.hypot(bx - ax, bz - az), along = bx !== ax;
+        const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+        b.box(along ? length : 0.04, 0.04, along ? 0.04 : length, mx, y + 0.95, mz, fence);
+        b.box(along ? length : 0.03, 0.55, along ? 0.03 : length, mx, y + 0.33, mz, screen);
+        for (let n = 0, posts = Math.max(1, Math.round(length / (2 * B))); n <= posts; n++) {
+            b.box(0.06, 0.97, 0.06, ax + (bx - ax) * n / posts, y + 0.485, az + (bz - az) * n / posts, fence);
+        }
+    };
+    run(x0, z0, x1, z0);
+    run(x0, z1, x1, z1);
+    run(x1, z0, x1, z1);
+    run(x0, z0, x0, cz - gate / 2);
+    run(x0, cz + gate / 2, x0, z1);
+    // Lights over the corners, leaning in over the court
+    [[x0, z0, 1, 1], [x1, z0, -1, 1], [x0, z1, 1, -1], [x1, z1, -1, -1]].forEach(([x, z, sx, sz]) => {
+        b.box(0.07, 1.9, 0.07, x + sx * 0.12, y + 0.95, z + sz * 0.12, '#3b3f45');
+        b.box(0.3, 0.06, 0.06, x + sx * 0.25, y + 1.88, z + sz * 0.12, '#3b3f45');
+        glow.box(0.18, 0.05, 0.14, x + sx * 0.36, y + 1.84, z + sz * 0.16, COLORS.glow);
+    });
+    // A bench inside the fence by the gate, two paddles on it and a ball on the court
+    const bx = x0 + 0.3, bz = cz + gate / 2 + 0.7;
+    b.box(0.26, 0.05, 0.9, bx, y + 0.24, bz, COLORS.woodLight);
+    [-0.35, 0.35].forEach(dz => b.box(0.22, 0.22, 0.05, bx, y + 0.11, bz + dz, '#3b3f45'));
+    [['#e8455a', -0.18], ['#ffd166', 0.18]].forEach(([hex, dz]) => {
+        b.box(0.16, 0.02, 0.2, bx, y + 0.275, bz + dz, hex);
+        b.box(0.04, 0.02, 0.12, bx + 0.12, y + 0.275, bz + dz, '#2b2f36');
+    });
+    b.box(0.06, 0.06, 0.06, cx + 0.5, y + 0.08, cz + L / 2 - 0.6, '#d7f24a');
+}
+
+// A little car, nose toward +z before it is turned by `heading`, its wheels on the ground at y, with a dark
+// patch of shade under it
+function car(b, x, y, z, heading, hex) {
+    const t = turned(b, new THREE.Vector3(x, y, z), [0, heading, 0]), W = 0.7, L = 1.5, glass = '#2a3440';
+    t(W + 0.08, 0.004, L + 0.1, x, y + 0.002, z, '#2b2e33');
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => t(0.12, 0.24, 0.24, x + sx * (W / 2 - 0.04), y + 0.12, z + sz * 0.47, '#1d1f22'));
+    t(W, 0.22, L, x, y + 0.23, z, hex);
+    t(W - 0.08, 0.2, 0.8, x, y + 0.44, z - 0.08, glass);
+    t(W - 0.1, 0.05, 0.7, x, y + 0.565, z - 0.1, hex);
+    [-1, 1].forEach(side => {
+        t(0.14, 0.06, 0.02, x + side * 0.22, y + 0.28, z + L / 2 + 0.005, '#fff6d8');
+        t(0.14, 0.06, 0.02, x + side * 0.22, y + 0.28, z - L / 2 - 0.005, '#d23a3a');
+    });
+    [-1, 1].forEach(end => t(W + 0.02, 0.06, 0.06, x, y + 0.15, z + end * (L / 2 + 0.01), '#2b2e33'));
+}
+
+// The car park behind the resort: asphalt with a kerb round it, a row of spaces marked in white along the back
+// with cars in most of them, a car waiting at the door, a sign with a P, and lamps
+function carPark(b, glow) {
+    const { i0, i1, k0, k1 } = CAR_PARK, y = ground(0, k0), surface = y + 0.03;
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cx = (x0 + x1) / 2;
+    b.box(x1 - x0, 0.03, z1 - z0, cx, y + 0.015, (z0 + z1) / 2, '#50555d');
+    b.box(x1 - x0 + 0.2, 0.08, 0.1, cx, y + 0.04, z1 + 0.05, '#d9d4c7');
+    [x0 - 0.05, x1 + 0.05].forEach(x => b.box(0.1, 0.08, z1 - z0, x, y + 0.04, (z0 + z1) / 2, '#d9d4c7'));
+    const spaces = Math.floor((i1 - i0 + 1) / 3), deep = 5 * B, zs = z1 - deep;
+    for (let n = 0; n <= spaces; n++) b.box(0.035, 0.012, deep, x0 + n * 3 * B, surface + 0.006, zs + deep / 2, '#f7f7f2');
+    b.box(x1 - x0, 0.012, 0.035, cx, surface + 0.006, zs, '#f7f7f2');
+    const colours = ['#f4f4f4', '#1f2329', '#c8453b', '#b8bec6', '#2f6fb0', '#f4f4f4', '#e8b93a', '#3f8a5c', '#b8bec6'];
+    [0, 1, 3, 4, 5, 7, 8, 10].forEach((n, m) => car(b, x0 + (n + 0.5) * 3 * B, surface, zs + deep / 2 + 0.05, 0, colours[m]));
+    car(b, 1.1, surface, (RESORT.ck + RESORT.r2 + 1.6) * B, -Math.PI / 2, colours[8]);
+    // The sign at the corner, a white P on blue on both sides
+    const sx = x0 + 0.2, sz = z0 + 0.2, sy = y + 1.05;
+    b.box(0.06, 1.05, 0.06, sx, y + 0.52, sz, '#8d97a1');
+    b.box(0.46, 0.46, 0.04, sx, sy, sz, '#2f6fb0');
+    ['XXX.', 'X..X', 'XXX.', 'X...', 'X...'].forEach((row, r) => [...row].forEach((ch, c) => {
+        if (ch === 'X') [-1, 1].forEach(side => b.box(0.06, 0.06, 0.012, sx + (c - 1.5) * 0.06, sy + (2 - r) * 0.06, sz + side * 0.024, '#ffffff'));
+    }));
+    [-11, 0, 11].forEach(i => lampPost(b, glow, i, k1 + 1));
+}
+
 function forest(b, keepClear) {
     const rand = random(71), placed = [];
-    for (let n = 0; n < 120 && placed.length < 18; n++) {
-        const i = Math.round(-47 + rand() * 30), k = Math.round(18 + rand() * 28);
+    for (let n = 0; n < 220 && placed.length < 30; n++) {
+        const i = Math.round(-58 + rand() * 42), k = Math.round(16 + rand() * 42);
         if (islandRadius(i, k) > 0.9 || !isGrass(i, k) || keepClear(i, k)) continue;
         if (placed.some(([a, c]) => Math.hypot(a - i, c - k) < 4)) continue;
         placed.push([i, k]);
@@ -1613,7 +1728,8 @@ function islandDetails(b, columns) {
         const y = top * B;
         const busy = (i >= GARDEN.i0 - 1 && i <= GARDEN.i1 + 1 && k >= GARDEN.k0 - 1 && k <= GARDEN.k1 + 1) || onPath(i, k) ||
             (i >= TULIPS.i0 - 1 && i <= TULIPS.i1 + 1 && k >= TULIPS.k0 - 1 && k <= TULIPS.k1 + 1) ||
-            nearPond(i, k, 1.5) || Math.hypot(i - MILL.i, k - MILL.k) < 3 || onTerrace(i, k) || onResortPath(i, k);
+            nearPond(i, k, 1.5) || Math.hypot(i - MILL.i, k - MILL.k) < 3 || onTerrace(i, k) || onResortPath(i, k) ||
+            inRect(COURT, i, k, 1) || inRect(CAR_PARK, i, k, 1);
         // Grass tufts and flowers on the grassy part
         if (isGrass(i, k) && !busy && hash(i, k, 5) > 0.82) {
             for (let n = 0; n < 2; n++) {
@@ -1758,8 +1874,57 @@ function fishingBoat() {
     return b;
 }
 
-// The ships with how they sail: straight across the sea, coming round again, or round and round in a ring.
-// `course(t)` gives where each is at time t and which way it heads
+// A white motor yacht at anchor: a long hull with a navy waterline and a gold line along it and portholes, two
+// decks of dark windows, a flybridge under a hardtop with the radar and a mast, a teak aft deck and a swim
+// platform, a sunpad on the bow, the anchor chain going down in front and a flag at the stern. Some of its
+// windows and its lights are lit; those go in `lights`
+function yacht() {
+    const b = new Blocks(), lights = new Blocks(), L = 7.2, W = 1.8, white = '#f7f7f5', dark = '#24303d', teak = '#b07a4a', cream = '#efe6d2', rail = '#dcdcdc';
+    hull(b, L, W, 1.05, white, '#1f3d6b');
+    const main = L * 0.8;
+    b.box(W + 0.03, 0.05, main + 0.02, 0, 0.56, -L / 2 + main / 2, '#c9a14a');
+    for (let n = 0; n < 6; n++) (n % 3 === 1 ? lights : b).box(W + 0.03, 0.08, 0.16, 0, 0.36, -2.6 + n * 0.8, n % 3 === 1 ? COLORS.glow : dark);
+    // Decks: teak aft with a sofa across it, the swim platform, the sunpad on the bow
+    b.box(W - 0.16, 0.03, 1.3, 0, 0.765, -L / 2 + 0.75, teak);
+    b.box(W - 0.3, 0.14, 0.3, 0, 0.85, -L / 2 + 0.3, cream);
+    b.box(W - 0.2, 0.08, 0.45, 0, 0.12, -L / 2 - 0.2, teak);
+    b.box(0.9, 0.08, 1.0, 0, 0.79, 2.4, cream);
+    // The main deck's cabin and the upper deck's on it, each with a band of windows and a step down in front
+    b.box(W - 0.3, 0.58, 3.8, 0, 1.04, -0.3, white);
+    b.box(W - 0.28, 0.28, 3.4, 0, 1.08, -0.4, dark);
+    b.box(W - 0.3, 0.3, 0.4, 0, 0.9, 1.8, white);
+    b.box(W - 0.28, 0.12, 0.3, 0, 1.0, 1.78, dark);
+    b.box(W - 0.5, 0.48, 2.6, 0, 1.57, -0.6, white);
+    b.box(W - 0.48, 0.22, 2.2, 0, 1.6, -0.55, dark);
+    b.box(W - 0.5, 0.25, 0.35, 0, 1.45, 0.88, white);
+    [-1.5, 0.3].forEach(z => lights.box(W - 0.26, 0.2, 0.5, 0, 1.08, z, COLORS.glow));
+    lights.box(W - 0.46, 0.15, 0.45, 0, 1.6, -1.25, COLORS.glow);
+    // The flybridge: seats under a hardtop on posts, the radar dome and a mast with the radar bar
+    b.box(0.9, 0.12, 0.3, 0, 1.87, -1.45, cream);
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => b.box(0.05, 0.45, 0.05, sx * 0.55, 2.04, -0.7 + sz * 0.7, white));
+    b.box(1.3, 0.07, 1.7, 0, 2.29, -0.7, white);
+    b.box(0.26, 0.1, 0.26, 0, 2.38, -0.9, white);
+    b.box(0.04, 0.55, 0.04, 0, 2.6, -1.3, rail);
+    b.box(0.5, 0.03, 0.06, 0, 2.62, -1.3, dark);
+    lights.box(0.06, 0.06, 0.06, 0, 2.9, -1.3, '#ffffff');
+    [[1, '#ff4a4a'], [-1, '#4aff7a']].forEach(([side, hex]) => lights.box(0.04, 0.06, 0.1, side * (W / 2 - 0.24), 1.42, 0.95, hex));
+    // Rails round the aft deck and the bow, on little posts
+    [-1, 1].forEach(side => {
+        [[1.3, W / 2 - 0.05, -L / 2 + 0.75], [0.65, 0.62, 2.375]].forEach(([length, x, z]) => {
+            b.box(0.03, 0.03, length, side * x, 1.02, z, rail);
+            [-1, 0, 1].forEach(n => b.box(0.025, 0.25, 0.025, side * x, 0.88, z + n * length * 0.45, rail));
+        });
+    });
+    // The anchor chain and the flag
+    b.box(0.03, 0.03, 0.9, 0, 0.22, 3.85, '#3b3f45', { rot: [0.75, 0, 0] });
+    b.box(0.03, 0.6, 0.03, 0, 1.05, -L / 2 + 0.06, rail);
+    b.box(0.02, 0.24, 0.36, 0, 1.22, -L / 2 - 0.12, '#da251d');
+    b.box(0.03, 0.07, 0.07, 0, 1.22, -L / 2 - 0.12, '#ffde00');
+    return { b, lights };
+}
+
+// The ships with how they sail: straight across the sea, coming round again, round and round in a ring, or
+// at anchor. `course(t)` gives where each is at time t and which way it heads
 function fleet() {
     const across = (z, x0, x1, speed, start) => t => {
         const span = Math.abs(x1 - x0), along = (((start + t * speed) % span) + span) % span;
@@ -1769,16 +1934,20 @@ function fleet() {
         const a = start + t * speed;
         return [x + Math.cos(a) * radius, z + Math.sin(a) * radius, speed > 0 ? -a : Math.PI - a];
     };
+    const anchored = (x, z, heading) => () => [x, z, heading];
+    const superyacht = yacht();
     return [
+        [superyacht.b, anchored(-8.5, -13.5, 2.25), 0.03, 0.008, superyacht.lights],
         [containerShip(), across(-135, 200, -700, 1.8, 260), 0.06, 0.006],
         [cruiseShip(), across(-105, -420, 160, 1.5, 230), 0.07, 0.008],
         [sailboat('#3d8fd1', '#f4a6b8'), ring(-34, -58, 9, 0.04, 0.6), 0.12, 0.05],
         [sailboat('#e8455a', '#ffd166'), ring(-10, -50, 7, -0.05, 2.1), 0.12, 0.05],
         [fishingBoat(), ring(-34, -32, 5, 0.03, 4), 0.1, 0.04]
-    ].map(([blocks, course, bob, roll], n) => {
+    ].map(([blocks, course, bob, roll, lights], n) => {
         const ship = new THREE.Group();
         ship.rotation.order = 'YXZ';
         ship.add(blocks.mesh(blockMaterial, { shadow: false }));
+        if (lights) ship.add(lights.mesh(new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }), { shadow: false }));
         return { ship, course, bob, roll, phase: n * 1.9 };
     });
 }
@@ -2263,10 +2432,12 @@ function start() {
     const resort = buildResort();
     island.add(resort.mesh);
     resortDetails(decor, glow);
+    carPark(decor, glow);
+    pickleball(decor, glow);
     forest(decor, (i, k) => {
         const { r, a } = resortAt(i, k);
-        return (r > 18 && r < 42 && Math.abs(a) < 32 * DEG) || Math.hypot(i + 24, k - 19) < 5 || nearPond(i, k, 3) ||
-            (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3);
+        return (r > 18 && r < RESORT.r2 + 6 && Math.abs(a) < 32 * DEG) || Math.hypot(i + 24, k - 19) < 5 || nearPond(i, k, 3) ||
+            (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3) || inRect(CAR_PARK, i, k, 4);
     });
     // Along the beach: a lifeguard's chair to the left, beach huts to the right
     lifeguardChair(decor, -18, -2);
@@ -2280,7 +2451,7 @@ function start() {
     island.add(millSails);
     // Out at sea: the small islands and the lighthouse, white water round every coast, and far-off hills
     const foamRings = [new Blocks(), new Blocks()], landMeshes = [];
-    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -57, 57, -37, 55);
+    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -63, 72, -33, 68);
     seaIslands(landMeshes, decor, glow, foamRings);
     landMeshes.push(
         farLand(-470, -177, 1.2, 26, 10, 6, 7, 1), farLand(97, -520, -0.2, 24, 9, 5, 7, 2), farLand(230, 330, 0.6, 32, 10, 7, 7, 3));
