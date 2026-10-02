@@ -1,10 +1,11 @@
 // ===== OPENING SCENE =====
 // An island built entirely from blocks, in a sea of blocks that runs to the horizon, with the two of us lying
 // on two loungers under a beach umbrella at sunset, holding hands, our little dog beside her: a bay with a
-// jetty and a boat, palms, a lifeguard's chair, a beach café and a volleyball court along the sand, a
-// cottage with a garden, a
+// jetty and a boat, palms, a lifeguard's chair, an outdoor gym, a beach café and a volleyball court along the
+// sand, a cottage with a garden, a
 // campfire, a swing, a white resort hotel like Vinpearl Ha Long with its pool at the back and a car park
-// behind it, pickleball and tennis courts, a forest round a pond with ducks and a little bridge, a field of tulips, and
+// behind it and a football pitch behind that, pickleball and tennis courts, a forest with a helipad in it
+// and a pond with ducks and a little bridge, a field of tulips, and
 // a windmill. Waves roll into the bay and break on the beach, and near it the water is clear, with fish and a
 // turtle over the sand. Out at sea are a yacht at anchor off the bay, small islands, the lighthouse on its
 // rock, ships big and small, leaping dolphins and far-off hills; above, a
@@ -598,11 +599,12 @@ class VoxelGrid {
 // ----- The island -----
 // Columns of blocks: i across, k from the front (the bay, toward the sun) to the back, levels up, all in
 // blocks. We lie on two loungers near the front with the bay before us; behind us the beach rises to grass,
-// a cottage and its garden, and at the back the resort with its pool and its car park behind it; to the left
-// is a forest round a pond, to the right a beach café and a volleyball court on the sand, a field of tulips, a
+// a cottage and its garden, and at the back the resort with its pool, its car park and a football pitch
+// behind it; to the left an outdoor gym on the sand and a forest round a pond with a helipad in a clearing,
+// to the right a beach café and a volleyball court on the sand, a field of tulips, a
 // windmill on its own hill, and pickleball and tennis courts; the beach ends in rocks at the front left. The island rises
 // out of a sea that runs to the horizon, so its blocks only go a little way below the water.
-const ISLAND = { ci: 0, ck: 30, ri: 80, rk: 58 };
+const ISLAND = { ci: 0, ck: 42, ri: 96, rk: 70 };
 const ROCK = { i: -31, k: -13 };
 // The lighthouse's rock, out in the sea beyond the bay (in world units)
 const LIGHTHOUSE = { x: -22, z: -27 };
@@ -621,6 +623,11 @@ const TULIPS = { i0: 14, i1: 29, k0: 16, k1: 26 };
 // behind the resort
 const COURT = { i0: 41, i1: 54, k0: 14, k1: 39 };
 const TENNIS = { i0: 58, i1: 75, k0: 14, k1: 47 };
+// The football pitch behind the car park, as wide as the resort; the helipad in a clearing in the forest; the
+// outdoor gym on the sand to the left
+const PITCH = { i0: -21, i1: 21, k0: 64, k1: 91 };
+const HELIPAD = { i0: -70, i1: -58, k0: 40, k1: 52 };
+const GYM = { i0: -55, i1: -42, k0: -3, k1: 3 };
 const CAR_PARK = { i0: -16, i1: 16, k0: 49, k1: 60 };
 // On the beach to the right: the café on its deck, and the volleyball court further along
 const CAFE = { i0: 26, i1: 38, k0: 0, k1: 10 };
@@ -684,13 +691,13 @@ function topLevel(i, k) {
     if (k < s) return -1 - Math.min(Math.floor((s - 1 - k) / 2), 5);
     // The café's deck is level with the top of the beach, the volleyball court with the bottom
     if (inRect(CAFE, i, k)) return 2;
-    if (inRect(VOLLEY, i, k, 1)) return 1;
+    if (inRect(VOLLEY, i, k, 1) || inRect(GYM, i, k, 1)) return 1;
     if (!isGrass(i, k)) return k - s > 10 ? 2 : 1;
     // The resort's terrace is level with the grass, its pool and the pond a block lower
     if (onTerrace(i, k)) return inPool(i, k) ? 1 : RESORT.ground;
     if (isPond(i, k)) return 1;
-    // The courts and the car park are level, and so is a strip of grass round them
-    if (inRect(COURT, i, k, 1) || inRect(TENNIS, i, k, 1) || inRect(CAR_PARK, i, k, 1)) return 2;
+    // The courts, the car park, the pitch and the helipad are level, and so is a strip of grass round them
+    if ([COURT, TENNIS, CAR_PARK, PITCH, HELIPAD].some(r => inRect(r, i, k, 2))) return 2;
     const mill = Math.round(3.4 * Math.exp(-((i - MILL.i) ** 2 + (k - MILL.k) ** 2) / 60));
     const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && !nearPond(i, k, 2) && hash(i, k, 1) > 0.8 ? 1 : 0;
     return 2 + mill + bump;
@@ -724,10 +731,10 @@ const clearWater = (i, k) => insideIsland(i, k) && isWater(i, k) && topLevel(i, 
     [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([a, c]) => insideIsland(i + a, k + c));
 
 function buildIsland() {
-    const grid = new VoxelGrid(-77, 88, -6, 10, -32, 87);
+    const grid = new VoxelGrid(-92, 106, -6, 10, -32, 111);
     const columns = [];
-    for (let i = -76; i <= 87; i++) {
-        for (let k = -31; k <= 86; k++) {
+    for (let i = -91; i <= 105; i++) {
+        for (let k = -31; k <= 110; k++) {
             if (!insideIsland(i, k)) continue;
             const top = topLevel(i, k);
             if (isWater(i, k)) {
@@ -1646,17 +1653,24 @@ function beachgoer(b, x, y, z, turn, look, sitting) {
     }
 }
 
-// Words in little square pixels, three wide and five high, on a sign facing -z, centred on (x, y)
+// Words in little square pixels, five high and mostly three wide, on a sign facing -z, centred on (x, y)
 const PIXEL_FONT = {
     C: ['XXX', 'X..', 'X..', 'X..', 'XXX'], O: ['XXX', 'X.X', 'X.X', 'X.X', 'XXX'],
-    F: ['XXX', 'X..', 'XX.', 'X..', 'X..'], E: ['XXX', 'X..', 'XX.', 'X..', 'XXX']
+    F: ['XXX', 'X..', 'XX.', 'X..', 'X..'], E: ['XXX', 'X..', 'XX.', 'X..', 'XXX'],
+    G: ['XXX', 'X..', 'X.X', 'X.X', 'XXX'], Y: ['X.X', 'X.X', '.X.', '.X.', '.X.'],
+    M: ['X...X', 'XX.XX', 'X.X.X', 'X...X', 'X...X']
 };
 function pixelText(b, text, x, y, z, size, hex) {
-    const columns = text.length * 4 - 1;
-    [...text].forEach((letter, n) => PIXEL_FONT[letter].forEach((row, r) => [...row].forEach((ch, c) => {
-        // Seen from -z, left is +x
-        if (ch === 'X') b.box(size, size, 0.012, x + ((columns - 1) / 2 - (n * 4 + c)) * size, y + (2 - r) * size, z, hex);
-    })));
+    const letters = [...text].map(letter => PIXEL_FONT[letter]);
+    const columns = letters.reduce((sum, rows) => sum + rows[0].length + 1, -1);
+    let at = 0;
+    letters.forEach(rows => {
+        rows.forEach((row, r) => [...row].forEach((ch, c) => {
+            // Seen from -z, left is +x
+            if (ch === 'X') b.box(size, size, 0.012, x + ((columns - 1) / 2 - (at + c)) * size, y + (2 - r) * size, z, hex);
+        }));
+        at += rows[0].length + 1;
+    });
 }
 
 // The beach café where the beach huts were, in the dark red and cream of a Highlands Coffee: a kiosk with a
@@ -1898,6 +1912,201 @@ function tennisCourt(b, glow) {
     courtFence(b, glow, y, x0, z0, x1, z1, 1.2);
 }
 
+// The football pitch behind the car park, as wide as the resort: mown in stripes, with its white lines, the
+// centre circle and the penalty boxes, goals with nets at both ends, corner flags, the teams' dugouts along the
+// far side and floodlights at the corners, and a ball on the centre spot. It is a small pitch, a block to a
+// metre, for seven a side
+function footballPitch(b, glow) {
+    const { i0, i1, k0, k1 } = PITCH, y = ground(i0, k0), white = '#f7f7f2', line = 0.05, top = y + 0.036;
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    for (let i = i0; i <= i1; i += 3) {
+        const w = Math.min(3, i1 - i + 1) * B;
+        b.box(w, 0.03, z1 - z0, (i - 0.5) * B + w / 2, y + 0.015, cz, Math.floor((i - i0) / 3) % 2 ? '#5fae46' : '#6fbf52');
+    }
+    // The lines: a block in from the edge of the grass
+    const px0 = x0 + B, px1 = x1 - B, pz0 = z0 + B, pz1 = z1 - B, width = pz1 - pz0;
+    const ring = (x, z, radius, keep) => {
+        for (let n = 0; n < 40; n++) {
+            const a = (n / 40) * Math.PI * 2, px = x + Math.cos(a) * radius, pz = z + Math.sin(a) * radius;
+            if (keep(px, pz)) b.box(line * 1.4, 0.012, radius * Math.PI * 2 / 40 + 0.01, px, top, pz, white, { rot: [0, -a, 0] });
+        }
+    };
+    [pz0, pz1].forEach(z => b.box(px1 - px0 + line, 0.012, line, cx, top, z, white));
+    [px0, px1, cx].forEach(x => b.box(line, 0.012, width, x, top, cz, white));
+    ring(cx, cz, 6 * B, () => true);
+    b.box(0.1, 0.012, 0.1, cx, top, cz, white);
+    [[px0, 1], [px1, -1]].forEach(([gx, dir]) => {
+        // The penalty box and the goal box, the spot, and the arc outside the box
+        const box = (deep, wide) => {
+            b.box(deep, 0.012, line, gx + dir * deep / 2, top, cz - wide / 2, white);
+            b.box(deep, 0.012, line, gx + dir * deep / 2, top, cz + wide / 2, white);
+            b.box(line, 0.012, wide, gx + dir * deep, top, cz, white);
+        };
+        box(8 * B, 16 * B);
+        box(3 * B, 8 * B);
+        const spot = gx + dir * 6 * B;
+        b.box(0.08, 0.012, 0.08, spot, top, cz, white);
+        ring(spot, cz, 4 * B, px => (px - gx) * dir > 8 * B);
+        // The goal: posts and crossbar, and the net sloping back from it
+        const gw = 5 * B, gh = 2 * B, back = 0.6, gz0 = cz - gw / 2, gz1 = cz + gw / 2, bx = gx - dir * back;
+        [gz0, gz1].forEach(z => {
+            b.box(0.07, gh, 0.07, gx, y + gh / 2, z, white);
+            b.box(back, 0.04, 0.04, gx - dir * back / 2, y + 0.02, z, '#d9d9d9');
+            b.box(0.04, gh * 0.6, 0.04, bx, y + gh * 0.3, z, '#d9d9d9');
+        });
+        b.box(0.07, 0.07, gw + 0.07, gx, y + gh, cz, white);
+        b.box(0.04, 0.04, gw, bx, y + 0.02, cz, '#d9d9d9');
+        const net = '#c9ced4', slope = Math.atan2(gh * 0.4, back);
+        for (let n = 1; n < 8; n++) {
+            const z = gz0 + (gw * n) / 8;
+            b.box(0.012, gh * 0.6, 0.012, bx, y + gh * 0.3, z, net);
+            b.box(back * 1.08, 0.012, 0.012, gx - dir * back / 2, y + gh * 0.8, z, net, { rot: [0, 0, dir * slope] });
+        }
+        for (let n = 1; n < 4; n++) b.box(0.012, 0.012, gw, bx, y + (gh * 0.6 * n) / 4, cz, net);
+        [gz0, gz1].forEach(z => { for (let n = 1; n < 4; n++) b.box(back, 0.012, 0.012, gx - dir * back / 2, y + (gh * 0.6 * n) / 4, z, net); });
+    });
+    // Corner flags
+    [[px0, pz0], [px1, pz0], [px0, pz1], [px1, pz1]].forEach(([x, z]) => {
+        b.box(0.03, 0.55, 0.03, x, y + 0.275, z, white);
+        b.box(0.02, 0.14, 0.2, x, y + 0.48, z + 0.1, '#ffd166');
+    });
+    // The dugouts along the far side, either side of halfway, and the floodlights
+    [-1, 1].forEach(side => {
+        const dx = cx + side * 2.2, dz = z1 + 0.35;
+        b.box(1.5, 0.06, 0.6, dx, y + 0.95, dz, '#2f6fb0', { outline: true });
+        b.box(1.5, 0.95, 0.06, dx, y + 0.475, dz + 0.27, '#2f6fb0');
+        [-1, 1].forEach(end => b.box(0.06, 0.95, 0.6, dx + end * 0.72, y + 0.475, dz, '#2f6fb0'));
+        b.box(1.3, 0.06, 0.28, dx, y + 0.3, dz + 0.1, '#e8455a');
+    });
+    [[x0, z0, 1, 1], [x1, z0, -1, 1], [x0, z1, 1, -1], [x1, z1, -1, -1]].forEach(([x, z, sx, sz]) => {
+        b.box(0.1, 3.0, 0.1, x - sx * 0.2, y + 1.5, z - sz * 0.2, '#8d97a1');
+        b.box(0.5, 0.3, 0.12, x - sx * 0.2, y + 3.05, z - sz * 0.2, '#3b3f45', { rot: [0, Math.atan2(sx, sz), 0] });
+        glow.box(0.42, 0.22, 0.04, x - sx * 0.2 + sx * 0.05, y + 3.0, z - sz * 0.2 + sz * 0.05, COLORS.glow, { rot: [0, Math.atan2(sx, sz), 0] });
+    });
+    // A ball on the centre spot
+    b.box(0.13, 0.13, 0.13, cx, y + 0.1, cz, '#ffffff', { outline: true });
+    b.box(0.135, 0.05, 0.05, cx, y + 0.1, cz, '#2b2f36');
+}
+
+// The helipad in a clearing in the forest: a dark square pad with a white edge, a yellow ring and a white H,
+// lights round its edge, a windsock, and a little white and blue helicopter parked on it
+function helipad(b, glow) {
+    const { i0, i1, k0, k1 } = HELIPAD, y = ground(i0, k0), white = '#f7f7f2', top = y + 0.056;
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    const size = x1 - x0, edge = 0.25;
+    b.box(size, 0.05, z1 - z0, cx, y + 0.025, cz, '#50555d');
+    [-1, 1].forEach(side => {
+        b.box(size - 2 * edge, 0.012, 0.08, cx, top, cz + side * (size / 2 - edge), white);
+        b.box(0.08, 0.012, size - 2 * edge, cx + side * (size / 2 - edge), top, cz, white);
+    });
+    const radius = size * 0.36;
+    for (let n = 0; n < 48; n++) {
+        const a = (n / 48) * Math.PI * 2;
+        b.box(0.14, 0.012, radius * Math.PI * 2 / 48 + 0.01, cx + Math.cos(a) * radius, top, cz + Math.sin(a) * radius, '#ffd166', { rot: [0, -a, 0] });
+    }
+    // The H, its legs running front to back
+    [-1, 1].forEach(side => b.box(0.22, 0.012, 1.6, cx + side * 0.5, top, cz, white));
+    b.box(0.8, 0.012, 0.22, cx, top, cz, white);
+    // Lights round the edge
+    for (let n = 0; n < 4; n++) {
+        const u = -size / 2 + 0.1 + (n * (size - 0.2)) / 3;
+        [[cx + u, z0 + 0.08], [cx + u, z1 - 0.08], [x0 + 0.08, cz + u], [x1 - 0.08, cz + u]].forEach(([x, z]) => glow.box(0.08, 0.06, 0.08, x, y + 0.08, z, '#9dffb0'));
+    }
+    // The windsock on its pole at the corner, blowing out in stripes
+    const wx = x1 + 0.25, wz = z0 - 0.2;
+    b.box(0.05, 1.7, 0.05, wx, y + 0.85, wz, '#d9d9d9');
+    for (let n = 0; n < 5; n++) b.box(0.22 - n * 0.025, 0.22 - n * 0.025, 0.18, wx - 0.05, y + 1.58 - n * 0.025, wz - 0.12 - n * 0.18, n % 2 ? white : '#ff7a3d', { rot: [0.1, 0, 0] });
+    // The helicopter, nose to +z before it is turned
+    const t = turned(b, new THREE.Vector3(cx, y, cz), [0, 0.7, 0]), body = '#f4f4f4', blue = '#2f6fb0', glass = '#24303d', dark = '#3b3f45';
+    const h = (w, hh, d, x, yy, z, hex, opts) => t(w, hh, d, cx + x, y + 0.05 + yy, cz + z, hex, opts);
+    [-1, 1].forEach(side => {
+        h(0.06, 0.06, 1.9, side * 0.45, 0.04, 0.1, dark);
+        [-0.45, 0.6].forEach(z => h(0.05, 0.32, 0.05, side * 0.38, 0.22, z, dark));
+    });
+    h(0.95, 0.8, 1.5, 0, 0.78, 0, body, { outline: true });
+    h(0.85, 0.6, 0.45, 0, 0.7, 0.95, body, { outline: true });
+    h(0.87, 0.36, 0.42, 0, 0.92, 0.92, glass);
+    h(0.97, 0.26, 0.8, 0, 0.98, 0.2, glass);
+    h(0.97, 0.1, 1.52, 0, 0.6, 0, blue);
+    h(0.6, 0.25, 0.75, 0, 1.28, -0.25, body);
+    h(0.24, 0.24, 1.9, 0, 0.95, -1.6, body, { outline: true });
+    h(0.06, 0.55, 0.36, 0, 1.2, -2.45, blue);
+    h(0.64, 0.04, 0.2, 0, 1.0, -2.25, body);
+    h(0.02, 0.48, 0.06, 0.07, 1.25, -2.5, dark);
+    h(0.02, 0.06, 0.48, 0.07, 1.25, -2.5, dark);
+    h(0.1, 0.24, 0.1, 0, 1.5, 0, dark);
+    h(0.2, 0.08, 0.2, 0, 1.64, 0, dark);
+    [0.35, 0.35 + Math.PI / 2].forEach(a => turned(b, new THREE.Vector3(cx, y, cz), [0, 0.7 + a, 0])(3.8, 0.03, 0.14, cx, y + 1.74, cz, dark));
+}
+
+// The outdoor gym on the sand to the left, on black rubber mats: a pull-up rig, parallel bars, a bench press
+// with its bar racked, a squat rack, a rack of dumbbells, kettlebells, a big tyre to flip, and the gym's sign
+function outdoorGym(b) {
+    const { i0, i1, k0, k1 } = GYM, y = ground(i0, k0), steel = '#3b3f45', grip = '#ffd166', plate = '#2b2e33';
+    const x0 = (i0 - 0.5) * B, x1 = (i1 + 0.5) * B, z0 = (k0 - 0.5) * B, z1 = (k1 + 0.5) * B, cz = (z0 + z1) / 2;
+    for (let i = i0; i <= i1; i += 2) {
+        for (let k = k0; k <= k1; k += 2) {
+            const w = Math.min(2, i1 - i + 1) * B, d = Math.min(2, k1 - k + 1) * B;
+            b.box(w - 0.01, 0.04, d - 0.01, (i - 0.5) * B + w / 2, y + 0.02, (k - 0.5) * B + d / 2, (i + k) % 4 ? '#3a3d42' : '#33363b');
+        }
+    }
+    const f = y + 0.04;
+    // A pull-up rig: three uprights with bars at two heights between them
+    const rx = x0 + 0.4;
+    [-1.1, 0, 1.1].forEach(dz => b.box(0.09, 2.3, 0.09, rx, f + 1.15, cz + dz, steel));
+    b.box(0.06, 0.06, 1.1, rx, f + 2.25, cz - 0.55, grip);
+    b.box(0.06, 0.06, 1.1, rx, f + 1.85, cz + 0.55, grip);
+    // Parallel bars
+    const px = x0 + 1.5;
+    [-0.25, 0.25].forEach(dx => {
+        b.box(0.05, 0.05, 1.2, px + dx, f + 1.05, cz, grip);
+        [-0.5, 0.5].forEach(dz => b.box(0.06, 1.05, 0.06, px + dx, f + 0.52, cz + dz, steel));
+    });
+    // A bench press with the bar racked over it, plates on the ends
+    const bx = x0 + 2.6, bz = cz;
+    b.box(0.36, 0.08, 1.1, bx, f + 0.45, bz, '#c8453b');
+    [-0.4, 0.4].forEach(dz => b.box(0.3, 0.42, 0.06, bx, f + 0.21, bz + dz, steel));
+    [-1, 1].forEach(side => b.box(0.06, 1.0, 0.06, bx + side * 0.4, f + 0.5, bz - 0.5, steel));
+    b.box(1.7, 0.035, 0.035, bx, f + 0.95, bz - 0.5, '#c0c4ca');
+    [-1, 1].forEach(side => [0.68, 0.74].forEach((at, n) => b.box(0.06, n ? 0.3 : 0.4, n ? 0.3 : 0.4, bx + side * at, f + 0.95, bz - 0.5, n ? '#2f6fb0' : plate)));
+    // A squat rack: a cage of four posts with the bar on its hooks
+    const sx = x0 + 3.9, sz = cz;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([dx, dz]) => b.box(0.08, 2.1, 0.08, sx + dx * 0.5, f + 1.05, sz + dz * 0.45, steel));
+    [-1, 1].forEach(dz => b.box(1.08, 0.08, 0.08, sx, f + 2.1, sz + dz * 0.45, steel));
+    [-1, 1].forEach(dx => b.box(0.08, 0.08, 0.98, sx + dx * 0.5, f + 2.1, sz, steel));
+    b.box(1.7, 0.035, 0.035, sx, f + 1.35, sz - 0.45, '#c0c4ca');
+    [-1, 1].forEach(side => [0.68, 0.75].forEach((at, n) => b.box(0.06, n ? 0.34 : 0.44, n ? 0.34 : 0.44, sx + side * at, f + 1.35, sz - 0.45, n ? '#c8453b' : plate)));
+    // A rack of dumbbells, small to big
+    const dx0 = x0 + 5.2, dzr = z1 - 0.35;
+    b.box(1.4, 0.05, 0.4, dx0 + 0.7, f + 0.5, dzr, steel);
+    [-1, 1].forEach(e => b.box(0.05, 0.5, 0.36, dx0 + 0.7 + e * 0.68, f + 0.25, dzr, steel));
+    for (let n = 0; n < 5; n++) {
+        const s = 0.07 + n * 0.012, x = dx0 + 0.15 + n * 0.28;
+        [-0.1, 0.1].forEach(dz => {
+            b.box(0.04, 0.04, 0.2, x, f + 0.55 + s / 2, dzr + dz, '#c0c4ca', { rot: [0, Math.PI / 2, 0] });
+            [-1, 1].forEach(end => b.box(0.06, s, s, x + end * 0.08, f + 0.55 + s / 2, dzr + dz, plate));
+        });
+    }
+    // Kettlebells and a tyre on the mats
+    [[0.2, '#2b2e33'], [0.55, '#c8453b'], [0.9, '#2f6fb0']].forEach(([dx, hex], n) => {
+        const kx = dx0 + dx, kz = z0 + 0.4, s = 0.18 + n * 0.03;
+        b.box(s, s, s, kx, f + s / 2, kz, hex);
+        b.box(0.03, 0.08, 0.03, kx - s / 3, f + s + 0.04, kz, hex);
+        b.box(0.03, 0.08, 0.03, kx + s / 3, f + s + 0.04, kz, hex);
+        b.box(s * 0.7, 0.03, 0.03, kx, f + s + 0.08, kz, hex);
+    });
+    const tx = x1 - 0.65, tz = cz + 0.2;
+    for (let n = 0; n < 10; n++) {
+        const a = (n / 10) * Math.PI * 2;
+        b.box(0.3, 0.2, 0.32, tx + Math.cos(a) * 0.38, f + 0.1, tz + Math.sin(a) * 0.38, '#1d1f22', { rot: [0, -a, 0] });
+    }
+    // The sign on two posts at the back, facing the sea
+    const gx = (x0 + x1) / 2, gz = z1 + 0.25;
+    [-0.5, 0.5].forEach(dx => b.box(0.06, 1.6, 0.06, gx + dx, f + 0.8, gz, steel));
+    b.box(1.3, 0.45, 0.06, gx, f + 1.45, gz, '#c8453b', { outline: true });
+    pixelText(b, 'GYM', gx, f + 1.45, gz - 0.036, 0.07, '#ffffff');
+}
+
 // A little car, nose toward +z before it is turned by `heading`, its wheels on the ground at y, with a dark
 // patch of shade under it
 function car(b, x, y, z, heading, hex) {
@@ -1940,8 +2149,8 @@ function carPark(b, glow) {
 
 function forest(b, keepClear) {
     const rand = random(71), placed = [];
-    for (let n = 0; n < 400 && placed.length < 48; n++) {
-        const i = Math.round(-72 + rand() * 84), k = Math.round(14 + rand() * 72);
+    for (let n = 0; n < 600 && placed.length < 70; n++) {
+        const i = Math.round(-90 + rand() * 102), k = Math.round(14 + rand() * 96);
         if (islandRadius(i, k) > 0.9 || !isGrass(i, k) || keepClear(i, k)) continue;
         if (placed.some(([a, c]) => Math.hypot(a - i, c - k) < 4)) continue;
         placed.push([i, k]);
@@ -1956,10 +2165,10 @@ function islandDetails(b, columns) {
         const busy = (i >= GARDEN.i0 - 1 && i <= GARDEN.i1 + 1 && k >= GARDEN.k0 - 1 && k <= GARDEN.k1 + 1) || onPath(i, k) ||
             (i >= TULIPS.i0 - 1 && i <= TULIPS.i1 + 1 && k >= TULIPS.k0 - 1 && k <= TULIPS.k1 + 1) ||
             nearPond(i, k, 1.5) || Math.hypot(i - MILL.i, k - MILL.k) < 3 || onTerrace(i, k) || onResortPath(i, k) ||
-            inRect(COURT, i, k, 1) || inRect(TENNIS, i, k, 1) || inRect(CAR_PARK, i, k, 1) || inRect(CAFE, i, k, 1);
+            [COURT, TENNIS, CAR_PARK, CAFE, PITCH, HELIPAD].some(r => inRect(r, i, k, 1));
         // Grass tufts and flowers on the grassy part, thinning out far from us where the picture is soft anyway,
         // without the undersides nobody sees
-        const far = smoothstep(28, 75, Math.hypot(i, k - 8)), under = { hide: 1 << 3 };
+        const d = Math.hypot(i, k - 8), far = smoothstep(28, 75, d) + 0.25 * smoothstep(75, 110, d), under = { hide: 1 << 3 };
         if (isGrass(i, k) && !busy && hash(i, k, 5) > 0.82 + 0.12 * far) {
             for (let n = 0; n < 2; n++) {
                 const h = 0.12 + rand() * 0.18;
@@ -2166,7 +2375,7 @@ function fleet() {
     const anchored = (x, z, heading) => () => [x, z, heading];
     const superyacht = yacht();
     return [
-        [superyacht.b, anchored(-9.5, -15, 2.25), 0.04, 0.006, superyacht.lights, 1.5],
+        [superyacht.b, anchored(-10, -16, 2.25), 0.04, 0.006, superyacht.lights, 1.5],
         [containerShip(), across(-135, 200, -700, 1.8, 260), 0.06, 0.006],
         [cruiseShip(), across(-105, -420, 160, 1.5, 230), 0.07, 0.008],
         [sailboat('#3d8fd1', '#f4a6b8'), ring(-34, -58, 9, 0.04, 0.6), 0.12, 0.05],
@@ -2187,7 +2396,7 @@ function fleet() {
 // the lighthouse on its own rock out beyond the bay. Their land goes in `meshes`, their things into the
 // island's blocks, and white water round them into the foam rings
 function seaIslands(meshes, decor, glow, foam) {
-    [[-30, -21, 6, 1], [29, -16, 5, 2], [-11, -36, 4, 3], [37, 18, 4, 4], [LIGHTHOUSE.x, LIGHTHOUSE.z, 6, 5, true]].forEach(([x, z, radius, seed, rocky], n) => {
+    [[-30, -21, 6, 1], [29, -16, 5, 2], [-11, -36, 4, 3], [44, 22, 4, 4], [LIGHTHOUSE.x, LIGHTHOUSE.z, 6, 5, true]].forEach(([x, z, radius, seed, rocky], n) => {
         const { mesh, tops } = buildSeaIsland(radius, seed, rocky);
         mesh.position.set(x, 0, z);
         meshes.push(mesh);
@@ -2638,7 +2847,7 @@ function start() {
         palmTree(decor, -18, 3, 12, [-1, 1], 0.9), palmTree(decor, 24, -1, 9, [1, 0], 1.8), palmTree(decor, -27, 4, 11, [-1, 0], 2.7),
         palmTree(decor, 40, -2, 11, [1, 1], 0.6), palmTree(decor, 42, 6, 10, [1, 0], 3.1), palmTree(decor, -36, 8, 10, [-1, 1], 1.1),
         palmTree(decor, -8, 27, 9, [-1, 0], 1.3), palmTree(decor, 8, 27, 9, [1, 0], 2.5),
-        palmTree(decor, 52, 7, 11, [1, -1], 1.6), palmTree(decor, 62, 7, 10, [1, 0], 0.2), palmTree(decor, -47, 2, 11, [-1, -1], 2.3),
+        palmTree(decor, 52, 7, 11, [1, -1], 1.6), palmTree(decor, 62, 7, 10, [1, 0], 0.2), palmTree(decor, -46, 8, 11, [-1, -1], 2.3),
         palmTree(decor, -57, 9, 10, [-1, 0], 0.8)
     ];
     palms.forEach(p => island.add(p.crown));
@@ -2660,7 +2869,8 @@ function start() {
     oakTree(decor, -13, 25, 7, 62);
     oakTree(decor, -27, 14, 6, 63);
     oakTree(decor, 38, 22, 6, 64);
-    [[56, 52, 7], [46, 60, 6], [52, 46, 5], [50, 66, 6], [44, 52, 6], [28, 62, 7], [12, 70, 6], [36, 72, 5]].forEach(([i, k, height], n) =>
+    [[56, 52, 7], [46, 60, 6], [52, 46, 5], [50, 66, 6], [44, 52, 6], [28, 62, 7], [30, 84, 6], [36, 72, 5],
+        [82, 34, 6], [86, 50, 7], [72, 62, 6], [60, 78, 7], [44, 88, 6], [24, 98, 5]].forEach(([i, k, height], n) =>
         oakTree(decor, i, k, height, 65 + n));
     // At the back, the resort
     const resort = buildResort();
@@ -2669,15 +2879,19 @@ function start() {
     carPark(decor, glow);
     pickleball(decor, glow);
     tennisCourt(decor, glow);
+    footballPitch(decor, glow);
+    helipad(decor, glow);
     forest(decor, (i, k) => {
         const { r, a } = resortAt(i, k);
         return (r > 18 && r < RESORT.r2 + 6 && Math.abs(a) < 32 * DEG) || Math.hypot(i + 24, k - 19) < 5 || nearPond(i, k, 3) ||
-            (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3) || inRect(CAR_PARK, i, k, 4) || (i > -16 && k < 60);
+            (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3) || inRect(CAR_PARK, i, k, 4) || (i > -16 && k < 60) ||
+            inRect(PITCH, i, k, 4) || inRect(HELIPAD, i, k, 5) || inRect(GYM, i, k, 4);
     });
-    // Along the beach: a lifeguard's chair to the left; to the right the café and a volleyball court
+    // Along the beach: a lifeguard's chair and the gym to the left; to the right the café and a volleyball court
     lifeguardChair(decor, -18, -2);
     beachCafe(decor, glow);
     volleyballCourt(decor);
+    outdoorGym(decor);
     // Over the grass to the right: tulips, a picnic under an oak and the windmill on its hill; the pond, in the
     // forest at the back left
     tulipField(decor);
@@ -2687,7 +2901,7 @@ function start() {
     island.add(millSails);
     // Out at sea: the small islands and the lighthouse, white water round every coast, and far-off hills
     const foamRings = [new Blocks(), new Blocks()], landMeshes = [];
-    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -78, 89, -33, 88);
+    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -93, 107, -33, 112);
     seaIslands(landMeshes, decor, glow, foamRings);
     landMeshes.push(
         farLand(-470, -177, 1.2, 26, 10, 6, 7, 1), farLand(97, -520, -0.2, 24, 9, 5, 7, 2), farLand(230, 330, 0.6, 32, 10, 7, 7, 3));
@@ -2767,7 +2981,7 @@ function start() {
     }
 
     // ----- Camera: always on the two of us. Drag to turn round or up and down, scroll or pinch to zoom -----
-    const PITCH_MIN = 0.05, PITCH_MAX = 1.45, DIST_MIN = 3.2, DIST_MAX = 72;
+    const PITCH_MIN = 0.05, PITCH_MAX = 1.45, DIST_MIN = 3.2, DIST_MAX = 95;
     // It starts a little round to her side, so the sun shows over the bay beside the umbrella, not behind it
     const view = { yaw: SUN_AZIMUTH + 0.3, pitch: 0.3, dist: 9.5 };
     let zoomed = false, interacted = false;
