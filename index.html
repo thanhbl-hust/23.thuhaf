@@ -29,8 +29,8 @@
 </head>
 
 <body>
-    <!-- OPENING SCREEN, shown on every visit: the two of us on a little floating island of a beach at sunset
-         (drawn by intro.js), the title, and the button into the page -->
+    <!-- OPENING SCREEN, shown on every visit: the two of us on the beach of an island at sunset (drawn by
+         intro.js), the title, and the button into the page. In the page, the scene stays behind it -->
     <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle">
         <div class="intro-scene" id="introScene"></div>
         <div class="intro-text">
@@ -48,6 +48,9 @@
 
         <!-- LOVE COUNTER -->
         <header class="love-counter">
+            <!-- Back to the beach scene behind the page (script.js) -->
+            <button class="back-to-beach" id="backToBeach" type="button" title="Back to the beach"
+                aria-label="Back to the beach">🏝️</button>
             <!-- When the page opens the two of them run toward each other and a heart pops out (style.css) -->
             <div class="lc-label">
                 <span class="lc-horse">🐴</span>

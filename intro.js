@@ -9,8 +9,9 @@
 // the further away things are.
 // The camera always looks at the two of us: drag to turn it round or up and down, scroll or pinch to zoom.
 // The figures follow the blocky style of the portfolio's pickleball scene.
-// script.js owns the overlay and its button; this file only draws behind them. If it can't run (no WebGL,
-// the file didn't load) the overlay keeps its painted sky and still works.
+// script.js owns the overlay and its button; this file only draws behind them. Once in the page, the scene
+// stays behind it as its background until the page's button brings it back to the front (script.js says when).
+// If it can't run (no WebGL, the file didn't load) the overlay keeps its painted sky and still works.
 import * as THREE from './vendor/three/three.module.min.js';
 
 const intro = document.getElementById('intro');
@@ -1866,12 +1867,6 @@ function lens(renderer, small) {
             renderer.render(scene, camera);
             renderer.setRenderTarget(null);
             renderer.render(screen, flat);
-        },
-        dispose() {
-            target.depthTexture.dispose();
-            target.dispose();
-            material.dispose();
-            quad.geometry.dispose();
         }
     };
 }
@@ -2146,7 +2141,11 @@ function start() {
     const PITCH_MIN = 0.05, PITCH_MAX = 1.45, DIST_MIN = 3.2, DIST_MAX = 72;
     // It starts a little round to her side, so the sun shows over the bay beside the umbrella, not behind it
     const view = { yaw: SUN_AZIMUTH + 0.3, pitch: 0.3, dist: 9.5 };
-    let zoomed = false, interacted = false, flight = null;
+    let zoomed = false, interacted = false;
+    // Behind the page (script.js) the scene is its background: the camera pulls back to a wide view of the sunset
+    // and drifts there slowly, and can't be dragged. `away` goes from 0 to 1 as it pulls back. If the page was
+    // opened before this file had loaded, it starts there
+    let away = intro.classList.contains('leaving') ? 1 : 0, awayTarget = away;
     const velocity = { yaw: 0, pitch: 0 };
     function resize() {
         const width = host.clientWidth || window.innerWidth;
@@ -2180,14 +2179,14 @@ function start() {
         interacted = true;
     }
     function onPointerDown(e) {
-        if (e.target.closest('button') || flight) return;
+        if (e.target.closest('button') || awayTarget) return;
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, moved: 0 });
         intro.setPointerCapture(e.pointerId);
         if (pointers.size === 2) pinch = { start: pinchDistance(), dist: view.dist };
     }
     function onPointerMove(e) {
         const p = pointers.get(e.pointerId);
-        if (!p || flight) return;
+        if (!p || awayTarget) return;
         const dx = e.clientX - p.x, dy = e.clientY - p.y;
         Object.assign(p, { x: e.clientX, y: e.clientY, moved: p.moved + Math.abs(dx) + Math.abs(dy) });
         if (p.moved < 4) return;
@@ -2211,13 +2210,13 @@ function start() {
         // No glide after a pinch, or when the finger was held still before letting go
         if (pointers.size === 0 && (wasPinch || performance.now() - lastMove > 80)) velocity.yaw = velocity.pitch = 0;
         // A tap rather than a drag sends up a few hearts
-        if (p && p.moved < 8 && !wasPinch && pointers.size === 0 && !flight) {
+        if (p && p.moved < 8 && !wasPinch && pointers.size === 0 && !awayTarget) {
             for (let n = 0; n < 4; n++) spawnHeart(handsMeet.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.2, 0)), n * 0.15);
         }
     }
     function onWheel(e) {
         e.preventDefault();
-        if (flight) return;
+        if (awayTarget) return;
         startInteraction();
         view.dist = THREE.MathUtils.clamp(view.dist * Math.exp(e.deltaY * 0.0012), DIST_MIN, DIST_MAX);
         zoomed = true;
@@ -2229,7 +2228,7 @@ function start() {
     intro.addEventListener('wheel', onWheel, { passive: false });
 
     const startTime = performance.now();
-    let clock = 0, lastClock = 0, lastHeartCycle = -1, frameId = 0, drawn = false, idleSway = 0;
+    let clock = 0, lastClock = 0, lastHeartCycle = -1, drawn = false, idleSway = 0, skipped = false;
     const lookAt = new THREE.Vector3(), focus = new THREE.Vector3();
     const swingAxis = new THREE.Vector3(1, 0, 0), swingTurn = new THREE.Quaternion();
     const partnerHead = new THREE.Vector3();
@@ -2279,9 +2278,16 @@ function start() {
         idleSway = interacted ? 0 : Math.sin(t * 0.1) * 0.2;
         // On arrival it swoops in from far above
         const arrive = easeInOut(Math.min(t / 3.6, 1));
-        const yaw = view.yaw + idleSway + (1 - arrive) * 1.2;
-        const pitch = Math.min(view.pitch + (1 - arrive) * 0.45, PITCH_MAX);
-        const d = view.dist * (1 + (1 - arrive) * 2);
+        let yaw = view.yaw + idleSway + (1 - arrive) * 1.2;
+        let pitch = Math.min(view.pitch + (1 - arrive) * 0.45, PITCH_MAX);
+        let d = view.dist * (1 + (1 - arrive) * 2);
+        if (away > 0) {
+            // Behind the page: further back and round to her side again, turning the shorter way, then drifting
+            const w = easeInOut(away), backYaw = SUN_AZIMUTH + 0.3 + Math.sin(t * 0.05) * 0.12;
+            yaw += Math.atan2(Math.sin(backYaw - yaw), Math.cos(backYaw - yaw)) * w;
+            pitch += (0.3 - pitch) * w;
+            d += ((camera.aspect < 1 ? 19 : 13) - d) * w;
+        }
         focus.copy(spot).addScaledVector(forward, -0.2).setY(beachY + 0.75);
         camera.position.set(
             focus.x + Math.sin(yaw) * Math.cos(pitch) * d,
@@ -2293,20 +2299,17 @@ function start() {
         camera.position.y = Math.max(camera.position.y, below + 0.45);
         // Low down it looks a little above us, so the sea and the sky fill the top of the picture
         lookAt.copy(focus).setY(focus.y + 1.4 * (1 - smoothstep(0.25, 1, pitch)));
-        if (flight) {
-            // Down to just behind us, looking out at the sun
-            const f = easeInOut(Math.min((performance.now() - flight.start) / 1600, 1));
-            camera.position.lerpVectors(flight.from, flight.to, f);
-            lookAt.lerpVectors(flight.lookFrom, flight.lookTo, f);
-        }
         camera.lookAt(lookAt);
     }
 
     function frame() {
-        frameId = requestAnimationFrame(frame);
+        requestAnimationFrame(frame);
+        // Behind the page, every other frame is enough
+        if (away === 1 && awayTarget === 1 && (skipped = !skipped)) return;
         clock = (performance.now() - startTime) / 1000;
         const dt = Math.min(clock - lastClock, 0.1);
         lastClock = clock;
+        away = THREE.MathUtils.clamp(away + THREE.MathUtils.clamp(awayTarget - away, -dt / 1.6, dt / 1.6), 0, 1);
         water.update(clock);
         sea.uniforms.time.value = clock;
         foamMaterials.forEach((m, n) => { m.opacity = 0.55 + 0.3 * Math.sin(clock * 1.3 - n * 1.4) - n * 0.15; });
@@ -2342,38 +2345,18 @@ function start() {
     }
     frame();
 
+    // script.js moves the scene behind the page, and back to the front
     window.openingScene = {
-        flyAway() {
-            const behind = spot.clone().addScaledVector(forward, -3).add(new THREE.Vector3(0, beachY + 1.5, 0));
-            flight = {
-                start: performance.now(),
-                from: camera.position.clone(),
-                to: behind,
-                lookFrom: lookAt.clone(),
-                lookTo: SUN_DIR.clone().multiplyScalar(100)
-            };
+        toBackground() {
+            awayTarget = 1;
+            pointers.clear();
+            pinch = null;
+            velocity.yaw = velocity.pitch = 0;
         },
-        dispose() {
-            cancelAnimationFrame(frameId);
-            clearTimeout(exploringTimer);
-            resizeObserver.disconnect();
-            intro.removeEventListener('pointerdown', onPointerDown);
-            intro.removeEventListener('pointermove', onPointerMove);
-            intro.removeEventListener('pointerup', onPointerUp);
-            intro.removeEventListener('pointercancel', onPointerUp);
-            intro.removeEventListener('wheel', onWheel);
-            scene.traverse(o => {
-                if (o.geometry) o.geometry.dispose();
-                if (o.material) o.material.dispose();
-            });
-            heartShape.dispose();
-            view3d.dispose();
-            renderer.dispose();
-            renderer.forceContextLoss();
-            renderer.domElement.remove();
-            delete window.openingScene;
+        toFront() {
+            awayTarget = 0;
         }
     };
 }
 
-if (intro && host && !intro.classList.contains('leaving')) start();
+if (intro && host) start();

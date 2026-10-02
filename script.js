@@ -46,11 +46,14 @@ function loveTick() {
 }
 
 // ===== OPENING SCREEN =====
-// Every visit opens on the beach scene (drawn by intro.js) with a button into the page. The page below is
-// built straight away, but its own entrance (the count-up, the pins dropping, ...) waits for that button
+// Every visit opens on the beach scene (drawn by intro.js) with a button into the page. Once in, the scene stays
+// behind the page as its background, and the island button on the counter goes back to it. The page below is
+// built straight away, but its own entrance (the count-up, the pins dropping, ...) waits for the first time in
 const intro = document.getElementById('intro');
+const app = document.querySelector('.app');
 const onPageShown = [];
 let pageShown = !intro;
+let onBeach = !!intro;
 function whenPageShown(fn) {
     if (pageShown) fn();
     else onPageShown.push(fn);
@@ -59,26 +62,47 @@ function whenPageShown(fn) {
 if (intro) {
     document.getElementById('introDays').textContent = Math.max(daysTogether(), 0).toLocaleString('vi-VN');
     document.getElementById('introEnter').addEventListener('click', enterPage);
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && document.body.contains(intro)) enterPage();
+    document.getElementById('backToBeach').addEventListener('click', e => {
+        // Not a tap on the counter, so no hearts
+        e.stopPropagation();
+        backToBeach();
     });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && onBeach) enterPage();
+    });
+} else {
+    document.getElementById('backToBeach').hidden = true;
 }
 
 function enterPage() {
-    if (intro.classList.contains('leaving')) return;
+    if (!onBeach) return;
+    onBeach = false;
+    // The title and button fade while the camera pulls back to a wide view of the sunset, then the page comes in
+    // over it
     intro.classList.add('leaving');
-    // The camera flies off toward the sun while the scene fades out over the page
-    window.openingScene?.flyAway();
+    window.openingScene?.toBackground();
     setTimeout(() => {
+        if (onBeach) return;
         document.documentElement.classList.remove('intro-open');
-        document.querySelector('.app').inert = false;
-        pageShown = true;
-        onPageShown.forEach(fn => fn());
+        intro.inert = true;
+        app.inert = false;
+        if (!pageShown) {
+            pageShown = true;
+            onPageShown.forEach(fn => fn());
+        }
     }, 700);
-    setTimeout(() => {
-        window.openingScene?.dispose();
-        intro.remove();
-    }, 1500);
+}
+
+function backToBeach() {
+    if (onBeach) return;
+    onBeach = true;
+    // The page fades out, the camera comes back in to the two of us, and the title and button return
+    app.inert = true;
+    document.documentElement.classList.add('intro-open');
+    intro.inert = false;
+    intro.classList.remove('leaving');
+    window.openingScene?.toFront();
+    document.getElementById('introEnter').focus({ preventScroll: true });
 }
 
 loveTick();

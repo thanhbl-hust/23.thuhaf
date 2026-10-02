@@ -36,56 +36,18 @@ body {
     position: relative;
 }
 
-/* Two soft colour blobs behind the page. They are gradients that fade out to the edge, drawn to look like
-   the 520px and 400px circles blurred by 80px they used to be: a real blur that size had to be redone on
-   every frame of the drift and was too heavy for phones */
-body::before,
-body::after {
-    content: '';
-    position: fixed;
-    opacity: 0.18;
-    pointer-events: none;
-    z-index: 0;
-}
-
-body::before {
-    width: 840px;
-    height: 840px;
-    /* --accent */
-    background: radial-gradient(closest-side, rgb(25 110 160) 24%, rgb(25 110 160 / 0.84) 43%, rgb(25 110 160 / 0.5) 62%, rgb(25 110 160 / 0.16) 81%, rgb(25 110 160 / 0));
-    top: -280px;
-    right: -320px;
-    animation: blobDriftA 22s ease-in-out infinite alternate;
-}
-
-body::after {
-    width: 720px;
-    height: 720px;
-    background: radial-gradient(closest-side, rgb(245 192 168) 11%, rgb(245 192 168 / 0.84) 33%, rgb(245 192 168 / 0.5) 56%, rgb(245 192 168 / 0.16) 78%, rgb(245 192 168 / 0));
-    bottom: -260px;
-    left: -260px;
-    animation: blobDriftB 27s ease-in-out infinite alternate;
-}
-
-/* The two blobs drift slowly and stretch a little */
-@keyframes blobDriftA {
-    0% { transform: translate(0, 0) scale(1) }
-    50% { transform: translate(-70px, 60px) scale(1.12, 0.92) }
-    100% { transform: translate(-20px, 130px) scale(0.94, 1.08) }
-}
-
-@keyframes blobDriftB {
-    0% { transform: translate(0, 0) scale(1) }
-    50% { transform: translate(80px, -50px) scale(0.9, 1.1) }
-    100% { transform: translate(30px, -110px) scale(1.1, 0.95) }
-}
-
 /* ===== OPENING SCREEN =====
-   Covers the page on every visit: the floating beach island drawn by intro.js, the title and the button in.
-   The page is built underneath straight away, but its own entrance animations wait, paused, until then */
+   Covers the page on every visit: the beach scene drawn by intro.js, the title and the button in. Once in, the
+   scene stays behind the page as its background, and the island button on the counter brings it back to the
+   front (script.js). The page is built underneath straight away, hidden, and its own entrance animations wait,
+   paused, until it is first shown */
 .intro-open .app,
 .intro-open .app * {
     animation-play-state: paused !important;
+}
+
+.intro-open .app {
+    opacity: 0;
 }
 
 .intro {
@@ -108,7 +70,15 @@ body::after {
     touch-action: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: opacity 0.9s ease 0.45s;
+    /* Coming back from the page, it moves to the front once the page has faded out */
+    transition: z-index 0s 0.5s;
+}
+
+/* In the page, the scene is its background, and can't be dragged */
+html:not(.intro-open) .intro {
+    z-index: 0;
+    pointer-events: none;
+    transition: none;
 }
 
 .intro.drawn {
@@ -120,7 +90,6 @@ body::after {
 }
 
 .intro.leaving {
-    opacity: 0;
     pointer-events: none;
 }
 
@@ -234,10 +203,12 @@ body::after {
     padding: calc(12px + 20 * var(--grow)) 16px calc(8px + 8 * var(--grow));
     display: flex;
     flex-direction: column;
+    transition: opacity 0.5s ease;
 }
 
 /* Love counter */
 .love-counter {
+    position: relative;
     flex-shrink: 0;
     background: var(--card);
     border-radius: var(--radius);
@@ -250,6 +221,32 @@ body::after {
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+}
+
+/* Back to the beach scene behind the page (script.js) */
+.back-to-beach {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: var(--soft);
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.back-to-beach:hover {
+    background: #cfdfee;
+    transform: scale(1.08);
+}
+
+.back-to-beach:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .lc-label {
@@ -511,12 +508,14 @@ body::after {
     font-size: calc(20px + 4 * var(--grow));
     font-weight: 700;
     line-height: 1.3;
-    color: var(--text);
+    /* On the beach scene behind the page: white, with a soft shadow */
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(16, 64, 110, 0.6);
     margin-bottom: calc(6px + 6 * var(--grow));
 }
 
 .panel-title em {
-    color: var(--accent);
+    color: #ffe1c7;
     font-style: italic;
 }
 
@@ -561,7 +560,8 @@ body::after {
 
 .sort-label {
     font-size: 0.8rem;
-    color: var(--muted);
+    color: #fff;
+    text-shadow: 0 1px 8px rgba(16, 64, 110, 0.6);
     font-weight: 500;
     margin-right: 2px;
 }
@@ -1335,7 +1335,8 @@ footer {
     text-align: center;
     margin-top: calc(6px + 8 * var(--grow));
     font-size: 0.82rem;
-    color: var(--muted);
+    color: #fff;
+    text-shadow: 0 1px 8px rgba(16, 64, 110, 0.6);
     animation: fadeUp 0.7s 0.6s ease both;
 }
 
@@ -1409,6 +1410,14 @@ footer {
     .lc-label {
         font-size: 1.3rem;
         margin-bottom: 0;
+    }
+
+    .back-to-beach {
+        top: 50%;
+        translate: 0 -50%;
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
     }
 
     .lc-main {
