@@ -1,8 +1,9 @@
 // ===== OPENING SCENE =====
-// A floating island built entirely from blocks, like a voxel diorama, with the two of us holding hands on
-// its beach at sunset: a bay with a jetty and a boat that spills over the edge as a waterfall, palms,
-// umbrellas and loungers on the sand, a cottage with a garden, a campfire, a swing, pines on a hill and a
-// lighthouse on the rocks, with smaller islands, a hot-air balloon, clouds and gulls around it.
+// A floating island built entirely from blocks, like a voxel diorama, with the two of us lying on two
+// loungers under a beach umbrella at sunset, holding hands: a bay with a jetty and a boat that spills over the
+// edge as a waterfall, palms, beach huts and a lifeguard's chair along the sand, a cottage with a garden, a
+// campfire, a swing, pines on a hill and a forest, a field of tulips, a pond with ducks and a little bridge, a
+// windmill, and a lighthouse on the rocks, with smaller islands, a hot-air balloon, clouds and gulls around it.
 // The camera always looks at the two of us: drag to turn it round or up and down, scroll or pinch to zoom.
 // The figures follow the blocky style of the portfolio's pickleball scene.
 // script.js owns the overlay and its button; this file only draws behind them. If it can't run (no WebGL,
@@ -32,6 +33,7 @@ const COLORS = {
     rock: '#a0a9b1',
     waterShallow: '#52b9dc',
     waterDeep: '#2477b4',
+    pond: '#5cc0e2',
     foam: '#f4fbff',
     footprint: '#d8c08f',
     wood: '#a8794e',
@@ -46,9 +48,10 @@ const COLORS = {
 
 // One block of the island
 const B = 0.35;
-// The sun hangs low beyond the bay, in front of us; the camera starts behind us looking out at it
+// The sun hangs low beyond the bay, in front of us, just touching the sea; the camera starts behind us looking
+// out at it
 const SUN_AZIMUTH = 0.6;
-const SUN_ELEVATION = -0.28;
+const SUN_ELEVATION = -0.17;
 const SUN_DIR = new THREE.Vector3(-Math.sin(SUN_AZIMUTH), 0, -Math.cos(SUN_AZIMUTH))
     .multiplyScalar(Math.sqrt(1 - SUN_ELEVATION ** 2)).setY(SUN_ELEVATION);
 
@@ -90,9 +93,9 @@ class Blocks {
         this.hull = [];
     }
 
-    // A box of size w×h×d centred at (x, y, z); opts: { outline, rot: [x, y, z] }
+    // A box of size w×h×d centred at (x, y, z); opts: { outline, rot: [x, y, z], hide: faces to leave out }
     box(w, h, d, x, y, z, hex, opts = {}) {
-        this.parts.push({ matrix: transform(x, y, z, opts.rot).scale(new THREE.Vector3(w, h, d)), color: color(hex) });
+        this.parts.push({ matrix: transform(x, y, z, opts.rot).scale(new THREE.Vector3(w, h, d)), color: color(hex), hide: opts.hide });
         if (opts.outline) {
             this.hull.push({ matrix: transform(x, y, z, opts.rot).scale(new THREE.Vector3(w + OUTLINE * 2, h + OUTLINE * 2, d + OUTLINE * 2)) });
         }
@@ -124,7 +127,29 @@ function transform(x, y, z, rot) {
     return matrix;
 }
 
-// Join the parts into one geometry, their colours as vertex colours
+// Add boxes that are turned together by `rot` about `pivot`, as if they were one rigid piece: give each box
+// where it would be unturned
+function turned(b, pivot, rot) {
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)), v = new THREE.Vector3();
+    return (w, h, d, x, y, z, hex, opts = {}) => {
+        v.set(x, y, z).sub(pivot).applyQuaternion(q).add(pivot);
+        b.box(w, h, d, v.x, v.y, v.z, hex, { ...opts, rot });
+    };
+}
+
+// Cubes of size s at whole steps [i, j, k] from `origin`, each with its colour, added without the faces they
+// press against each other, which can't be seen
+function cubes(b, s, origin, cells) {
+    const filled = new Set(cells.map(([i, j, k]) => `${i},${j},${k}`));
+    for (const [i, j, k, hex] of cells) {
+        let hide = 0;
+        FACES.forEach(({ n }, f) => { if (filled.has(`${i + n[0]},${j + n[1]},${k + n[2]}`)) hide |= 1 << f; });
+        if (hide !== 63) b.box(s, s, s, origin.x + i * s, origin.y + j * s, origin.z + k * s, hex, { hide });
+    }
+}
+
+// Join the parts into one geometry, their colours as vertex colours. A box can leave out some of its faces:
+// `hide` has a bit for each, in the order of FACES (the cube's corners come six to a face in that order)
 function merge(parts) {
     const sources = parts.map(p => {
         if (!p.geometry) return CUBE;
@@ -134,7 +159,9 @@ function merge(parts) {
         p.geometry.dispose();
         return source;
     });
-    const count = sources.reduce((n, s) => n + s.position.length / 3, 0);
+    const kept = (p, corner) => !(p.hide & (1 << Math.floor(corner / 6)));
+    let count = 0;
+    parts.forEach((p, n) => { for (let i = 0; i < sources[n].position.length / 3; i++) if (kept(p, i)) count++; });
     const position = new Float32Array(count * 3), normal = new Float32Array(count * 3);
     const colors = parts[0]?.color ? new Float32Array(count * 3) : null;
     const v = new THREE.Vector3(), normalMatrix = new THREE.Matrix3();
@@ -143,15 +170,16 @@ function merge(parts) {
         const s = sources[n], corners = s.position.length / 3;
         normalMatrix.getNormalMatrix(p.matrix);
         for (let i = 0; i < corners; i++) {
-            v.fromArray(s.position, i * 3).applyMatrix4(p.matrix).toArray(position, (offset + i) * 3);
-            v.fromArray(s.normal, i * 3).applyMatrix3(normalMatrix).normalize().toArray(normal, (offset + i) * 3);
+            if (!kept(p, i)) continue;
+            v.fromArray(s.position, i * 3).applyMatrix4(p.matrix).toArray(position, offset * 3);
+            v.fromArray(s.normal, i * 3).applyMatrix3(normalMatrix).normalize().toArray(normal, offset * 3);
             if (colors) {
-                colors[(offset + i) * 3] = p.color.r;
-                colors[(offset + i) * 3 + 1] = p.color.g;
-                colors[(offset + i) * 3 + 2] = p.color.b;
+                colors[offset * 3] = p.color.r;
+                colors[offset * 3 + 1] = p.color.g;
+                colors[offset * 3 + 2] = p.color.b;
             }
+            offset++;
         }
-        offset += corners;
     });
     const merged = new THREE.BufferGeometry();
     merged.setAttribute('position', new THREE.BufferAttribute(position, 3));
@@ -166,8 +194,8 @@ const tint = (hex, amount) => `#${color(hex).lerp(color('#ffffff'), amount).getH
 // ----- The two of us -----
 // Built facing +z like the portfolio figures, then turned around to look out to sea.
 // Looks taken from our photos: his short black textured crop with a fringe, white tee and navy shorts;
-// her shoulder-length dark brown hair with a side fringe, a slim figure, a light blue bra top that comes down
-// over her waist, and denim shorts.
+// her face, her black cat-eye glasses, her shoulder-length brown hair parted in the middle, a slim figure, a
+// light blue bra top that comes down over her waist, and denim shorts.
 const HIP_Y = 0.78, SHOULDER_Y = 1.47, NECK_Y = 1.55;
 const HIPS_Y = 0.085, WAIST_Y = 0.295, CHEST_Y = 0.57, COLLAR_Y = 0.745;
 
@@ -185,7 +213,7 @@ const HER = {
     chestW: 0.5, chestD: 0.3, waistW: 0.38, waistD: 0.25, hipsW: 0.52, hipsD: 0.32,
     shoulderHalf: 0.31, hipHalf: 0.12, armW: 0.15, legW: 0.18, headW: 0.48,
     skin: '#f2d0b0', skinShade: '#dfb592',
-    hair: '#35231a', hairLight: '#5a3b2a',
+    hair: '#3a281e', hairLight: '#6e4e37',
     top: '#8cc6e8', bottom: '#5a82b0'
 };
 
@@ -215,14 +243,14 @@ function buildPerson(P) {
     buildArm(P, false).addTo(armLeft);
     buildHead(P).addTo(head);
 
-    const person = { P, outer, root, torso, head, armRight, armLeft };
+    const person = { P, outer, root, torso, head, legs, armRight, armLeft };
 
     if (P.female) {
         // The long part of her hair hangs from its own pivot so the sea breeze can move it
         const hairFlow = new THREE.Group();
         hairFlow.position.set(0, 0.5, -0.05);
         buildHairFlow(P).addTo(hairFlow);
-        head.add(hairFlow);
+        head.add(hairFlow, buildLenses(P.headW / 2));
         person.hairFlow = hairFlow;
     }
     return person;
@@ -254,7 +282,7 @@ function buildTorso(P) {
     const b = new Blocks();
     if (P.female) {
         // Beach outfit: a light blue bra top with thin straps that comes down over her waist to a white hem,
-        // denim shorts with a darker waistband, and a small gold necklace
+        // denim shorts with a darker waistband, and a fine silver necklace with a crescent moon
         b.box(P.hipsW, 0.17, P.hipsD, 0, HIPS_Y, 0, P.bottom, { outline: true });
         b.box(P.hipsW + 0.012, 0.04, P.hipsD + 0.012, 0, HIPS_Y + 0.06, 0, shade(P.bottom, 0.2));
         b.box(P.waistW, 0.29, P.waistD, 0, WAIST_Y, 0, P.top, { outline: true });
@@ -264,8 +292,11 @@ function buildTorso(P) {
         b.box(P.chestW + 0.018, 0.02, P.chestD + 0.018, 0, CHEST_Y + 0.06, 0, '#ffffff');
         b.box(0.04, 0.04, 0.012, 0, CHEST_Y + 0.04, P.chestD / 2 + 0.01, '#ffffff');
         [1, -1].forEach(side => b.box(0.04, 0.16, P.chestD + 0.016, (P.chestW / 2 - 0.09) * side, CHEST_Y + 0.11, 0, shade(P.top, 0.08)));
-        b.box(0.15, 0.014, 0.012, 0, CHEST_Y + 0.13, P.chestD / 2 + 0.002, '#e9c46a');
-        b.box(0.03, 0.03, 0.012, 0, CHEST_Y + 0.105, P.chestD / 2 + 0.004, '#f2d38a', { rot: [0, 0, Math.PI / 4] });
+        [1, -1].forEach(side => b.box(0.08, 0.01, 0.012, 0.038 * side, CHEST_Y + 0.15, P.chestD / 2 + 0.004, '#e4e7ec', { rot: [0, 0, 0.26 * side] }));
+        // Its pendant: a little crescent moon holding a pale stone
+        ['.XX', 'X..', 'X.o', 'X..', '.XX'].forEach((row, r) => [...row].forEach((c, i) => {
+            if (c !== '.') b.box(0.012, 0.012, 0.01, (i - 1) * 0.012, CHEST_Y + 0.106 + (2 - r) * 0.012, P.chestD / 2 + 0.012, c === 'X' ? '#e4e7ec' : '#b9d3ff');
+        }));
         b.box(0.15, 0.06, 0.14, 0, COLLAR_Y - 0.02, 0, P.skinShade);
     } else {
         // White T-shirt over navy shorts
@@ -305,42 +336,140 @@ function buildArm(P, holding) {
 function buildHead(P) {
     const b = new Blocks(), hw = P.headW, face = hw / 2;
     b.box(P.female ? 0.16 : 0.2, 0.14, P.female ? 0.16 : 0.2, 0, 0.01, 0, P.skinShade);
+    if (P.female) return buildHerHead(b, P);
     b.box(hw, hw, hw, 0, 0.3, 0, P.skin, { outline: true });
-    b.box(P.female ? hw - 0.16 : hw - 0.06, 0.07, P.female ? hw - 0.13 : hw - 0.05, 0, 0.055, 0.01, P.female ? P.skin : P.skinShade);
+    b.box(hw - 0.06, 0.07, hw - 0.05, 0, 0.055, 0.01, P.skinShade);
     [1, -1].forEach(side => b.box(0.055, 0.13, 0.11, (hw / 2 + 0.02) * side, 0.29, -0.02, P.skinShade));
     // Face: eyes with a glint, brows, a small smile
     [1, -1].forEach(side => {
         b.box(0.06, 0.07, 0.02, 0.115 * side, 0.3, face + 0.004, '#2a211c');
         b.box(0.022, 0.022, 0.01, 0.115 * side + 0.014, 0.318, face + 0.014, '#ffffff');
-        b.box(0.1, 0.022, 0.02, 0.115 * side, P.female ? 0.4 : 0.395, face + 0.004, P.hair);
+        b.box(0.1, 0.022, 0.02, 0.115 * side, 0.395, face + 0.004, P.hair);
     });
     b.box(0.1, 0.022, 0.016, 0, 0.165, face + 0.004, '#c46d65');
-    if (P.female) {
-        [1, -1].forEach(side => b.box(0.07, 0.035, 0.01, 0.16 * side, 0.22, face + 0.004, '#f3a5a9'));
-        // Crown and a side-swept fringe parted on her right
-        b.box(hw + 0.05, 0.13, hw + 0.06, 0, 0.52, -0.01, P.hair, { outline: true });
-        b.box(0.34, 0.12, 0.08, 0.07, 0.47, face - 0.01, P.hair, { rot: [0, 0, -0.18] });
-        b.box(0.13, 0.08, 0.08, -0.19, 0.49, face - 0.01, P.hairLight);
-        b.box(0.07, 0.3, 0.12, -(hw / 2 + 0.03), 0.38, face - 0.08, P.hair);
-        b.box(0.07, 0.3, 0.12, hw / 2 + 0.03, 0.38, face - 0.08, P.hair);
-    } else {
-        // Short textured crop: a fringe that falls onto the forehead, short sides, a few tufts on top
-        b.box(hw + 0.04, 0.12, hw + 0.04, 0, 0.53, 0, P.hair, { outline: true });
-        b.box(hw + 0.02, 0.08, 0.08, 0, 0.5, face - 0.02, P.hair);
-        b.box(0.16, 0.1, 0.06, -0.15, 0.44, face, P.hair);
-        b.box(0.18, 0.12, 0.06, 0.01, 0.43, face + 0.004, P.hair);
-        b.box(0.14, 0.08, 0.06, 0.16, 0.45, face, P.hairLight);
-        // Sides cut short above the ears, the back tapering down to the nape
-        [1, -1].forEach(side => {
-            b.box(0.035, 0.15, hw - 0.06, (hw / 2 + 0.015) * side, 0.45, -0.01, P.hair);
-            b.box(0.03, 0.2, 0.2, (hw / 2 + 0.013) * side, 0.36, -0.15, P.hair);
-        });
-        b.box(hw + 0.02, 0.36, 0.06, 0, 0.36, -(hw / 2 + 0.02), P.hair, { outline: true });
-        b.box(hw - 0.08, 0.08, 0.05, 0, 0.15, -(hw / 2 + 0.015), shade(P.hair, -0.4));
-        [[-0.12, 0.08, 0.3], [0.08, -0.06, -0.25], [0.16, 0.12, 0.2], [-0.04, -0.15, -0.15]].forEach(([x, z, r]) =>
-            b.box(0.13, 0.06, 0.12, x, 0.6, z, P.hairLight, { rot: [r * 0.5, r, r] }));
-    }
+    // Short textured crop: a fringe that falls onto the forehead, short sides, a few tufts on top
+    b.box(hw + 0.04, 0.12, hw + 0.04, 0, 0.53, 0, P.hair, { outline: true });
+    b.box(hw + 0.02, 0.08, 0.08, 0, 0.5, face - 0.02, P.hair);
+    b.box(0.16, 0.1, 0.06, -0.15, 0.44, face, P.hair);
+    b.box(0.18, 0.12, 0.06, 0.01, 0.43, face + 0.004, P.hair);
+    b.box(0.14, 0.08, 0.06, 0.16, 0.45, face, P.hairLight);
+    // Sides cut short above the ears, the back tapering down to the nape
+    [1, -1].forEach(side => {
+        b.box(0.035, 0.15, hw - 0.06, (hw / 2 + 0.015) * side, 0.45, -0.01, P.hair);
+        b.box(0.03, 0.2, 0.2, (hw / 2 + 0.013) * side, 0.36, -0.15, P.hair);
+    });
+    b.box(hw + 0.02, 0.36, 0.06, 0, 0.36, -(hw / 2 + 0.02), P.hair, { outline: true });
+    b.box(hw - 0.08, 0.08, 0.05, 0, 0.15, -(hw / 2 + 0.015), shade(P.hair, -0.4));
+    [[-0.12, 0.08, 0.3], [0.08, -0.06, -0.25], [0.16, 0.12, 0.2], [-0.04, -0.15, -0.15]].forEach(([x, z, r]) =>
+        b.box(0.13, 0.06, 0.12, x, 0.6, z, P.hairLight, { rot: [r * 0.5, r, r] }));
     return b;
+}
+
+// Her face, after her photos: a soft round face with a high forehead, framed by straight brown hair parted in
+// the middle, defined arched brows, clear almond eyes behind big black cat-eye glasses, a small rounded nose
+// and full dusty rose lips
+function buildHerHead(b, P) {
+    const hw = P.headW, face = hw / 2, front = face + 0.004;
+    // Full width down to the mouth, then the jaw rounds in to a soft chin. Their outlines come from copies set
+    // back a little, so no line is drawn across her face where it steps in
+    const skin = (w, h, y, d = hw, z = 0) => {
+        b.box(w, h, d, 0, y, z, P.skin);
+        b.box(w, h, d - 0.03, 0, y, z - 0.015, P.skin, { outline: true });
+    };
+    skin(hw, 0.42, 0.33);
+    skin(hw - 0.12, 0.05, 0.095);
+    skin(hw - 0.22, 0.04, 0.05, hw - 0.02, 0.01);
+    [1, -1].forEach(side => {
+        const x = 0.1 * side, y = 0.305, out = dx => x + dx * side;
+        // Almond eye: white either side of a dark iris that the upper lid rests on, with a glint; a bold lash
+        // line that ends level in a fine point past the outer corner, a dip at the inner corner, and a thin
+        // lower lash line under the outer half
+        b.box(0.086, 0.022, 0.016, x, y, front, '#fbf5f0');
+        b.box(0.062, 0.034, 0.016, x, y, front, '#fbf5f0');
+        b.box(0.04, 0.036, 0.02, x, y - 0.001, front, '#22170f');
+        b.box(0.028, 0.042, 0.02, x, y - 0.001, front, '#22170f');
+        b.box(0.026, 0.01, 0.022, x, y - 0.014, front, '#3d2a1f');
+        b.box(0.012, 0.012, 0.01, x + 0.007, y + 0.006, front + 0.012, '#ffffff');
+        b.box(0.09, 0.014, 0.024, out(0.002), y + 0.021, front + 0.001, '#140e0b');
+        b.box(0.018, 0.009, 0.024, out(0.05), y + 0.0115, front + 0.001, '#140e0b');
+        b.box(0.008, 0.01, 0.024, out(-0.042), y + 0.012, front + 0.001, '#140e0b');
+        b.box(0.022, 0.006, 0.014, out(0.02), y - 0.02, front, '#4a3226');
+        b.box(0.016, 0.006, 0.014, out(0.039), y - 0.014, front, '#4a3226');
+        // Defined brow: a fuller head rising gently, then a crisp, thinner tail that runs on level rather
+        // than falling away; and a faint blush
+        b.box(0.064, 0.018, 0.016, out(-0.013), 0.3972, front, '#4a3226', { rot: [0, 0, 0.1 * side] });
+        b.box(0.038, 0.012, 0.016, out(0.035), 0.4024, front, '#4a3226');
+        b.box(0.06, 0.026, 0.01, 0.135 * side, 0.215, front, '#f3b8ae');
+    });
+    // Small nose with a soft, rounded tip and a shadow under it
+    b.box(0.026, 0.05, 0.012, 0, 0.255, face + 0.002, P.skin);
+    b.box(0.05, 0.034, 0.024, 0, 0.218, face + 0.008, P.skin);
+    b.box(0.044, 0.01, 0.016, 0, 0.197, face + 0.004, P.skinShade);
+    // Full, dusty rose lips, closed, with the corners lifting just a little
+    b.box(0.068, 0.014, 0.014, 0, 0.164, front, '#c8736c');
+    b.box(0.054, 0.006, 0.012, 0, 0.155, front, '#b05f5c');
+    b.box(0.058, 0.016, 0.014, 0, 0.145, front, '#d4847e');
+    [1, -1].forEach(side => b.box(0.01, 0.01, 0.014, 0.039 * side, 0.163, front, '#b5625d'));
+    // Straight brown hair parted in the middle: the crown with the parting showing, two curtains that sweep
+    // out from it over the corners of her forehead, and locks down both sides of her face past the jaw, the
+    // ends a lighter brown
+    b.box(hw + 0.05, 0.13, hw + 0.06, 0, 0.565, -0.01, P.hair, { outline: true });
+    b.box(0.018, 0.1, 0.01, 0, 0.585, face + 0.02, shade(P.skin, 0.06));
+    b.box(0.018, 0.012, hw * 0.5, 0, 0.63, face - hw * 0.25, shade(P.skin, 0.06));
+    [1, -1].forEach(side => {
+        b.box(0.22, 0.09, 0.07, 0.115 * side, 0.5, face - 0.005, P.hair, { rot: [0, 0, -0.5 * side] });
+        b.box(0.06, 0.5, 0.08, (hw / 2 - 0.008) * side, 0.25, face - 0.015, P.hair, { outline: true });
+        b.box(0.07, 0.05, 0.08, hw / 2 * side, -0.02, face - 0.02, shade(P.hairLight, 0.18), { outline: true });
+        b.box(0.02, 0.26, 0.01, (hw / 2 - 0.022) * side, 0.27, face + 0.026, P.hairLight);
+        b.box(0.07, 0.3, 0.12, (hw / 2 + 0.03) * side, 0.38, face - 0.08, P.hair);
+    });
+    buildGlasses(b, face);
+    return b;
+}
+
+// Her glasses: big black cat-eye frames, the top rim a little thicker and sweeping up to a point at the outer
+// corner, rounded underneath, with her eyes in the top half. One lens, from the nose (left) outwards; the
+// other is its mirror image
+const CAT_EYE = [
+    '.............XX',
+    'XXXXXXXXXXXXXXX',
+    'XXXXXXXXXXXXXX.',
+    'X............X.',
+    'X............X.',
+    'X............X.',
+    'X...........X..',
+    'X...........X..',
+    'X..........X...',
+    '.X.........X...',
+    '.X........X....',
+    '..XX....XX.....',
+    '....XXXX.......'
+];
+const GLASSES = { px: 0.012, inner: 0.022, top: 0.384 };
+
+function buildGlasses(b, face) {
+    const { px, inner, top } = GLASSES, frame = '#16141a';
+    [1, -1].forEach(side => CAT_EYE.forEach((row, r) => {
+        for (const run of row.matchAll(/X+/g)) {
+            const n = run[0].length;
+            b.box(n * px, px, px, (inner + (run.index + n / 2) * px) * side, top - r * px, face + 0.036, frame);
+        }
+    }));
+    // The bridge across the top of her nose
+    b.box(inner * 2, px, px, 0, top - 1.5 * px, face + 0.036, frame);
+}
+
+// The clear lenses, filling the frames between their sides: see-through, so they stay out of the merged blocks
+function buildLenses(face) {
+    const { px, inner, top } = GLASSES, b = new Blocks();
+    [1, -1].forEach(side => CAT_EYE.forEach((row, r) => {
+        const runs = [...row.matchAll(/X+/g)];
+        if (runs.length < 2) return;
+        const from = runs[0].index + runs[0][0].length, to = runs[runs.length - 1].index;
+        b.box((to - from) * px, px, 0.004, (inner + (from + to) / 2 * px) * side, top - r * px, face + 0.034, '#ffffff');
+    }));
+    const material = new THREE.MeshStandardMaterial({ color: '#e3f0fa', transparent: true, opacity: 0.05, roughness: 0.2, depthWrite: false });
+    return b.mesh(material, { shadow: false });
 }
 
 // Her hair below the crown: the back and the sides down to her shoulders, with a few lighter strands
@@ -350,7 +479,7 @@ function buildHairFlow(P) {
     b.box(hw - 0.02, 0.54, 0.06, 0, -0.25, -hw / 2 + 0.06, shade(P.hair, 0.25));
     [1, -1].forEach(side => {
         b.box(0.075, 0.5, hw - 0.12, (hw / 2 + 0.04) * side, -0.27, 0.0, P.hair, { outline: true });
-        b.box(0.09, 0.08, hw - 0.16, (hw / 2 + 0.05) * side, -0.53, -0.02, shade(P.hair, 0.2));
+        b.box(0.09, 0.08, hw - 0.16, (hw / 2 + 0.05) * side, -0.53, -0.02, P.hairLight);
     });
     [-0.15, 0.02, 0.17].forEach((x, i) => b.box(0.05, 0.42 - i * 0.06, 0.012, x, -0.25, -hw / 2 - 0.054, P.hairLight));
     b.box(hw + 0.09, 0.07, 0.12, 0, -0.56, -hw / 2 + 0.01, shade(P.hair, 0.2));
@@ -376,7 +505,8 @@ function heartGeometry() {
 }
 
 // ----- Voxel terrain: a grid of blocks drawn as one mesh of only the faces open to the air -----
-// The six faces of a unit cube, corners in counter-clockwise order seen from outside
+// The six faces of a unit cube: which way each looks, and its two triangles' corners in a flat list,
+// counter-clockwise seen from outside
 const FACES = [
     { n: [1, 0, 0], c: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]] },
     { n: [-1, 0, 0], c: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]] },
@@ -384,9 +514,9 @@ const FACES = [
     { n: [0, -1, 0], c: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]] },
     { n: [0, 0, 1], c: [[1, 0, 1], [1, 1, 1], [0, 1, 1], [0, 0, 1]] },
     { n: [0, 0, -1], c: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]] }
-];
+].map(({ n, c }) => ({ n, corners: [0, 1, 2, 0, 2, 3].flatMap(m => c[m]) }));
 
-const ID = { sand: 1, sandDeep: 2, sandstone: 3, dirt: 4, stone: 5, stoneDark: 6, seabed: 7, grass: 8, grassDark: 9, path: 10, rock: 11 };
+const ID = { sand: 1, sandDeep: 2, sandstone: 3, dirt: 4, stone: 5, stoneDark: 6, seabed: 7, grass: 8, grassDark: 9, path: 10, rock: 11, pond: 12 };
 const PALETTE = [];
 for (const [name, id] of Object.entries(ID)) PALETTE[id] = color(COLORS[name]);
 
@@ -407,8 +537,11 @@ class VoxelGrid {
         this.cells[((i - this.i0) * this.nj + (j - this.j0)) * this.nk + (k - this.k0)] = id;
     }
 
-    mesh() {
+    // With `undersides: false` the faces looking down are left out too, for an island the camera never goes
+    // below
+    mesh({ undersides = true } = {}) {
         const position = [], normal = [], colors = [];
+        const faces = FACES.filter(face => undersides || face.n[1] >= 0);
         for (let a = 0; a < this.ni; a++) {
             for (let b = 0; b < this.nj; b++) {
                 for (let c = 0; c < this.nk; c++) {
@@ -417,13 +550,13 @@ class VoxelGrid {
                     const i = a + this.i0, j = b + this.j0, k = c + this.k0;
                     // Each block a shade lighter or darker than its neighbours, like the texture of real blocks
                     const tint = 0.93 + hash(i + j * 7, k, 3) * 0.1, p = PALETTE[id];
-                    for (const face of FACES) {
-                        if (this.get(i + face.n[0], j + face.n[1], k + face.n[2])) continue;
-                        for (const n of [0, 1, 2, 0, 2, 3]) {
-                            const [cx, cy, cz] = face.c[n];
-                            position.push((i - 0.5 + cx) * B, (j + cy) * B, (k - 0.5 + cz) * B);
-                            normal.push(face.n[0], face.n[1], face.n[2]);
-                            colors.push(p.r * tint, p.g * tint, p.b * tint);
+                    const red = p.r * tint, green = p.g * tint, blue = p.b * tint;
+                    for (const { n, corners } of faces) {
+                        if (this.get(i + n[0], j + n[1], k + n[2])) continue;
+                        for (let v = 0; v < 18; v += 3) {
+                            position.push((i - 0.5 + corners[v]) * B, (j + corners[v + 1]) * B, (k - 0.5 + corners[v + 2]) * B);
+                            normal.push(n[0], n[1], n[2]);
+                            colors.push(red, green, blue);
                         }
                     }
                 }
@@ -441,14 +574,18 @@ class VoxelGrid {
 
 // ----- The island -----
 // Columns of blocks: i across, k from the front (the bay, toward the sun) to the back, levels up, all in
-// blocks. We stand near the front with the bay before us; behind us the beach rises to grass, a cottage and
-// its garden, and a hill of pines; the lighthouse is on a rocky point at the front left. Underneath, the
+// blocks. We lie on two loungers near the front with the bay before us; behind us the beach rises to grass,
+// a cottage and its garden, a hill of pines and a forest; to the right are beach huts, a field of tulips, a
+// pond and a windmill on its own hill; the lighthouse is on a rocky point at the front left. Underneath, the
 // island narrows in layers of sand, earth and stone, like a chunk lifted out of the ground.
-const ISLAND = { ci: 0, ck: 7, ri: 32, rk: 25 };
-const ROCK = { i: -24, k: -8 };
-const COTTAGE = { i0: -15, i1: -9, k0: 12, k1: 17 };
-const GARDEN = { i0: -19, i1: -6, k0: 10, k1: 20 };
-const HILL = { i: -3, k: 24 };
+const ISLAND = { ci: 0, ck: 9, ri: 46, rk: 36 };
+const ROCK = { i: -31, k: -13 };
+const COTTAGE = { i0: -15, i1: -9, k0: 14, k1: 19 };
+const GARDEN = { i0: -19, i1: -6, k0: 12, k1: 22 };
+const HILL = { i: -4, k: 31 };
+const MILL = { i: 25, k: 35 };
+const POND = { i: 9, k: 34, ri: 6.5, rk: 4 };
+const TULIPS = { i0: 14, i1: 29, k0: 16, k1: 26 };
 
 // 0 at the middle of the island, 1 at its edge
 function islandRadius(i, k) {
@@ -458,15 +595,16 @@ function islandRadius(i, k) {
 }
 
 const insideIsland = (i, k) => islandRadius(i, k) <= 1;
-const shoreK = i => -4 + Math.round(1.6 * Math.sin(i * 0.21 + 0.5) + 0.8 * Math.sin(i * 0.53));
-const grassK = i => 9 + Math.round(2 * Math.sin(i * 0.3 + 1.2));
+const shoreK = i => -6 + Math.round(1.6 * Math.sin(i * 0.21 + 0.5) + 0.8 * Math.sin(i * 0.53));
+const grassK = i => 11 + Math.round(2 * Math.sin(i * 0.3 + 1.2));
 const isRock = (i, k) => ((i - ROCK.i) / 6) ** 2 + ((k - ROCK.k) / 5) ** 2 < 1;
 const isWater = (i, k) => !isRock(i, k) && k < shoreK(i);
 const isGrass = (i, k) => !isRock(i, k) && k >= grassK(i);
+const isPond = (i, k) => ((i - POND.i) / POND.ri) ** 2 + ((k - POND.k) / POND.rk) ** 2 < 1;
 
 // The gravel path from the beach up to the cottage door
 function onPath(i, k) {
-    const ax = -1, az = 6, bx = -12, bz = 11;
+    const ax = -2, az = 7, bx = -12, bz = 13;
     const t = Math.max(0, Math.min(1, ((i - ax) * (bx - ax) + (k - az) * (bz - az)) / ((bx - ax) ** 2 + (bz - az) ** 2)));
     return Math.hypot(i - (ax + t * (bx - ax)), k - (az + t * (bz - az))) < 0.9;
 }
@@ -477,15 +615,18 @@ function topLevel(i, k) {
         return Math.hypot(i - ROCK.i, k - ROCK.k) < 2.6 ? 3 : 2 + (hash(i, k, 4) > 0.5 ? 1 : 0) + (hash(i, k, 5) > 0.8 ? 1 : 0);
     }
     const s = shoreK(i);
-    if (k < s) return -1 - Math.min(Math.floor((s - 1 - k) / 2), 4);
-    if (!isGrass(i, k)) return k - s > 6 ? 2 : 1;
+    if (k < s) return -1 - Math.min(Math.floor((s - 1 - k) / 2), 5);
+    if (!isGrass(i, k)) return k - s > 10 ? 2 : 1;
+    // The pond lies a block below the grass around it
+    if (isPond(i, k)) return 1;
     const hill = Math.round(3.2 * Math.exp(-((i - HILL.i) ** 2 + (k - HILL.k) ** 2) / 45));
-    const bump = (k > 21 || Math.abs(i) > 21) && hash(i, k, 1) > 0.8 ? 1 : 0;
-    return 2 + hill + bump;
+    const mill = Math.round(3.4 * Math.exp(-((i - MILL.i) ** 2 + (k - MILL.k) ** 2) / 60));
+    const bump = (k > 27 || (Math.abs(i) > 30 && k > 14)) && !isPond(i, k) && hash(i, k, 1) > 0.8 ? 1 : 0;
+    return 2 + hill + mill + bump;
 }
 
 function bottomLevel(i, k) {
-    return -Math.round(4 + 14 * Math.pow(Math.max(0, 1 - islandRadius(i, k)), 0.75) + hash(i, k, 2) * 2.5);
+    return -Math.round(4 + 18 * Math.pow(Math.max(0, 1 - islandRadius(i, k)), 0.75) + hash(i, k, 2) * 2.5);
 }
 
 // World height of the ground at a block
@@ -496,6 +637,7 @@ function blockId(i, k, j, top) {
     if (isRock(i, k)) return depth === 0 ? ID.rock : hash(i, k, j) > 0.5 ? ID.stone : ID.stoneDark;
     if (depth === 0) {
         if (isWater(i, k)) return ID.seabed;
+        if (isPond(i, k)) return ID.pond;
         if (onPath(i, k)) return ID.path;
         if (isGrass(i, k)) return hash(i, k, 6) > 0.7 ? ID.grassDark : ID.grass;
         return ID.sand;
@@ -508,17 +650,17 @@ function blockId(i, k, j, top) {
 }
 
 function buildIsland() {
-    const grid = new VoxelGrid(-36, 36, -26, 8, -22, 36);
+    const grid = new VoxelGrid(-56, 56, -30, 10, -36, 54);
     const columns = [];
-    for (let i = -35; i <= 35; i++) {
-        for (let k = -21; k <= 35; k++) {
+    for (let i = -55; i <= 55; i++) {
+        for (let k = -35; k <= 53; k++) {
             if (!insideIsland(i, k)) continue;
             const top = topLevel(i, k), bottom = bottomLevel(i, k);
             for (let j = bottom; j < top; j++) grid.set(i, j, k, blockId(i, k, j, top));
             columns.push({ i, k, top });
         }
     }
-    return { mesh: grid.mesh(), columns };
+    return { mesh: grid.mesh({ undersides: false }), columns };
 }
 
 // A small floating island around the big one: grass on top, earth and stone below
@@ -641,54 +783,100 @@ function oakTree(b, i, k, height, seed) {
     for (let n = 0; n < height; n++) b.box(s, s, s, x, y + n * s + s / 2, z, n % 2 ? '#7a5233' : '#6b4629');
     const top = y + height * s;
     const rand = random(seed);
-    const leaf = ['#4f9a4a', '#5aa953', '#468b42', '#63b35a'];
+    const leaf = ['#4f9a4a', '#5aa953', '#468b42', '#63b35a'], crown = [];
     for (let dx = -2; dx <= 2; dx++) {
         for (let dy = 0; dy <= 3; dy++) {
             for (let dz = -2; dz <= 2; dz++) {
                 if (dx * dx + dz * dz + (dy - 1.3) ** 2 * 1.5 > 6.2 || rand() < 0.1) continue;
-                b.box(B, B, B, x + dx * B, top + dy * B - B / 2, z + dz * B, leaf[Math.floor(rand() * leaf.length)]);
+                crown.push([dx, dy, dz, leaf[Math.floor(rand() * leaf.length)]]);
             }
         }
     }
+    cubes(b, B, new THREE.Vector3(x, top - B / 2, z), crown);
     return { x, z, top };
 }
 
 function pineTree(b, i, k, height) {
     const x = i * B, z = k * B, y = ground(i, k), s = 0.24;
-    for (let n = 0; n < 3; n++) b.box(s, s, s, x, y + n * s + s / 2, z, '#6b4629');
-    let level = y + 3 * s;
+    // A trunk three cubes high, then layers of needles narrowing to the top
+    const cells = [0, 1, 2].map(n => [0, n, 0, '#6b4629']);
     const layers = height >= 4 ? [2, 2, 1, 1, 1, 0, 0] : [2, 1, 1, 0, 0];
     layers.forEach((r, n) => {
         for (let dx = -r; dx <= r; dx++) {
             for (let dz = -r; dz <= r; dz++) {
                 if (r === 2 && Math.abs(dx) === 2 && Math.abs(dz) === 2) continue;
-                b.box(s, s, s, x + dx * s, level + s / 2, z + dz * s, (n + dx + dz) % 2 ? '#2f6e4f' : '#3a7f5c');
+                cells.push([dx, 3 + n, dz, (n + dx + dz) % 2 ? '#2f6e4f' : '#3a7f5c']);
             }
         }
-        level += s;
     });
-    b.box(s * 0.6, s, s * 0.6, x, level + s / 2, z, '#3a7f5c');
+    cubes(b, s, new THREE.Vector3(x, y + s / 2, z), cells);
+    b.box(s * 0.6, s, s * 0.6, x, y + (3 + layers.length) * s + s / 2, z, '#3a7f5c');
 }
 
-function beachUmbrella(b, i, k, stripe) {
-    const x = i * B, z = k * B, y = ground(i, k), cell = 0.2;
-    b.box(0.07, 1.6, 0.07, x, y + 0.8, z, '#f4f4f4');
-    [[7, 1.3], [5, 1.42], [3, 1.54], [1, 1.66]].forEach(([n, h]) => {
-        for (let a = 0; a < n; a++) {
-            for (let c = 0; c < n; c++) b.box(cell, 0.12, cell, x + (a - (n - 1) / 2) * cell, y + h, z + (c - (n - 1) / 2) * cell, a % 2 ? '#ffffff' : stripe);
+// ----- Where we lie: two loungers side by side under a big umbrella, built facing +z (out to sea) -----
+// How far the loungers' backs, and we, lean back from upright
+const RECLINE = 0.87;
+
+// A wooden lounger with a striped cushion, its back raised to RECLINE; x is its middle. Whoever lies on it
+// has their hips at z = 0, the seat's top at 0.42
+function lounger(b, x, stripe) {
+    const W = 1.1, wood = COLORS.woodLight, dark = COLORS.wood;
+    b.box(W, 0.08, 1.7, x, 0.3, 0.23, wood, { outline: true });
+    [[-1, -0.55], [1, -0.55], [-1, 1.0], [1, 1.0]].forEach(([side, z]) => b.box(0.08, 0.26, 0.08, x + side * (W / 2 - 0.07), 0.13, z, dark));
+    // Seat cushion, striped along its length
+    const stripes = 5, sw = (W - 0.1) / stripes;
+    for (let n = 0; n < stripes; n++) b.box(sw, 0.08, 1.3, x - (W - 0.1) / 2 + (n + 0.5) * sw, 0.38, 0.43, n % 2 ? '#ffffff' : stripe);
+    // The back, raised about its foot, with its own cushion and a pillow at the top
+    const back = turned(b, new THREE.Vector3(x, 0.42, -0.11), [-RECLINE, 0, 0]);
+    for (let n = 0; n < stripes; n++) back(sw, 1.02, 0.08, x - (W - 0.1) / 2 + (n + 0.5) * sw, 0.93, -0.15, n % 2 ? '#ffffff' : stripe);
+    back(W, 1.06, 0.06, x, 0.92, -0.22, wood, { outline: true });
+    back(0.56, 0.12, 0.12, x, 1.36, -0.07, '#ffffff', { outline: true });
+    // Two struts propping the back up
+    [-1, 1].forEach(side => b.box(0.06, 0.31, 0.06, x + side * (W / 2 - 0.07), 0.495, -0.58, dark));
+}
+
+// A big beach umbrella planted at (x, z), its pole leaning by `tilt` (turns about x, then z); the canopy steps
+// up in rings to the top, in stripes of colour and white, with a scalloped edge
+function parasol(b, x, z, height, radius, tilt, stripe) {
+    const lean = turned(b, new THREE.Vector3(x, 0, z), tilt);
+    lean(0.08, height, 0.08, x, height / 2, z, '#f4f4f4', { outline: true });
+    const cell = 0.24, rings = [radius, radius * 0.76, radius * 0.52, radius * 0.28, 0];
+    for (let r = 0; r < 4; r++) {
+        const n = Math.ceil(rings[r] / cell);
+        for (let a = -n; a <= n; a++) {
+            for (let c = -n; c <= n; c++) {
+                const d = Math.hypot(a, c) * cell;
+                if (d > rings[r] || (r < 3 && d <= rings[r + 1])) continue;
+                const sector = Math.floor(((Math.atan2(c, a) + Math.PI) / (Math.PI * 2)) * 8);
+                const hex = sector % 2 ? '#ffffff' : stripe;
+                lean(cell, 0.13, cell, x + a * cell, height + r * 0.13, z + c * cell, hex);
+                if (r === 0 && d > rings[0] - cell && (a + c) % 2 === 0) lean(cell, 0.1, cell, x + a * cell, height - 0.11, z + c * cell, hex);
+            }
         }
-    });
-    // A striped towel in its shade
-    ['#ffffff', '#5fb0e0', '#ffffff', '#f4a6b8', '#ffffff', '#5fb0e0'].forEach((hex, n) => b.box(0.62, 0.03, 0.2, x + 0.55, y + 0.015, z - 0.5 + n * 0.2, hex));
+    }
+    lean(0.12, 0.14, 0.12, x, height + 0.58, z, '#f4f4f4');
 }
 
-// A lounger looking out to sea
-function lounger(b, i, k) {
-    const x = i * B, z = k * B, y = ground(i, k);
-    [[-0.17, -0.3], [0.17, -0.3], [-0.17, 0.3], [0.17, 0.3]].forEach(([dx, dz]) => b.box(0.04, 0.12, 0.04, x + dx, y + 0.06, z + dz, '#f4f4f4'));
-    b.box(0.4, 0.05, 0.72, x, y + 0.14, z, '#ffffff');
-    ['#5fb0e0', '#ffffff', '#5fb0e0', '#ffffff', '#5fb0e0'].forEach((hex, n) => b.box(0.36, 0.04, 0.12, x, y + 0.18, z - 0.3 + n * 0.12, hex));
-    for (let n = 0; n < 4; n++) b.box(0.36, 0.06, 0.08, x, y + 0.22 + n * 0.08, z + 0.3 + n * 0.05, n % 2 ? '#ffffff' : '#5fb0e0');
+// A little wooden table with two coconuts to drink from, each with a straw and a paper umbrella
+function drinksTable(b, x, z) {
+    b.box(0.42, 0.05, 0.42, x, 0.47, z, COLORS.woodLight, { outline: true });
+    b.box(0.07, 0.44, 0.07, x, 0.23, z, COLORS.wood);
+    b.box(0.26, 0.03, 0.26, x, 0.015, z, COLORS.wood);
+    [[-0.09, 0.06, '#f4a6b8'], [0.09, -0.06, '#5fb0e0']].forEach(([dx, dz, hex]) => {
+        b.box(0.16, 0.14, 0.16, x + dx, 0.565, z + dz, '#7a5233');
+        b.box(0.11, 0.02, 0.11, x + dx, 0.64, z + dz, '#f6efe2');
+        b.box(0.02, 0.16, 0.02, x + dx + 0.03, 0.71, z + dz, hex, { rot: [0, 0, -0.3] });
+        b.box(0.012, 0.14, 0.012, x + dx - 0.03, 0.7, z + dz, '#f4f4f4');
+        b.box(0.09, 0.025, 0.09, x + dx - 0.03, 0.77, z + dz, hex);
+    });
+}
+
+// A pair of flip-flops left on the sand
+function flipFlops(b, x, z, hex) {
+    [[-0.07, 0, -0.12], [0.08, 0.04, 0.1]].forEach(([dx, dz, turn]) => {
+        b.box(0.1, 0.025, 0.25, x + dx, 0.0125, z + dz, hex, { rot: [0, turn, 0] });
+        b.box(0.08, 0.03, 0.025, x + dx + Math.sin(turn) * 0.05, 0.035, z + dz + Math.cos(turn) * 0.05, '#ffffff', { rot: [0, turn, 0] });
+    });
 }
 
 function sandcastle(b, i, k) {
@@ -844,7 +1032,7 @@ function fenceAndGarden(b) {
     }
     // Vegetable rows beside the cottage
     for (let i = -18; i <= -16; i++) {
-        for (let k = 12; k <= 18; k++) {
+        for (let k = 14; k <= 20; k++) {
             const y = ground(i, k);
             b.box(B * 0.9, 0.04, B * 0.9, i * B, y + 0.02, k * B, '#7a5233');
             b.box(0.06, 0.12, 0.06, i * B, y + 0.1, k * B, '#5aa953');
@@ -869,11 +1057,142 @@ function lighthouse(b, glow) {
     return new THREE.Vector3(x, top + 0.26, z);
 }
 
+// A windmill on its hill: a white tower narrowing up to a slate cap, a door and windows looking out to sea,
+// and four sails, returned on their own so they can turn
+function windmill(b, i, k) {
+    const x = i * B, z = k * B, y = ground(i, k), course = 0.42, courses = 7;
+    const half = h => (1.6 - Math.floor(h / course) * 0.1) / 2;
+    for (let n = 0; n < courses; n++) b.box(1.6 - n * 0.1, course, 1.6 - n * 0.1, x, y + (n + 0.5) * course, z, n % 2 ? '#f4f1ea' : '#e6dfd2', { outline: true });
+    const top = y + courses * course;
+    b.box(0.4, 0.66, 0.06, x, y + 0.33, z - half(0) - 0.02, COLORS.woodDark);
+    [1.3, 2.2].forEach(h => b.box(0.22, 0.22, 0.06, x, y + h, z - half(h) - 0.02, '#7fb8e0'));
+    b.box(1.2, 0.3, 1.3, x, top + 0.15, z, COLORS.roof, { outline: true });
+    b.box(0.9, 0.26, 1.0, x, top + 0.43, z, '#3f4a56');
+    b.box(0.5, 0.2, 0.6, x, top + 0.66, z, COLORS.roof);
+    const sails = new THREE.Group();
+    sails.position.set(x, top + 0.2, z - 0.75);
+    const s = new Blocks(), hub = new THREE.Vector3();
+    s.box(0.24, 0.24, 0.24, 0, 0, 0, COLORS.woodDark);
+    s.box(0.1, 0.1, 0.4, 0, 0, 0.25, COLORS.woodDark);
+    for (let a = 0; a < 4; a++) {
+        const arm = turned(s, hub, [0, 0, a * Math.PI / 2]);
+        arm(0.08, 2.1, 0.06, 0, 1.12, 0, COLORS.woodDark);
+        arm(0.48, 1.7, 0.03, 0.29, 1.22, -0.03, '#fbf8f2');
+        for (let n = 0; n < 7; n++) arm(0.52, 0.035, 0.05, 0.29, 0.42 + n * 0.27, -0.04, COLORS.wood);
+        arm(0.035, 1.7, 0.05, 0.54, 1.22, -0.04, COLORS.wood);
+    }
+    sails.add(s.mesh());
+    return sails;
+}
+
+// A field of tulips in rows of colours, between furrows of earth
+function tulipField(b) {
+    const { i0, i1, k0, k1 } = TULIPS, colours = ['#f7a8c4', '#e8455a', '#ffffff', '#ffd166', '#c3a6e6', '#ff9f43'];
+    for (let k = k0; k <= k1; k += 2) {
+        const hex = colours[((k - k0) / 2) % colours.length];
+        for (let i = i0; i <= i1; i++) {
+            if (!insideIsland(i, k) || !isGrass(i, k)) continue;
+            const y = ground(i, k);
+            b.box(B, 0.04, B * 0.7, i * B, y + 0.02, k * B, '#7a5233');
+            [-0.08, 0.08].forEach((dx, n) => {
+                const tx = i * B + dx, tz = k * B + (n ? 0.05 : -0.05), h = 0.16 + hash(i, k, n + 20) * 0.08;
+                b.box(0.025, h, 0.025, tx, y + h / 2, tz, '#5aa953');
+                b.box(0.08, 0.09, 0.08, tx, y + h + 0.03, tz, hex);
+            });
+        }
+    }
+}
+
+// On the pond: lily pads, some flowering, two ducks, reeds at its ends, and a little wooden bridge that
+// arches across its middle
+function pondLife(b) {
+    const y = B;
+    [[5, 33], [7, 36], [11, 35], [13, 33], [6, 32]].forEach(([i, k], n) => {
+        b.box(0.24, 0.02, 0.2, i * B + 0.05, y + 0.01, k * B, '#4f9a4a', { rot: [0, n, 0] });
+        if (n % 2 === 0) b.box(0.08, 0.06, 0.08, i * B + 0.05, y + 0.05, k * B, '#f7a8c4');
+    });
+    [[12, 32, 0.4], [6, 35, 2.6]].forEach(([i, k, turn]) => {
+        const duck = turned(b, new THREE.Vector3(i * B, y, k * B), [0, turn, 0]);
+        duck(0.24, 0.12, 0.15, i * B, y + 0.06, k * B, '#ffffff');
+        duck(0.09, 0.1, 0.09, i * B + 0.09, y + 0.17, k * B, '#ffffff');
+        duck(0.06, 0.03, 0.05, i * B + 0.16, y + 0.16, k * B, '#ff9f43');
+        duck(0.06, 0.06, 0.1, i * B - 0.11, y + 0.1, k * B, '#f4f4f4');
+    });
+    [[POND.i - 6, POND.k], [POND.i + 6, POND.k - 1], [POND.i - 5, POND.k + 2]].forEach(([i, k]) => {
+        for (let n = 0; n < 4; n++) b.box(0.03, 0.3 + n * 0.06, 0.03, i * B + (n - 1.5) * 0.07, y + 0.15 + n * 0.03, k * B + (n % 2) * 0.06, n % 2 ? '#6fae4f' : '#5c9a41');
+        b.box(0.05, 0.12, 0.05, i * B + 0.035, y + 0.5, k * B, '#8a5f3a');
+    });
+    const bx = POND.i * B, reach = POND.rk + 1;
+    for (let k = POND.k - reach; k <= POND.k + reach; k++) {
+        const t = (k - POND.k) / reach, h = 2 * B + 0.04 + (1 - t * t) * 0.24;
+        b.box(0.72, 0.06, B * 0.96, bx, h, k * B, k % 2 ? COLORS.wood : COLORS.woodLight);
+        [-1, 1].forEach(side => {
+            b.box(0.05, 0.28, 0.05, bx + side * 0.34, h + 0.14, k * B, COLORS.woodDark);
+            b.box(0.04, 0.04, B, bx + side * 0.34, h + 0.28, k * B, COLORS.wood);
+        });
+    }
+}
+
+// A little beach hut: upright boards in a colour and white, a door to the sea with a step, and a pitched
+// roof with its gable to the front
+function beachHut(b, i, k, hex) {
+    const x = i * B, z = k * B, y = ground(i, k), w = 1.4, h = 1.6, boards = 7, bw = w / boards;
+    for (let n = 0; n < boards; n++) {
+        const along = -w / 2 + (n + 0.5) * bw, board = n % 2 ? '#ffffff' : hex;
+        [-1, 1].forEach(end => b.box(bw, h, 0.08, x + along, y + h / 2, z + end * w / 2, board));
+        [-1, 1].forEach(side => b.box(0.08, h, bw, x + side * w / 2, y + h / 2, z + along, board));
+    }
+    b.box(0.48, 1.04, 0.04, x, y + 0.58, z - w / 2 - 0.05, '#ffffff');
+    b.box(0.38, 0.94, 0.03, x, y + 0.56, z - w / 2 - 0.07, shade(hex, 0.15));
+    b.box(0.04, 0.04, 0.03, x + 0.12, y + 0.55, z - w / 2 - 0.09, '#ffd166');
+    b.box(0.64, 0.08, 0.3, x, y + 0.04, z - w / 2 - 0.18, COLORS.woodLight);
+    for (let n = 1; n <= 3; n++) [-1, 1].forEach(end => b.box(w - n * 0.36, 0.14, 0.08, x, y + h + (n - 0.5) * 0.14, z + end * w / 2, n % 2 ? hex : '#ffffff'));
+    [-1, 1].forEach(side => b.box(w * 0.62, 0.07, w + 0.24, x + side * w * 0.256, y + h + 0.25, z, COLORS.roof, { rot: [0, 0, -side * 0.6], outline: true }));
+}
+
+// A lifeguard's tall chair, white and red, with a ladder at the back, a little roof and a flag
+function lifeguardChair(b, i, k) {
+    const x = i * B, z = k * B, y = ground(i, k), white = '#f4f4f4', red = '#e8455a';
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, c]) => b.box(0.08, 1.45, 0.08, x + a * 0.36, y + 0.72, z + c * 0.36, white));
+    for (let n = 1; n <= 4; n++) b.box(0.72, 0.05, 0.05, x, y + n * 0.29, z + 0.38, white);
+    b.box(0.9, 0.1, 0.9, x, y + 1.45, z, red, { outline: true });
+    b.box(0.9, 0.55, 0.08, x, y + 1.78, z + 0.41, red);
+    [-1, 1].forEach(side => b.box(0.06, 0.06, 0.86, x + side * 0.42, y + 1.72, z, white));
+    b.box(0.05, 1.05, 0.05, x - 0.4, y + 2.0, z + 0.4, white);
+    b.box(1.1, 0.07, 1.1, x - 0.05, y + 2.55, z + 0.05, red, { outline: true });
+    b.box(0.03, 0.5, 0.03, x + 0.4, y + 2.8, z + 0.4, white);
+    b.box(0.32, 0.2, 0.02, x + 0.56, y + 2.95, z + 0.4, red);
+}
+
+// A checked picnic blanket in the shade of an oak, with a basket and a few apples
+function picnic(b, i, k) {
+    const x = i * B, z = k * B, y = ground(i, k), cell = 0.28;
+    for (let a = 0; a < 5; a++) for (let c = 0; c < 4; c++) b.box(cell, 0.03, cell, x + (a - 2) * cell, y + 0.015, z + (c - 1.5) * cell, (a + c) % 2 ? '#ffffff' : '#e8455a');
+    b.box(0.34, 0.2, 0.24, x + 0.3, y + 0.13, z + 0.1, '#c49a6c', { outline: true });
+    b.box(0.36, 0.05, 0.26, x + 0.3, y + 0.25, z + 0.1, '#a8794e');
+    b.box(0.04, 0.16, 0.2, x + 0.3, y + 0.33, z + 0.1, '#7a5233');
+    [[-0.3, -0.15], [-0.2, 0.05], [-0.4, 0.1]].forEach(([dx, dz]) => b.box(0.08, 0.08, 0.08, x + dx, y + 0.07, z + dz, '#e8455a'));
+}
+
+// A forest of pines over the back left of the island
+function forest(b, keepClear) {
+    const rand = random(71), placed = [];
+    for (let n = 0; n < 120 && placed.length < 18; n++) {
+        const i = Math.round(-47 + rand() * 30), k = Math.round(18 + rand() * 28);
+        if (islandRadius(i, k) > 0.9 || !isGrass(i, k) || keepClear(i, k)) continue;
+        if (placed.some(([a, c]) => Math.hypot(a - i, c - k) < 4)) continue;
+        placed.push([i, k]);
+        pineTree(b, i, k, rand() > 0.4 ? 5 : 3);
+    }
+}
+
 function islandDetails(b, columns) {
     const rand = random(11);
     for (const { i, k, top } of columns) {
         const y = top * B;
-        const busy = (i >= GARDEN.i0 - 1 && i <= GARDEN.i1 + 1 && k >= GARDEN.k0 - 1 && k <= GARDEN.k1 + 1) || onPath(i, k);
+        const busy = (i >= GARDEN.i0 - 1 && i <= GARDEN.i1 + 1 && k >= GARDEN.k0 - 1 && k <= GARDEN.k1 + 1) || onPath(i, k) ||
+            (i >= TULIPS.i0 - 1 && i <= TULIPS.i1 + 1 && k >= TULIPS.k0 - 1 && k <= TULIPS.k1 + 1) ||
+            ((i - POND.i) / (POND.ri + 1.5)) ** 2 + ((k - POND.k) / (POND.rk + 1.5)) ** 2 < 1 || Math.hypot(i - MILL.i, k - MILL.k) < 3;
         // Grass tufts and flowers on the grassy part
         if (isGrass(i, k) && !busy && hash(i, k, 5) > 0.82) {
             for (let n = 0; n < 2; n++) {
@@ -900,12 +1219,12 @@ function islandDetails(b, columns) {
         b.box(0.05, 0.03, 0.05, sx + a * 0.05, sy, sz + c * 0.05, '#f2896d'));
 }
 
-// Our footprints, walking down the beach to where we stand
+// Our footprints, coming down the beach to the loungers
 function footprints(b, people) {
     for (const [person, side] of people) {
         const facing = new THREE.Vector3(Math.sin(person.outer.rotation.y), 0, Math.cos(person.outer.rotation.y));
         const across = new THREE.Vector3(facing.z, 0, -facing.x);
-        for (let d = 0.6, n = 0; d < 4.6; d += 0.42, n++) {
+        for (let d = 1.3, n = 0; d < 5.6; d += 0.42, n++) {
             const p = person.outer.position.clone().addScaledVector(facing, -d).addScaledVector(across, (n % 2 ? 0.08 : -0.08) + Math.sin(d) * 0.1 * side);
             const i = Math.round(p.x / B), k = Math.round(p.z / B);
             if (!insideIsland(i, k) || isWater(i, k)) break;
@@ -918,7 +1237,7 @@ function footprints(b, people) {
 function islets(scene) {
     const list = [];
     // Each little island has something on it; one has a heart of red flowers
-    [[-22, -1.5, -15, 6, 1], [21, 2.5, -11, 5, 2], [-8, -5.5, -26, 4, 3], [27, -3, 13, 4, 4]].forEach(([x, y, z, radius, seed], n) => {
+    [[-30, -1.5, -21, 6, 1], [29, 2.5, -16, 5, 2], [-11, -5.5, -36, 4, 3], [37, -3, 18, 4, 4]].forEach(([x, y, z, radius, seed], n) => {
         const { mesh, tops } = buildIslet(radius, seed);
         const group = new THREE.Group();
         group.position.set(x, y, z);
@@ -1004,8 +1323,8 @@ function clouds() {
     const b = new Blocks();
     const rand = random(51);
     const place = [
-        [-16, 1, -10, 1.0], [16, -3, -12, 1.2], [-15, -7, 10, 1.1], [18, 1, 9, 0.9], [2, -9, -16, 1.3], [-6, 4, 22, 1.0],
-        [-34, -12, 4, 2.2], [32, -10, 22, 2.0], [-40, 6, -30, 3], [44, 3, -36, 3.2], [-10, -16, -40, 2.6], [10, 8, 40, 2.4]
+        [-22, 1, -14, 1.0], [22, -3, -17, 1.2], [-21, -7, 14, 1.1], [25, 2, 13, 0.9], [3, -9, -22, 1.3], [-8, 5, 30, 1.0],
+        [-46, -12, 5, 2.2], [43, -10, 30, 2.0], [-54, 6, -40, 3], [59, 3, -48, 3.2], [-14, -16, -54, 2.6], [14, 8, 54, 2.4]
     ];
     for (const [x, y, z, size] of place) {
         const nx = 4 + Math.floor(rand() * 3), nz = 2 + Math.floor(rand() * 2);
@@ -1165,7 +1484,7 @@ function start() {
     key.position.set(9, 16, 7);
     key.castShadow = true;
     key.shadow.mapSize.set(small ? 1024 : 2048, small ? 1024 : 2048);
-    Object.assign(key.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 60 });
+    Object.assign(key.shadow.camera, { left: -19, right: 19, top: 19, bottom: -19, near: 1, far: 70 });
     key.shadow.bias = -0.0005;
     key.shadow.normalBias = 0.03;
     const rim = new THREE.DirectionalLight('#ffc6a6', 1.1);
@@ -1188,66 +1507,99 @@ function start() {
     const fall = waterfall(water.spill);
     island.add(fall.group);
 
-    // Us, on the beach facing the sun: him on the left, her on the right, turned a little toward each other
+    // Us, lying back on two loungers at the top of the beach, looking out to sea under a big umbrella: him on
+    // the left, her on the right, holding hands across the gap between the loungers. The umbrella is planted
+    // beside his lounger and leans in over both of us, so from behind its pole doesn't stand between us
     const facingSun = Math.atan2(SUN_DIR.x, SUN_DIR.z);
     const right = new THREE.Vector3(-Math.cos(facingSun), 0, Math.sin(facingSun));
     const forward = new THREE.Vector3(Math.sin(facingSun), 0, Math.cos(facingSun));
-    const spot = new THREE.Vector3(0, 0, 0);
-    const him = buildPerson(HIM), her = buildPerson(HER);
-    him.outer.position.copy(spot).addScaledVector(right, -0.66);
-    her.outer.position.copy(spot).addScaledVector(right, 0.62);
-    for (const p of [him, her]) p.outer.position.y = ground(Math.round(p.outer.position.x / B), Math.round(p.outer.position.z / B));
-    him.outer.rotation.y = facingSun - 0.12;
-    her.outer.rotation.y = facingSun + 0.12;
-    her.outer.scale.setScalar(0.93);
-    island.add(him.outer, her.outer);
+    const spot = new THREE.Vector3(0, 0, 0), beachY = ground(0, 0);
+    // The loungers, the umbrella and the things around them, built facing +z, so turned to face the sun;
+    // in here +x is toward his side
+    const beach = new THREE.Group();
+    beach.position.copy(spot).setY(beachY);
+    beach.rotation.y = facingSun;
+    const set = new Blocks();
+    lounger(set, 0.8, '#3d8fd1');
+    lounger(set, -0.8, '#f4a6b8');
+    parasol(set, 1.55, -0.45, 2.65, 1.7, [0.12, 0, 0.38], '#3d8fd1');
+    drinksTable(set, -1.72, -0.3);
+    flipFlops(set, 1.55, 0.75, '#3d8fd1');
+    flipFlops(set, -1.55, 0.6, '#f4a6b8');
+    set.addTo(beach, { receive: true });
+    island.add(beach);
 
-    // Point his right arm and her left arm at the same spot between us, so the hands meet
+    const him = buildPerson(HIM), her = buildPerson(HER);
+    her.outer.scale.setScalar(0.93);
+    for (const [person, x, spread] of [[him, 0.8, 0.07], [her, -0.8, 0.02]]) {
+        person.outer.position.copy(spot).addScaledVector(right, -x).setY(beachY);
+        person.outer.rotation.y = facingSun;
+        // Hips on the seat with the legs out along it, back against the raised back, head tipped forward a
+        // little to see the sea
+        const thigh = (person.P.legW + 0.05) / 2;
+        person.root.position.y = 0.42 / person.outer.scale.y + thigh - HIP_Y;
+        person.legs.forEach((leg, n) => leg.rotation.set(-Math.PI / 2, 0, n ? -spread : spread));
+        person.torso.rotation.x = -RECLINE;
+        person.head.rotation.x = 0.32;
+        island.add(person.outer);
+    }
+
+    // Point his right arm and her left arm at the same spot between the loungers, so our hands meet; the
+    // other arms lie along the cushions
     scene.updateMatrixWorld(true);
     const shoulderR = him.armRight.getWorldPosition(new THREE.Vector3());
     const shoulderL = her.armLeft.getWorldPosition(new THREE.Vector3());
-    const handsMeet = shoulderR.clone().lerp(shoulderL, 0.5).setY(him.outer.position.y + 0.79).addScaledVector(forward, 0.06);
+    const handsMeet = shoulderR.clone().lerp(shoulderL, 0.5).setY(beachY + 0.62).addScaledVector(forward, 0.39);
     const down = new THREE.Vector3(0, -1, 0);
     for (const arm of [him.armRight, her.armLeft]) {
         const target = arm.parent.worldToLocal(handsMeet.clone()).sub(arm.position).normalize();
         arm.userData.base = new THREE.Quaternion().setFromUnitVectors(down, target);
         arm.quaternion.copy(arm.userData.base);
     }
-    him.armLeft.rotation.z = 0.07;
-    her.armRight.rotation.z = -0.07;
+    him.armLeft.rotation.set(0.13, 0, 0.07);
+    her.armRight.rotation.set(0.13, 0, -0.07);
 
     // Everything else on the island: still things in one mesh, glowing windows and lamps in another
     const decor = new Blocks(), glow = new Blocks();
     islandDetails(decor, columns);
     footprints(decor, [[him, 1], [her, -1]]);
     const palms = [
-        palmTree(decor, -9, 2, 11, [-1, 0], 0.3), palmTree(decor, 8, 1, 12, [1, 0], 1.4), palmTree(decor, 17, 1, 10, [1, -1], 2.2),
-        palmTree(decor, -18, 3, 12, [-1, 1], 0.9), palmTree(decor, 24, 0, 9, [1, 0], 1.8)
+        palmTree(decor, -9, 2, 11, [-1, 0], 0.3), palmTree(decor, 20, 0, 10, [1, -1], 2.2),
+        palmTree(decor, -18, 3, 12, [-1, 1], 0.9), palmTree(decor, 24, -1, 9, [1, 0], 1.8), palmTree(decor, -27, 4, 11, [-1, 0], 2.7),
+        palmTree(decor, 33, -1, 11, [1, 1], 0.6), palmTree(decor, 42, 6, 10, [1, 0], 3.1), palmTree(decor, -36, 8, 10, [-1, 1], 1.1)
     ];
     palms.forEach(p => island.add(p.crown));
-    beachUmbrella(decor, -6, 3, '#3d8fd1');
-    beachUmbrella(decor, 13, 4, '#e8455a');
-    lounger(decor, 12, 1);
-    lounger(decor, 14, 1);
-    sandcastle(decor, 4, 1);
-    surfboard(decor, -4, 5);
-    const pier = jetty(decor, 10, -2, -13);
+    sandcastle(decor, 5, -4);
+    surfboard(decor, -12, -1);
+    const pier = jetty(decor, 10, -5, -20);
     island.add(pier.boat);
     glow.box(0.12, 0.14, 0.12, ...pier.lamp, COLORS.glow);
-    const fireAt = campfire(decor, -5, 7);
-    bench(decor, 3, 11);
-    lampPost(decor, glow, -3, 5);
-    lampPost(decor, glow, -10, 9);
+    const fireAt = campfire(decor, -7, 5);
+    bench(decor, 3, 13);
+    lampPost(decor, glow, -4, 8);
+    lampPost(decor, glow, -10, 11);
     const chimney = cottage(decor, glow);
     fenceAndGarden(decor);
     // A mailbox by the garden gate
-    decor.box(0.06, 0.6, 0.06, -6 * B, ground(-6, 9) + 0.3, 9 * B, COLORS.woodDark);
-    decor.box(0.2, 0.16, 0.28, -6 * B, ground(-6, 9) + 0.66, 9 * B, '#3d8fd1');
-    const swingTree = oakTree(decor, -22, 17, 6, 61);
-    oakTree(decor, 24, 14, 7, 62);
-    oakTree(decor, -25, 12, 6, 63);
-    [[-3, 25, 5], [-7, 27, 4], [1, 28, 4], [-1, 21, 5], [-6, 22, 4], [3, 24, 3]].forEach(([i, k, h]) => pineTree(decor, i, k, h));
+    decor.box(0.06, 0.6, 0.06, -6 * B, ground(-6, 11) + 0.3, 11 * B, COLORS.woodDark);
+    decor.box(0.2, 0.16, 0.28, -6 * B, ground(-6, 11) + 0.66, 11 * B, '#3d8fd1');
+    const swingTree = oakTree(decor, -24, 19, 6, 61);
+    oakTree(decor, 17, 31, 7, 62);
+    oakTree(decor, -27, 14, 6, 63);
+    oakTree(decor, 38, 22, 6, 64);
+    [[-4, 32, 5], [-8, 34, 4], [0, 35, 4], [-2, 28, 5], [-7, 29, 4], [2, 31, 3]].forEach(([i, k, h]) => pineTree(decor, i, k, h));
+    forest(decor, (i, k) => Math.hypot(i - HILL.i, k - HILL.k) < 8 || Math.hypot(i + 24, k - 19) < 5 ||
+        (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3));
     lighthouse(decor, glow);
+    // Along the beach: a lifeguard's chair to the left, beach huts to the right
+    lifeguardChair(decor, -18, -2);
+    [[27, '#5fb0e0'], [31, '#f4a6b8'], [35, '#ffd166'], [39, '#7fd1b9']].forEach(([i, hex]) => beachHut(decor, i, 8, hex));
+    // Over the grass to the right: tulips, a picnic under an oak, the pond and the windmill on its hill
+    tulipField(decor);
+    picnic(decor, 35, 19);
+    pondLife(decor);
+    const millSails = windmill(decor, MILL.i, MILL.k);
+    island.add(millSails);
     const decorMesh = decor.mesh(blockMaterial, { receive: true });
     island.add(decorMesh, glow.mesh(new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }), { shadow: false }));
 
@@ -1271,13 +1623,13 @@ function start() {
     const smoke = particles(10, smokeMaterial, ...rising(fireAt.clone().add(new THREE.Vector3(0, 0.4, 0)), 0.15, 1.6, 0.35, 0.13));
     const chimneySmoke = particles(10, smokeMaterial, ...rising(chimney, 0.12, 1.8, 0.3, 0.16));
     const fireflies = particles(30, new THREE.MeshBasicMaterial({ color: '#fff3a0', toneMapped: false }),
-        (p, rand, n) => Object.assign(p, { x: (-18 + rand() * 26) * B, z: (6 + rand() * 18) * B, y: 0.9 + rand() * 0.9, ph: rand() * 10 }),
+        (p, rand, n) => Object.assign(p, { x: (-20 + rand() * 30) * B, z: (10 + rand() * 22) * B, y: 0.9 + rand() * 0.9, ph: rand() * 10 }),
         (p, t) => [p.x + Math.sin(t * 0.5 + p.ph) * 0.5, p.y + Math.sin(t * 0.9 + p.ph * 2) * 0.25, p.z + Math.cos(t * 0.4 + p.ph) * 0.5, 0.045 * (0.5 + 0.5 * Math.sin(t * 3 + p.ph))]);
     const specks = particles(60, new THREE.MeshStandardMaterial({ color: '#b89a74' }),
-        (p, rand, n, first) => Object.assign(p, { x: (rand() - 0.5) * 16, z: -4 + rand() * 14, y: first ? -2 - rand() * 8 : -2, v: 0.12 + rand() * 0.2 }),
+        (p, rand, n, first) => Object.assign(p, { x: (rand() - 0.5) * 24, z: -6 + rand() * 20, y: first ? -2 - rand() * 8 : -2, v: 0.12 + rand() * 0.2 }),
         (p, t, dt, rand) => {
             p.y -= p.v * dt;
-            if (p.y < -11) Object.assign(p, { y: -2, x: (rand() - 0.5) * 16, z: -4 + rand() * 14 });
+            if (p.y < -11) Object.assign(p, { y: -2, x: (rand() - 0.5) * 24, z: -6 + rand() * 20 });
             return [p.x, p.y, p.z, 0.07];
         });
     [flames, embers, smoke, chimneySmoke, fireflies, specks].forEach(p => island.add(p.mesh));
@@ -1285,14 +1637,14 @@ function start() {
     // Around the island: smaller islands, a balloon, clouds, gulls
     const smallIslands = islets(scene);
     const hotAir = balloon();
-    hotAir.position.set(14, 6, -18);
+    hotAir.position.set(20, 7, -25);
     scene.add(hotAir);
     const cloudMesh = clouds();
     scene.add(cloudMesh);
     const gulls = [0, 1, 2].map(n => {
         const g = seagull();
         island.add(g.bird);
-        return { ...g, offset: n * 2.1, radius: 8 + n * 2.5, height: 4 + n * 1.3, speed: 0.32 - n * 0.05 };
+        return { ...g, offset: n * 2.1, radius: 11 + n * 3, height: 5 + n * 1.4, speed: 0.3 - n * 0.05 };
     });
 
     // Pixel hearts that float up from our hands now and then (and when the scene is tapped)
@@ -1325,8 +1677,9 @@ function start() {
     }
 
     // ----- Camera: always on the two of us. Drag to turn round or up and down, scroll or pinch to zoom -----
-    const PITCH_MIN = 0.05, PITCH_MAX = 1.45, DIST_MIN = 3.2, DIST_MAX = 55;
-    const view = { yaw: SUN_AZIMUTH, pitch: 0.42, dist: 12 };
+    const PITCH_MIN = 0.05, PITCH_MAX = 1.45, DIST_MIN = 3.2, DIST_MAX = 72;
+    // It starts a little round to her side, so the sun shows over the bay beside the umbrella, not behind it
+    const view = { yaw: SUN_AZIMUTH + 0.3, pitch: 0.36, dist: 9.5 };
     let zoomed = false, interacted = false, flight = null;
     const velocity = { yaw: 0, pitch: 0 };
     function resize() {
@@ -1336,7 +1689,7 @@ function start() {
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         // Further back on narrow (portrait) screens, so there's still some island around us
-        if (!zoomed) view.dist = camera.aspect < 1 ? 17 : 12;
+        if (!zoomed) view.dist = camera.aspect < 1 ? 14 : 9.5;
     }
     resize();
     const resizeObserver = new ResizeObserver(resize);
@@ -1423,15 +1776,11 @@ function start() {
     }
 
     function animatePeople(t) {
-        for (const [person, seed] of [[him, 0], [her, 1.7]]) {
-            person.root.position.y = Math.sin(t * 1.6 + seed) * 0.005;
-            person.torso.rotation.z = Math.sin(t * 0.9 + seed) * 0.012;
-        }
-        // Our joined hands swing a little
-        swingTurn.setFromAxisAngle(swingAxis, Math.sin(t * 1.1) * 0.05);
+        // Slow breathing
+        for (const [person, seed] of [[him, 0], [her, 1.7]]) person.torso.rotation.x = -RECLINE + Math.sin(t * 1.4 + seed) * 0.006;
+        // Our joined hands sway a little
+        swingTurn.setFromAxisAngle(swingAxis, Math.sin(t * 1.1) * 0.03);
         for (const arm of [him.armRight, her.armLeft]) arm.quaternion.copy(swingTurn).multiply(arm.userData.base);
-        him.armLeft.rotation.x = Math.sin(t * 1.1 + 2) * 0.04;
-        her.armRight.rotation.x = Math.sin(t * 1.1 + 2.4) * 0.04;
         // Every nine seconds we turn to look at each other for a moment, and a heart floats up
         const cycle = t % 9;
         const look = smoothstep(3.6, 4.4, cycle) * (1 - smoothstep(6.6, 7.4, cycle));
@@ -1443,9 +1792,9 @@ function start() {
             spawnHeart(handsMeet.clone().add(new THREE.Vector3(0, 0.25, 0)));
             spawnHeart(handsMeet.clone().add(new THREE.Vector3(0.1, 0.6, 0.05)), 0.35);
         }
-        // Sea breeze in her hair
-        her.hairFlow.rotation.x = 0.1 + Math.sin(t * 1.3) * 0.04 + Math.sin(t * 2.9) * 0.02;
-        her.hairFlow.rotation.z = Math.sin(t * 0.8) * 0.03;
+        // Sea breeze in her hair, which lies forward against the cushion so it doesn't poke through it
+        her.hairFlow.rotation.x = -0.1 + Math.sin(t * 1.3) * 0.012;
+        her.hairFlow.rotation.z = Math.sin(t * 0.8) * 0.02;
     }
 
     function placeCamera(t) {
@@ -1462,7 +1811,7 @@ function start() {
         const yaw = view.yaw + idleSway + (1 - arrive) * 1.2;
         const pitch = Math.min(view.pitch + (1 - arrive) * 0.45, PITCH_MAX);
         const d = view.dist * (1 + (1 - arrive) * 2);
-        focus.copy(spot).add(island.position).setY(island.position.y + him.outer.position.y + 1.0);
+        focus.copy(spot).addScaledVector(forward, -0.2).add(island.position).setY(island.position.y + beachY + 0.75);
         camera.position.set(
             focus.x + Math.sin(yaw) * Math.cos(pitch) * d,
             focus.y + Math.sin(pitch) * d,
@@ -1494,9 +1843,10 @@ function start() {
         pier.boat.position.y = -0.04 + Math.sin(clock * 1.5) * 0.03;
         pier.boat.rotation.z = Math.sin(clock * 1.2) * 0.04;
         swing.rotation.z = Math.sin(clock * 1.4) * 0.35;
+        millSails.rotation.z = clock * 0.6;
         [flames, embers, smoke, chimneySmoke, fireflies, specks].forEach(p => p.update(clock, dt));
         smallIslands.forEach(s => { s.group.position.y = s.y + Math.sin(clock * 0.5 + s.phase) * 0.25; });
-        hotAir.position.y = 6 + Math.sin(clock * 0.25) * 0.8;
+        hotAir.position.y = 7 + Math.sin(clock * 0.25) * 0.8;
         hotAir.rotation.y = clock * 0.05;
         cloudMesh.rotation.y = clock * 0.004;
         gulls.forEach(g => {
@@ -1517,7 +1867,7 @@ function start() {
 
     window.openingScene = {
         flyAway() {
-            const behind = spot.clone().addScaledVector(forward, -2.8).add(new THREE.Vector3(0, him.outer.position.y + 1.9, 0)).add(island.position);
+            const behind = spot.clone().addScaledVector(forward, -3).add(new THREE.Vector3(0, beachY + 1.5, 0)).add(island.position);
             flight = {
                 start: performance.now(),
                 from: camera.position.clone(),
