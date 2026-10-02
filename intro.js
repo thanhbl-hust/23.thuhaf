@@ -601,7 +601,7 @@ class VoxelGrid {
 // is a forest round a pond, to the right beach huts, a field of tulips, a windmill on its own hill and a
 // pickleball court; the beach ends in rocks at the front left. The island rises out of a sea that runs to the horizon, so its blocks only go a little way below the
 // water.
-const ISLAND = { ci: 0, ck: 20, ri: 64, rk: 48 };
+const ISLAND = { ci: 0, ck: 30, ri: 80, rk: 58 };
 const ROCK = { i: -31, k: -13 };
 // The lighthouse's rock, out in the sea beyond the bay (in world units)
 const LIGHTHOUSE = { x: -22, z: -27 };
@@ -715,10 +715,10 @@ const clearWater = (i, k) => insideIsland(i, k) && isWater(i, k) && topLevel(i, 
     [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([a, c]) => insideIsland(i + a, k + c));
 
 function buildIsland() {
-    const grid = new VoxelGrid(-62, 71, -6, 10, -32, 67);
+    const grid = new VoxelGrid(-77, 88, -6, 10, -32, 87);
     const columns = [];
-    for (let i = -61; i <= 70; i++) {
-        for (let k = -31; k <= 66; k++) {
+    for (let i = -76; i <= 87; i++) {
+        for (let k = -31; k <= 86; k++) {
             if (!insideIsland(i, k)) continue;
             const top = topLevel(i, k);
             if (isWater(i, k)) {
@@ -1713,8 +1713,8 @@ function carPark(b, glow) {
 
 function forest(b, keepClear) {
     const rand = random(71), placed = [];
-    for (let n = 0; n < 220 && placed.length < 30; n++) {
-        const i = Math.round(-58 + rand() * 42), k = Math.round(16 + rand() * 42);
+    for (let n = 0; n < 400 && placed.length < 48; n++) {
+        const i = Math.round(-72 + rand() * 84), k = Math.round(14 + rand() * 72);
         if (islandRadius(i, k) > 0.9 || !isGrass(i, k) || keepClear(i, k)) continue;
         if (placed.some(([a, c]) => Math.hypot(a - i, c - k) < 4)) continue;
         placed.push([i, k]);
@@ -1730,16 +1730,18 @@ function islandDetails(b, columns) {
             (i >= TULIPS.i0 - 1 && i <= TULIPS.i1 + 1 && k >= TULIPS.k0 - 1 && k <= TULIPS.k1 + 1) ||
             nearPond(i, k, 1.5) || Math.hypot(i - MILL.i, k - MILL.k) < 3 || onTerrace(i, k) || onResortPath(i, k) ||
             inRect(COURT, i, k, 1) || inRect(CAR_PARK, i, k, 1);
-        // Grass tufts and flowers on the grassy part
-        if (isGrass(i, k) && !busy && hash(i, k, 5) > 0.82) {
+        // Grass tufts and flowers on the grassy part, thinning out far from us where the picture is soft anyway,
+        // without the undersides nobody sees
+        const far = smoothstep(28, 75, Math.hypot(i, k - 8)), under = { hide: 1 << 3 };
+        if (isGrass(i, k) && !busy && hash(i, k, 5) > 0.82 + 0.12 * far) {
             for (let n = 0; n < 2; n++) {
                 const h = 0.12 + rand() * 0.18;
-                b.box(0.05, h, 0.05, i * B + (rand() - 0.5) * 0.25, y + h / 2, k * B + (rand() - 0.5) * 0.25, n % 2 ? '#6fae4f' : '#93cf6c');
+                b.box(0.05, h, 0.05, i * B + (rand() - 0.5) * 0.25, y + h / 2, k * B + (rand() - 0.5) * 0.25, n % 2 ? '#6fae4f' : '#93cf6c', under);
             }
         }
-        if (isGrass(i, k) && !busy && hash(i, k, 6) > 0.94) {
-            b.box(0.02, 0.16, 0.02, i * B, y + 0.08, k * B, '#5c9a41');
-            b.box(0.08, 0.08, 0.08, i * B, y + 0.19, k * B, ['#f7a8c4', '#ffffff', '#ffd166'][Math.floor(hash(i, k, 7) * 3)]);
+        if (isGrass(i, k) && !busy && hash(i, k, 6) > 0.94 + 0.03 * far) {
+            b.box(0.02, 0.16, 0.02, i * B, y + 0.08, k * B, '#5c9a41', under);
+            b.box(0.08, 0.08, 0.08, i * B, y + 0.19, k * B, ['#f7a8c4', '#ffffff', '#ffd166'][Math.floor(hash(i, k, 7) * 3)], under);
         }
         // Shells along the waterline
         if (!isWater(i, k) && !isRock(i, k) && k === shoreK(i) && hash(i, k, 8) > 0.75) {
@@ -1937,15 +1939,16 @@ function fleet() {
     const anchored = (x, z, heading) => () => [x, z, heading];
     const superyacht = yacht();
     return [
-        [superyacht.b, anchored(-8.5, -13.5, 2.25), 0.03, 0.008, superyacht.lights],
+        [superyacht.b, anchored(-9.5, -15, 2.25), 0.04, 0.006, superyacht.lights, 1.5],
         [containerShip(), across(-135, 200, -700, 1.8, 260), 0.06, 0.006],
         [cruiseShip(), across(-105, -420, 160, 1.5, 230), 0.07, 0.008],
         [sailboat('#3d8fd1', '#f4a6b8'), ring(-34, -58, 9, 0.04, 0.6), 0.12, 0.05],
         [sailboat('#e8455a', '#ffd166'), ring(-10, -50, 7, -0.05, 2.1), 0.12, 0.05],
         [fishingBoat(), ring(-34, -32, 5, 0.03, 4), 0.1, 0.04]
-    ].map(([blocks, course, bob, roll, lights], n) => {
+    ].map(([blocks, course, bob, roll, lights, scale = 1], n) => {
         const ship = new THREE.Group();
         ship.rotation.order = 'YXZ';
+        ship.scale.setScalar(scale);
         ship.add(blocks.mesh(blockMaterial, { shadow: false }));
         if (lights) ship.add(lights.mesh(new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }), { shadow: false }));
         return { ship, course, bob, roll, phase: n * 1.9 };
@@ -2356,7 +2359,7 @@ function start() {
     const set = new Blocks();
     lounger(set, 0.8, '#3d8fd1');
     lounger(set, -0.8, '#f4a6b8');
-    parasol(set, 1.55, -0.45, 2.65, 1.7, [0.12, 0, 0.38], '#3d8fd1');
+    parasol(set, 1.55, -0.45, 2.95, 2.25, [0.12, 0, 0.38], '#3d8fd1');
     drinksTable(set, -1.72, -0.3);
     flipFlops(set, 1.55, 0.75, '#3d8fd1');
     flipFlops(set, -1.4, 1.45, '#f4a6b8');
@@ -2407,7 +2410,9 @@ function start() {
         palmTree(decor, -9, 2, 11, [-1, 0], 0.3), palmTree(decor, 20, 0, 10, [1, -1], 2.2),
         palmTree(decor, -18, 3, 12, [-1, 1], 0.9), palmTree(decor, 24, -1, 9, [1, 0], 1.8), palmTree(decor, -27, 4, 11, [-1, 0], 2.7),
         palmTree(decor, 33, -1, 11, [1, 1], 0.6), palmTree(decor, 42, 6, 10, [1, 0], 3.1), palmTree(decor, -36, 8, 10, [-1, 1], 1.1),
-        palmTree(decor, -8, 27, 9, [-1, 0], 1.3), palmTree(decor, 8, 27, 9, [1, 0], 2.5)
+        palmTree(decor, -8, 27, 9, [-1, 0], 1.3), palmTree(decor, 8, 27, 9, [1, 0], 2.5),
+        palmTree(decor, 53, 1, 11, [1, -1], 1.6), palmTree(decor, 62, 7, 10, [1, 0], 0.2), palmTree(decor, -47, 2, 11, [-1, -1], 2.3),
+        palmTree(decor, -57, 9, 10, [-1, 0], 0.8)
     ];
     palms.forEach(p => island.add(p.crown));
     sandcastle(decor, 5, -4);
@@ -2428,6 +2433,8 @@ function start() {
     oakTree(decor, -13, 25, 7, 62);
     oakTree(decor, -27, 14, 6, 63);
     oakTree(decor, 38, 22, 6, 64);
+    [[63, 24, 7], [71, 36, 6], [60, 48, 7], [68, 14, 5], [44, 52, 6], [28, 62, 7], [12, 70, 6], [36, 72, 5]].forEach(([i, k, height], n) =>
+        oakTree(decor, i, k, height, 65 + n));
     // At the back, the resort
     const resort = buildResort();
     island.add(resort.mesh);
@@ -2437,7 +2444,7 @@ function start() {
     forest(decor, (i, k) => {
         const { r, a } = resortAt(i, k);
         return (r > 18 && r < RESORT.r2 + 6 && Math.abs(a) < 32 * DEG) || Math.hypot(i + 24, k - 19) < 5 || nearPond(i, k, 3) ||
-            (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3) || inRect(CAR_PARK, i, k, 4);
+            (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3) || inRect(CAR_PARK, i, k, 4) || (i > -16 && k < 60);
     });
     // Along the beach: a lifeguard's chair to the left, beach huts to the right
     lifeguardChair(decor, -18, -2);
@@ -2451,7 +2458,7 @@ function start() {
     island.add(millSails);
     // Out at sea: the small islands and the lighthouse, white water round every coast, and far-off hills
     const foamRings = [new Blocks(), new Blocks()], landMeshes = [];
-    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -63, 72, -33, 68);
+    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -78, 89, -33, 88);
     seaIslands(landMeshes, decor, glow, foamRings);
     landMeshes.push(
         farLand(-470, -177, 1.2, 26, 10, 6, 7, 1), farLand(97, -520, -0.2, 24, 9, 5, 7, 2), farLand(230, 330, 0.6, 32, 10, 7, 7, 3));
