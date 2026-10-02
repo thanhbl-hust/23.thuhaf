@@ -17,13 +17,13 @@ import * as THREE from './vendor/three/three.module.min.js';
 const intro = document.getElementById('intro');
 const host = document.getElementById('introScene');
 
-// --- Colours: the site's blues, with the sunset kept to a soft peach around the sun ---
+// --- Colours: the site's blues overhead, going lavender and then orange toward the setting sun ---
 const COLORS = {
-    skyTop: '#2f74a8',
-    skyMid: '#8cc3e2',
-    skyBand: '#f8d3d2',
-    skyGlow: '#ffd9bf',
-    skyLow: '#d7e8f5',
+    skyTop: '#284c86',
+    skyMid: '#b394c2',
+    skyBand: '#ff9f6e',
+    skyGlow: '#ffc06a',
+    skyLow: '#b9a9cf',
     sand: '#f0dcb0',
     sandDeep: '#e2c690',
     sandstone: '#cfae7c',
@@ -35,8 +35,8 @@ const COLORS = {
     grassDark: '#74b54f',
     path: '#c8b48c',
     rock: '#a0a9b1',
-    waterShallow: '#52b9dc',
-    waterDeep: '#2477b4',
+    waterShallow: '#4aa9cf',
+    waterDeep: '#2a6aa8',
     pond: '#5cc0e2',
     deck: '#ebe4d6',
     pool: '#5fd3ea',
@@ -1684,7 +1684,7 @@ function clouds() {
 // the edge of the sea, so the sea hides its lower part
 function voxelSun() {
     const sun = new THREE.Group(), far = 1700, scale = far / 400;
-    [[46, '#ffe2a8', 1], [70, '#ffc890', 0.5], [100, '#ffb9a0', 0.25]].forEach(([size, hex, opacity], n) => {
+    [[46, '#ffd77e', 1], [70, '#ffad66', 0.5], [100, '#ff8c6e', 0.25]].forEach(([size, hex, opacity], n) => {
         // Blended over the sky without changing its alpha, so it stays out of the tone mapping like the sky
         const square = new THREE.Mesh(new THREE.PlaneGeometry(size * scale, size * scale), new THREE.MeshBasicMaterial({
             color: hex, transparent: true, opacity, depthWrite: false, toneMapped: false, blending: THREE.CustomBlending,
@@ -1913,7 +1913,7 @@ function start() {
     const small = Math.min(window.innerWidth, window.innerHeight) < 700;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.toneMapping = THREE.NeutralToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 0.95;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.setClearColor(COLORS.skyLow);
@@ -1924,17 +1924,17 @@ function start() {
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
 
     // Light: warm light from above, a peach rim from the low sun, a cool fill from the other side
-    scene.add(new THREE.HemisphereLight('#d2e8f7', '#f1dcc0', 1.7));
-    const key = new THREE.DirectionalLight('#ffe3c9', 2.6);
-    key.position.set(9, 16, 7);
+    scene.add(new THREE.HemisphereLight('#bdb9e6', '#f0c19a', 1.4));
+    const key = new THREE.DirectionalLight('#ffc690', 2.3);
+    key.position.set(9, 10, 7);
     key.castShadow = true;
     key.shadow.mapSize.set(small ? 1024 : 2048, small ? 1024 : 2048);
     Object.assign(key.shadow.camera, { left: -19, right: 19, top: 19, bottom: -19, near: 1, far: 70 });
     key.shadow.bias = -0.0005;
     key.shadow.normalBias = 0.03;
-    const rim = new THREE.DirectionalLight('#ffc6a6', 1.1);
+    const rim = new THREE.DirectionalLight('#ff9a66', 1.6);
     rim.position.set(SUN_DIR.x * 20, 5, SUN_DIR.z * 20);
-    const fill = new THREE.DirectionalLight('#d8e9f8', 0.9);
+    const fill = new THREE.DirectionalLight('#c8c8f0', 0.7);
     fill.position.set(-6, 4, 8);
     scene.add(key, rim, fill);
 

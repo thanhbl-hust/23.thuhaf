@@ -59,10 +59,10 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: max(48px, 9vh) 16px max(28px, 5vh);
-    /* A painted stand-in for the scene while three.js loads, or where it can't run: the same sky in
-       hard-edged bands, like the blocks it is made of */
-    background: linear-gradient(180deg, #2f74a8 0 8%, #3c80b3 8% 16%, #5596c6 16% 24%, #74afd6 24% 31%, #9fc6e0 31% 37%,
-        #f3d3d4 37% 42%, #ffe0c8 42% 47%, #ead9df 47% 54%, #dde6f1 54% 64%, #d7e8f5 64% 80%, #e6eff8 80% 100%);
+    /* A painted stand-in for the scene while three.js loads, or where it can't run: the same sunset sky over
+       the sea, in hard-edged bands like the blocks it is made of */
+    background: linear-gradient(180deg, #284c86 0 8%, #3a5590 8% 16%, #5a6aa3 16% 24%, #8679b4 24% 31%, #ab8cc0 31% 37%,
+        #e3a1ae 37% 42%, #ffb27c 42% 47%, #3f70a8 47% 54%, #33649e 54% 64%, #2c5b94 64% 80%, #26538b 80% 100%);
     color: #fff;
     text-align: center;
     overflow: hidden;
