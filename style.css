@@ -97,8 +97,10 @@ body::after {
     align-items: center;
     justify-content: space-between;
     padding: max(48px, 9vh) 16px max(28px, 5vh);
-    /* A painted stand-in for the scene while three.js loads, or where it can't run */
-    background: linear-gradient(180deg, #2f74a8 0%, #8cc3e2 26%, #f8d3d2 36%, #ffe0c8 40%, #e9e3ec 48%, #d7e8f5 62%, #e6eff8 100%);
+    /* A painted stand-in for the scene while three.js loads, or where it can't run: the same sky in
+       hard-edged bands, like the blocks it is made of */
+    background: linear-gradient(180deg, #2f74a8 0 8%, #3c80b3 8% 16%, #5596c6 16% 24%, #74afd6 24% 31%, #9fc6e0 31% 37%,
+        #f3d3d4 37% 42%, #ffe0c8 42% 47%, #ead9df 47% 54%, #dde6f1 54% 64%, #d7e8f5 64% 80%, #e6eff8 80% 100%);
     color: #fff;
     text-align: center;
     overflow: hidden;

@@ -166,7 +166,7 @@ const tint = (hex, amount) => `#${color(hex).lerp(color('#ffffff'), amount).getH
 // ----- The two of us -----
 // Built facing +z like the portfolio figures, then turned around to look out to sea.
 // Looks taken from our photos: his short black textured crop with a fringe, white tee and navy shorts;
-// her shoulder-length dark brown hair with a side fringe, round black glasses, and a light blue sundress.
+// her shoulder-length dark brown hair with a side fringe, a slim figure, a light blue bra top and skirt.
 const HIP_Y = 0.78, SHOULDER_Y = 1.47, NECK_Y = 1.55;
 const HIPS_Y = 0.085, WAIST_Y = 0.295, CHEST_Y = 0.57, COLLAR_Y = 0.745;
 
@@ -181,8 +181,8 @@ const HIM = {
 
 const HER = {
     female: true,
-    chestW: 0.58, chestD: 0.35, waistW: 0.46, waistD: 0.3, hipsW: 0.62, hipsD: 0.37,
-    shoulderHalf: 0.365, hipHalf: 0.145, armW: 0.18, legW: 0.215, headW: 0.5,
+    chestW: 0.5, chestD: 0.3, waistW: 0.38, waistD: 0.25, hipsW: 0.52, hipsD: 0.32,
+    shoulderHalf: 0.31, hipHalf: 0.12, armW: 0.15, legW: 0.18, headW: 0.48,
     skin: '#f2d0b0', skinShade: '#dfb592',
     hair: '#35231a', hairLight: '#5a3b2a',
     top: '#8cc6e8', bottom: '#8cc6e8'
@@ -226,14 +226,6 @@ function buildPerson(P) {
         hairFlow.position.set(0, 0.5, -0.05);
         buildHairFlow(P).addTo(hairFlow);
         head.add(hairFlow);
-        // Glass in the round frames: see-through, so it stays out of the merged blocks
-        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.068, 20),
-            new THREE.MeshStandardMaterial({ color: '#dbeaf6', transparent: true, opacity: 0.22, roughness: 0.1 }));
-        [1, -1].forEach(side => {
-            const l = lens.clone();
-            l.position.set(0.118 * side, 0.31, P.headW / 2 + 0.024);
-            head.add(l);
-        });
         Object.assign(person, { skirt, hairFlow });
     }
     return person;
@@ -261,16 +253,18 @@ function buildLeg(P, side) {
 function buildTorso(P) {
     const b = new Blocks();
     if (P.female) {
-        // Sundress: fitted top with a ribbon at the waist, thin straps, a small gold necklace
+        // Beach outfit: a light blue bra top with thin straps and a white trim, a bare waist, the skirt's
+        // waistband at the hips, and a small gold necklace
         b.box(P.hipsW, 0.17, P.hipsD, 0, HIPS_Y, 0, P.top, { outline: true });
-        b.box(P.waistW, 0.29, P.waistD, 0, WAIST_Y, 0, P.top, { outline: true });
-        b.box(P.waistW + 0.016, 0.05, P.waistD + 0.016, 0, WAIST_Y - 0.06, 0, '#ffffff');
-        b.box(P.chestW, 0.24, P.chestD, 0, CHEST_Y - 0.03, 0, P.top, { outline: true });
-        b.box(P.chestW - 0.06, 0.1, P.chestD - 0.06, 0, CHEST_Y + 0.13, 0, P.skin, { outline: true });
-        [1, -1].forEach(side => b.box(0.05, 0.1, P.chestD - 0.04, (P.chestW / 2 - 0.1) * side, CHEST_Y + 0.13, 0, shade(P.top, 0.12)));
-        b.box(0.17, 0.014, 0.012, 0, CHEST_Y + 0.15, P.chestD / 2 - 0.024, '#e9c46a');
-        b.box(0.03, 0.03, 0.012, 0, CHEST_Y + 0.125, P.chestD / 2 - 0.022, '#f2d38a', { rot: [0, 0, Math.PI / 4] });
-        b.box(0.16, 0.06, 0.15, 0, COLLAR_Y - 0.02, 0, P.skinShade);
+        b.box(P.waistW, 0.29, P.waistD, 0, WAIST_Y, 0, P.skin, { outline: true });
+        b.box(P.chestW, 0.3, P.chestD, 0, CHEST_Y, 0, P.skin, { outline: true });
+        b.box(P.chestW + 0.014, 0.15, P.chestD + 0.014, 0, CHEST_Y - 0.035, 0, P.top);
+        b.box(P.chestW + 0.018, 0.025, P.chestD + 0.018, 0, CHEST_Y - 0.1, 0, '#ffffff');
+        b.box(0.04, 0.04, 0.012, 0, CHEST_Y - 0.03, P.chestD / 2 + 0.01, '#ffffff');
+        [1, -1].forEach(side => b.box(0.04, 0.16, P.chestD + 0.016, (P.chestW / 2 - 0.09) * side, CHEST_Y + 0.11, 0, shade(P.top, 0.08)));
+        b.box(0.15, 0.014, 0.012, 0, CHEST_Y + 0.13, P.chestD / 2 + 0.002, '#e9c46a');
+        b.box(0.03, 0.03, 0.012, 0, CHEST_Y + 0.105, P.chestD / 2 + 0.004, '#f2d38a', { rot: [0, 0, Math.PI / 4] });
+        b.box(0.15, 0.06, 0.14, 0, COLLAR_Y - 0.02, 0, P.skinShade);
     } else {
         // White T-shirt over navy shorts
         b.box(P.hipsW, 0.17, P.hipsD, 0, HIPS_Y, 0, P.bottom, { outline: true });
@@ -290,7 +284,7 @@ function buildSkirt(P) {
     b.box(w + 0.16, 0.2, d + 0.16, 0, -0.26, 0, P.top, { outline: true });
     b.box(w + 0.18, 0.035, d + 0.18, 0, -0.37, 0, '#ffffff');
     // Pleats, front and back
-    [-0.24, -0.08, 0.08, 0.24].forEach(x => [1, -1].forEach(face =>
+    [-0.36, -0.12, 0.12, 0.36].map(f => f * (w + 0.16)).forEach(x => [1, -1].forEach(face =>
         b.box(0.05, 0.19, 0.01, x, -0.26, ((d + 0.16) / 2 + 0.004) * face, tint(P.top, 0.3))));
     return b;
 }
@@ -331,8 +325,7 @@ function buildHead(P) {
     });
     b.box(0.1, 0.022, 0.016, 0, 0.165, face + 0.004, '#c46d65');
     if (P.female) {
-        [1, -1].forEach(side => b.box(0.07, 0.035, 0.01, 0.17 * side, 0.215, face + 0.004, '#f3a5a9'));
-        buildGlasses(b, face);
+        [1, -1].forEach(side => b.box(0.07, 0.035, 0.01, 0.16 * side, 0.22, face + 0.004, '#f3a5a9'));
         // Crown and a side-swept fringe parted on her right
         b.box(hw + 0.05, 0.13, hw + 0.06, 0, 0.52, -0.01, P.hair, { outline: true });
         b.box(0.34, 0.12, 0.08, 0.07, 0.47, face - 0.01, P.hair, { rot: [0, 0, -0.18] });
@@ -357,16 +350,6 @@ function buildHead(P) {
             b.box(0.13, 0.06, 0.12, x, 0.6, z, P.hairLight, { rot: [r * 0.5, r, r] }));
     }
     return b;
-}
-
-// Round black frames like hers, with arms running back to the ears
-function buildGlasses(b, face) {
-    const frame = '#1c1c22';
-    [1, -1].forEach(side => {
-        b.shape(new THREE.TorusGeometry(0.075, 0.011, 6, 22), 0.118 * side, 0.31, face + 0.024, frame);
-        b.box(0.014, 0.014, 0.25, (0.25 + 0.006) * side, 0.33, face - 0.1, frame);
-    });
-    b.box(0.07, 0.014, 0.014, 0, 0.325, face + 0.024, frame);
 }
 
 // Her hair below the crown: the back and the sides down to her shoulders, with a few lighter strands
@@ -1082,39 +1065,56 @@ function seagull() {
     return { bird, wings };
 }
 
-function skyMaterial() {
-    return new THREE.ShaderMaterial({
+// The sky is a huge box round everything (it moves with the camera), each wall tiled with square blocks of
+// colour: blue overhead, a band of sunset at the sun's height, pale blue below, each block a little lighter
+// or darker than its neighbours with a faint join between them, so even the sky is made of blocks
+function skyBox() {
+    const material = new THREE.ShaderMaterial({
         side: THREE.BackSide,
         depthWrite: false,
         toneMapped: false,
         uniforms: {
-            sunDir: { value: SUN_DIR },
+            sunDir: { value: SUN_DIR }, tiles: { value: 22 },
             top: { value: color(COLORS.skyTop) }, mid: { value: color(COLORS.skyMid) }, band: { value: color(COLORS.skyBand) },
             glow: { value: color(COLORS.skyGlow) }, low: { value: color(COLORS.skyLow) }
         },
         vertexShader: `
-            varying vec3 vWorld;
+            varying vec3 vLocal;
             void main() {
-                vec4 w = modelMatrix * vec4(position, 1.0);
-                vWorld = w.xyz;
-                gl_Position = projectionMatrix * viewMatrix * w;
+                vLocal = position;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }`,
         fragmentShader: `
             uniform vec3 sunDir, top, mid, band, glow, low;
-            varying vec3 vWorld;
-            void main() {
-                vec3 d = normalize(vWorld - cameraPosition);
-                // Blue overhead, a warm band of sunset at the sun's height, soft pale blue below it
+            uniform float tiles;
+            varying vec3 vLocal;
+            float hash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+            vec3 skyColor(vec3 d) {
                 vec3 col = mix(mid, top, smoothstep(-0.15, 0.35, d.y));
                 col = mix(low, col, smoothstep(-0.6, -0.32, d.y));
                 float towardSun = max(dot(normalize(d.xz + 1e-5), normalize(sunDir.xz)), 0.0);
                 float inBand = exp(-pow((d.y - sunDir.y) / 0.1, 2.0));
                 col = mix(col, band, inBand * (0.25 + 0.6 * pow(towardSun, 3.0)));
-                col = mix(col, glow, pow(max(dot(d, sunDir), 0.0), 10.0) * 0.85);
+                return mix(col, glow, pow(max(dot(d, sunDir), 0.0), 10.0) * 0.85);
+            }
+            void main() {
+                // Which wall of the box this is, and where on it (-1..1 across the wall)
+                vec3 a = abs(vLocal);
+                float m = max(a.x, max(a.y, a.z));
+                vec3 p = vLocal / m;
+                vec2 f = a.x == m ? p.yz : a.y == m ? p.xz : p.xy;
+                // The block this point falls in, and the direction to its middle
+                vec2 cell = (floor(f * tiles * 0.5) + 0.5) / (tiles * 0.5);
+                vec3 centre = a.x == m ? vec3(sign(p.x), cell) : a.y == m ? vec3(cell.x, sign(p.y), cell.y) : vec3(cell, sign(p.z));
+                vec3 col = skyColor(normalize(centre)) * (0.975 + 0.05 * hash(centre));
+                vec2 g = fract(f * tiles * 0.5);
+                float edge = min(min(g.x, 1.0 - g.x), min(g.y, 1.0 - g.y));
+                col *= mix(0.955, 1.0, smoothstep(0.0, 0.05, edge));
                 gl_FragColor = vec4(col, 1.0);
                 #include <colorspace_fragment>
             }`
     });
+    return new THREE.Mesh(new THREE.BoxGeometry(1000, 1000, 1000), material);
 }
 
 // Little cubes that rise, drift and fade (fire, smoke) or wander (fireflies, falling earth): one draw call each
@@ -1183,7 +1183,7 @@ function start() {
     fill.position.set(-6, 4, 8);
     scene.add(key, rim, fill);
 
-    const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), skyMaterial());
+    const sky = skyBox();
     sky.renderOrder = -10;
     scene.add(sky, voxelSun());
 
@@ -1517,6 +1517,7 @@ function start() {
             g.wings.forEach(w => { w.pivot.rotation.x = w.side * Math.sin(clock * 6 + g.offset) * 0.5; });
         });
         placeCamera(clock);
+        sky.position.copy(camera.position);
         renderer.render(scene, camera);
         if (!drawn) {
             drawn = true;
