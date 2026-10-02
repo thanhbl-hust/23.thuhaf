@@ -1985,7 +1985,8 @@ function skyBox() {
 // The scene is drawn into a buffer first. Then each pixel is blurred more the further its point is from us,
 // so the two of us and what's round us stay sharp and far things go soft (when the camera is pulled back,
 // the sharp part grows with it), and far things fade toward the colour of the sky behind them. Pixels of
-// the sky (alpha 0) already have their final colours; the rest are tone mapped here
+// the sky (alpha 0) already have their final colours; the rest are tone mapped here. Behind the page, `veil`
+// softens and dims the whole picture a little, so the page reads clearly over it
 function lens(renderer, small) {
     const gl = renderer.getContext();
     const float = renderer.extensions.has('EXT_color_buffer_float');
@@ -1997,7 +1998,7 @@ function lens(renderer, small) {
     const uniforms = {
         tColor: { value: target.texture }, tDepth: { value: target.depthTexture }, texel: { value: new THREE.Vector2() },
         projectionInverse: { value: new THREE.Matrix4() }, cameraToWorld: { value: new THREE.Matrix4() },
-        focus: { value: new THREE.Vector3() }, sharp: { value: 3 }, soft: { value: 30 }, maxBlur: { value: 5 },
+        focus: { value: new THREE.Vector3() }, sharp: { value: 3 }, soft: { value: 30 }, maxBlur: { value: 5 }, veil: { value: 0 },
         hazeStart: { value: 30 }, hazeScale: { value: 1 / 550 }, ...skyUniforms()
     };
     const material = new THREE.ShaderMaterial({
@@ -2016,16 +2017,18 @@ function lens(renderer, small) {
             uniform vec2 texel;
             uniform mat4 projectionInverse, cameraToWorld;
             uniform vec3 focus;
-            uniform float sharp, soft, maxBlur, hazeStart, hazeScale;
+            uniform float sharp, soft, maxBlur, hazeStart, hazeScale, veil;
             varying vec2 vUv;
             ${SKY_GLSL}
             vec3 viewAt(vec2 uv, float depth) {
                 vec4 p = projectionInverse * vec4(vec3(uv, depth) * 2.0 - 1.0, 1.0);
                 return p.xyz / p.w;
             }
-            // How many pixels the blur spreads at a point: none near us, more the further it is from us
+            // How many pixels the blur spreads at a point: none near us, more the further it is from us, and
+            // some everywhere behind the page
             float blurAt(vec2 uv, float depth) {
-                return depth >= 1.0 ? maxBlur : maxBlur * smoothstep(sharp, soft, distance(viewAt(uv, depth), focus));
+                float lens = depth >= 1.0 ? maxBlur : maxBlur * smoothstep(sharp, soft, distance(viewAt(uv, depth), focus));
+                return max(lens, veil * maxBlur * 0.8);
             }
             void main() {
                 float depth = texture2D(tDepth, vUv).x, blur = blurAt(vUv, depth);
@@ -2049,6 +2052,7 @@ function lens(renderer, small) {
                     float haze = 1.0 - exp(-max(length(p) - hazeStart, 0.0) * hazeScale);
                     rgb = mix(rgb, skyColor(normalize((cameraToWorld * vec4(p, 0.0)).xyz)), haze);
                 }
+                rgb *= 1.0 - veil * 0.12;
                 gl_FragColor = vec4(rgb, 1.0);
                 #include <colorspace_fragment>
             }`
@@ -2062,14 +2066,15 @@ function lens(renderer, small) {
             uniforms.texel.value.set(1 / width, 1 / height);
             uniforms.maxBlur.value = height * 0.0065;
         },
-        // Draw the scene, sharpest round `at`, with the camera `dist` from it
-        render(scene, camera, at, dist) {
+        // Draw the scene, sharpest round `at`, with the camera `dist` from it, and softened by `veil` (0 to 1)
+        render(scene, camera, at, dist, veil = 0) {
             camera.updateMatrixWorld();
             uniforms.projectionInverse.value.copy(camera.projectionMatrixInverse);
             uniforms.cameraToWorld.value.copy(camera.matrixWorld);
             uniforms.focus.value.copy(at).applyMatrix4(camera.matrixWorldInverse);
             uniforms.sharp.value = 2.2 + dist * 0.1;
             uniforms.soft.value = uniforms.sharp.value + 12 + dist * 1.6;
+            uniforms.veil.value = veil;
             renderer.setRenderTarget(target);
             renderer.render(scene, camera);
             renderer.setRenderTarget(null);
@@ -2550,7 +2555,7 @@ function start() {
         });
         placeCamera(clock);
         sky.position.copy(camera.position);
-        view3d.render(scene, camera, focus, camera.position.distanceTo(focus));
+        view3d.render(scene, camera, focus, camera.position.distanceTo(focus), easeInOut(away));
         if (!drawn) {
             drawn = true;
             requestAnimationFrame(() => intro.classList.add('drawn'));
