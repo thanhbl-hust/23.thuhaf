@@ -3,10 +3,11 @@
 // on two loungers under a beach umbrella at sunset, holding hands, our little dog beside her: a bay with a
 // jetty and a boat, palms, beach huts and a lifeguard's chair along the sand, a cottage with a garden, a
 // campfire, a swing, a white resort hotel like Vinpearl Ha Long with its pool at the back, a forest round a
-// pond with ducks and a little bridge, a field of tulips, and a windmill. Out at sea are small islands, the
-// lighthouse on its rock, ships big and small, and far-off
-// hills; above, a hot-air balloon, clouds and gulls. Like a photo, it is sharp round us and softer and hazier
-// the further away things are.
+// pond with ducks and a little bridge, a field of tulips, and a windmill. Waves roll into the bay and break on
+// the beach, and near it the water is clear, with fish and a turtle over the sand. Out at sea are small
+// islands, the lighthouse on its rock, ships big and small, leaping dolphins and far-off hills; above, a
+// hot-air balloon, clouds and gulls. Like a photo, it is sharp round us and softer and hazier the further away
+// things are.
 // The camera always looks at the two of us: drag to turn it round or up and down, scroll or pinch to zoom.
 // The figures follow the blocky style of the portfolio's pickleball scene.
 // script.js owns the overlay and its button; this file only draws behind them. Once in the page, the scene
@@ -31,6 +32,8 @@ const COLORS = {
     stone: '#8d97a1',
     stoneDark: '#7b858f',
     seabed: '#dcc493',
+    seabedDeep: '#ad9c78',
+    seabedDark: '#7d8580',
     grass: '#84c25d',
     grassDark: '#74b54f',
     path: '#c8b48c',
@@ -531,7 +534,7 @@ const FACES = [
 
 const ID = {
     sand: 1, sandDeep: 2, sandstone: 3, dirt: 4, stone: 5, stoneDark: 6, seabed: 7, grass: 8, grassDark: 9, path: 10, rock: 11, pond: 12,
-    deck: 13, pool: 14, wall: 15, trim: 16, glass: 17, glassDark: 18, slate: 19
+    deck: 13, pool: 14, wall: 15, trim: 16, glass: 17, glassDark: 18, slate: 19, seabedDeep: 20, seabedDark: 21
 };
 const PALETTE = [];
 for (const [name, id] of Object.entries(ID)) PALETTE[id] = color(COLORS[name]);
@@ -697,15 +700,28 @@ function blockId(i, k, j, top) {
     return hash(i, k, j) > 0.5 ? ID.stone : ID.stoneDark;
 }
 
+// Near the beach the water of the bay is clear, and the sand, the fish and their shadows show through it. Further
+// out, and wherever it meets the open sea, it is deep and dark
+const clearWater = (i, k) => insideIsland(i, k) && isWater(i, k) && topLevel(i, k) >= -4 &&
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([a, c]) => insideIsland(i + a, k + c));
+
 function buildIsland() {
-    const grid = new VoxelGrid(-56, 56, SEA_FLOOR, 10, -36, 54);
+    const grid = new VoxelGrid(-56, 56, -6, 10, -36, 54);
     const columns = [];
     for (let i = -55; i <= 55; i++) {
         for (let k = -35; k <= 53; k++) {
             if (!insideIsland(i, k)) continue;
             const top = topLevel(i, k);
-            // Under the bay the water's own blocks hide the sea floor, so only its depth is kept
-            if (!isWater(i, k)) for (let j = SEA_FLOOR; j < top; j++) grid.set(i, j, k, blockId(i, k, j, top));
+            if (isWater(i, k)) {
+                // Under clear water the sand of the sea floor, darker where it's deeper; under deep water the
+                // water's own blocks hide the floor, so only its depth is kept
+                if (clearWater(i, k)) for (let j = top - 2; j < top; j++) grid.set(i, j, k, j < top - 1 ? ID.sandDeep : top >= -2 ? ID.seabed : top === -3 ? ID.seabedDeep : ID.seabedDark);
+            } else {
+                // Land reaches down as deep as the clear water beside it, so nothing shows under it through the water
+                let bottom = SEA_FLOOR;
+                for (const [a, c] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (clearWater(i + a, k + c)) bottom = Math.min(bottom, topLevel(i + a, k + c) - 2);
+                for (let j = bottom; j < top; j++) grid.set(i, j, k, blockId(i, k, j, top));
+            }
             columns.push({ i, k, top });
         }
     }
@@ -792,6 +808,158 @@ function resortDetails(b, glow) {
     [[-2, 15], [2, 15], [-2, 20], [2, 20]].forEach(([i, k]) => lampPost(b, glow, i, k));
 }
 
+// On the sand under the clear water: shells, starfish and pebbles, and where it's deep enough for them, tufts of
+// seaweed and little corals
+function seaFloor(b, columns) {
+    for (const { i, k, top } of columns) {
+        if (!clearWater(i, k) || hash(i, k, 21) < 0.86) continue;
+        const x = i * B + (hash(i, k, 23) - 0.5) * 0.12, z = k * B + (hash(i, k, 24) - 0.5) * 0.12, y = top * B;
+        const kind = Math.floor(hash(i, k, 22) * (top <= -2 ? 5 : 3));
+        if (kind === 0) {
+            b.box(0.11, 0.03, 0.08, x, y + 0.015, z, hash(i, k, 25) > 0.5 ? '#fbe4ec' : '#fff1dc', { rot: [0, hash(i, k, 26) * 3, 0] });
+        } else if (kind === 1) {
+            [[0, 0], [1, 0], [2, 0], [-1, 0], [-2, 0], [0, 1], [0, 2], [0, -1], [1, -2], [-1, -2]].forEach(([a, c]) =>
+                b.box(0.04, 0.025, 0.04, x + a * 0.04, y + 0.012, z + c * 0.04, '#f2896d'));
+        } else if (kind === 2) {
+            [[0, 0, 0.12], [0.1, 0.05, 0.08], [-0.06, 0.08, 0.07]].forEach(([dx, dz, w]) => b.box(w, w * 0.7, w, x + dx, y + w * 0.35, z + dz, '#9aa3ab'));
+        } else if (kind === 3) {
+            for (let n = 0; n < 3; n++) b.box(0.03, 0.16 + n * 0.07, 0.03, x + (n - 1) * 0.06, y + 0.08 + n * 0.035, z + (n % 2) * 0.05, n % 2 ? '#5aa86a' : '#3f8f5a');
+        } else {
+            const hex = ['#ff7f8a', '#ffa45c', '#b67de0'][Math.floor(hash(i, k, 27) * 3)];
+            [[0, 0.1, 0], [0.06, 0.16, 0.03], [-0.05, 0.13, -0.03], [0.02, 0.22, -0.02]].forEach(([dx, h, dz]) => b.box(0.05, h, 0.05, x + dx, y + h / 2, z + dz, hex));
+        }
+    }
+}
+
+// Where the edge of the beach runs, smoothly (shoreK without the rounding into blocks)
+const shoreLine = i => -6 + 1.6 * Math.sin(i * 0.21 + 0.5) + 0.8 * Math.sin(i * 0.53);
+
+// Little fish swimming in schools in the clear water along the beach, and a turtle paddling slowly past, just
+// under the surface; their shadows fall on the sand below
+function sealife() {
+    // Each school: where along the beach it swims (in blocks), how far either way, its colour, how many, how fast
+    const fish = [];
+    [[-6, 7, '#cfd8e3', 7, 0.16], [8, 6, '#ffd23f', 5, -0.2], [-17, 5, '#ff8a3d', 4, 0.22], [16, 5, '#5b9be6', 5, 0.18]].forEach(([along, range, hex, count, speed], s) => {
+        const rand = random(90 + s), start = rand() * 6;
+        for (let n = 0; n < count; n++) {
+            fish.push({ along, range, hex, speed, start, di: (rand() - 0.5) * 1.6, dk: (rand() - 0.5) * 1.2, dy: (rand() - 0.5) * 0.06, size: 0.85 + rand() * 0.35, beat: rand() * 6 });
+        }
+    });
+    const material = () => new THREE.MeshStandardMaterial({ roughness: 0.5 });
+    const bodies = new THREE.InstancedMesh(new THREE.BoxGeometry(0.16, 0.07, 0.05), material(), fish.length);
+    const tails = new THREE.InstancedMesh(new THREE.BoxGeometry(0.05, 0.06, 0.02), material(), fish.length);
+    fish.forEach((f, n) => {
+        bodies.setColorAt(n, color(f.hex));
+        tails.setColorAt(n, color(shade(f.hex, 0.18)));
+    });
+    bodies.castShadow = tails.castShadow = true;
+    // The turtle: a domed shell with a lighter pattern, its head, and two pairs of flippers that paddle
+    const turtle = new THREE.Group(), shell = new Blocks();
+    turtle.rotation.order = 'YXZ';
+    shell.box(0.34, 0.08, 0.4, 0, 0, 0, '#4f6b3a', { outline: true });
+    shell.box(0.26, 0.05, 0.3, 0, 0.06, 0, '#6b8a4a');
+    shell.box(0.12, 0.03, 0.14, 0, 0.09, 0, '#7d9c58');
+    shell.box(0.1, 0.07, 0.12, 0, 0.0, 0.25, '#93b36e', { outline: true });
+    shell.box(0.02, 0.02, 0.01, 0.03, 0.02, 0.31, '#1d2630');
+    shell.box(0.02, 0.02, 0.01, -0.03, 0.02, 0.31, '#1d2630');
+    shell.addTo(turtle);
+    const flippers = [[0.12, 1], [-0.12, -1]].map(([z, front]) => {
+        const pair = new THREE.Group(), f = new Blocks();
+        pair.position.z = z;
+        [-1, 1].forEach(side => f.box(front > 0 ? 0.16 : 0.1, 0.02, front > 0 ? 0.08 : 0.06, side * (front > 0 ? 0.22 : 0.18), -0.01, 0, '#93b36e'));
+        pair.add(f.mesh());
+        turtle.add(pair);
+        return { pair, front };
+    });
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), v = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    const size = new THREE.Vector3();
+    function update(t) {
+        fish.forEach((f, n) => {
+            // Round a long thin loop along the beach, a little way out from the sand
+            const a = f.start + t * f.speed, i = f.along + Math.cos(a) * f.range + f.di;
+            p.set(i * B, -0.27 + f.dy + Math.sin(t * 1.5 + f.beat) * 0.02, (shoreLine(i) - 4.4 + Math.sin(a) * 1.3 + f.dk) * B);
+            const heading = Math.atan2(-Math.cos(a) * 1.3, -Math.sin(a) * f.range) + (f.speed < 0 ? Math.PI : 0);
+            size.setScalar(f.size);
+            q.setFromAxisAngle(up, heading);
+            m.compose(p, q, size);
+            bodies.setMatrixAt(n, m);
+            // The tail beats behind it
+            v.set(-0.105 * f.size, 0, 0).applyQuaternion(q).add(p);
+            q.setFromAxisAngle(up, heading + Math.sin(t * 12 + f.beat) * 0.5);
+            m.compose(v, q, size);
+            tails.setMatrixAt(n, m);
+        });
+        bodies.instanceMatrix.needsUpdate = tails.instanceMatrix.needsUpdate = true;
+        const a = t * 0.045, i = 2 + Math.cos(a) * 11;
+        turtle.position.set(i * B, -0.45 + Math.sin(t * 0.8) * 0.03, (shoreLine(i) - 5.6 + Math.sin(a) * 0.8) * B);
+        turtle.rotation.set(Math.sin(t * 0.8) * 0.05, Math.atan2(-Math.sin(a) * 11, Math.cos(a) * 0.8), 0);
+        flippers.forEach(({ pair, front }) => { pair.rotation.z = Math.sin(t * 2.2 + (front > 0 ? 0 : 1.5)) * 0.35; });
+    }
+    update(0);
+    return { meshes: [bodies, tails, turtle], update };
+}
+
+// Two dolphins out beyond the bay that leap one after the other every few seconds, splashing as they come out
+// of the water and go back in
+function dolphins() {
+    const group = new THREE.Group(), PERIOD = 8, LEAP = 1.8, REACH = 3.4, HEIGHT = 1.6;
+    const pod = [[-9, -16, 0], [-12, -18.5, 1.1]].map(([x, z, delay]) => {
+        const body = new THREE.Group(), b = new Blocks(), grey = '#5f7f99';
+        body.rotation.order = 'YXZ';
+        b.box(0.3, 0.28, 1.0, 0, 0, 0, grey, { outline: true });
+        b.box(0.24, 0.08, 0.8, 0, -0.12, 0.02, '#dfe7ee');
+        b.box(0.24, 0.22, 0.22, 0, 0, 0.6, grey, { outline: true });
+        b.box(0.1, 0.08, 0.2, 0, -0.04, 0.8, '#7d97ad');
+        b.box(0.05, 0.2, 0.22, 0, 0.22, -0.05, grey, { rot: [-0.5, 0, 0] });
+        b.box(0.16, 0.14, 0.32, 0, 0.02, -0.64, grey);
+        b.box(0.56, 0.05, 0.16, 0, 0.02, -0.86, grey, { outline: true });
+        [-1, 1].forEach(side => {
+            b.box(0.2, 0.04, 0.12, side * 0.2, -0.1, 0.3, grey, { rot: [0, 0, side * 0.5] });
+            b.box(0.03, 0.03, 0.02, side * 0.125, 0.05, 0.66, '#1d2630');
+        });
+        b.addTo(body);
+        // White water thrown up where it breaks the surface
+        const splash = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: COLORS.foam, roughness: 0.6 }), 12);
+        group.add(body, splash);
+        return { body, splash, x, z, delay };
+    });
+    // Where the leap breaks the surface on the way out and on the way back in (fractions of the leap)
+    const out = (1 - Math.sqrt(1 - 0.5 / HEIGHT)) / 2, back = 1 - out;
+    const m = new THREE.Matrix4();
+    function update(t) {
+        pod.forEach(d => {
+            const u = ((((t - d.delay) % PERIOD) + PERIOD) % PERIOD) / LEAP;
+            d.body.visible = u <= 1;
+            if (u <= 1) {
+                // Along an arc, from under the water up and back down, nose following the arc
+                d.body.position.set(d.x - REACH / 2 + u * REACH, SEA_Y - 0.5 + 4 * u * (1 - u) * HEIGHT, d.z);
+                d.body.rotation.set(-Math.atan((1 - 2 * u) * 4 * HEIGHT / REACH), Math.PI / 2, 0);
+            }
+            // The splash from the last time it broke the surface, if that was less than 0.7 s ago
+            let age = -1, at = 0;
+            for (const crossing of [out, back]) {
+                const since = (u - crossing) * LEAP;
+                if (since >= 0 && since < 0.7 && (age < 0 || since < age)) {
+                    age = since;
+                    at = d.x - REACH / 2 + crossing * REACH;
+                }
+            }
+            for (let n = 0; n < 12; n++) {
+                if (age < 0) {
+                    m.makeScale(0, 0, 0);
+                } else {
+                    const a = (n / 12) * Math.PI * 2, r = 0.15 + age * (0.8 + (n % 3) * 0.25), s = 0.1 * (1 - age / 0.7);
+                    m.makeScale(s, s, s).setPosition(at + Math.cos(a) * r, SEA_Y + age * (2 + (n % 2)) - age * age * 4.5, d.z + Math.sin(a) * r);
+                }
+                d.splash.setMatrixAt(n, m);
+            }
+            d.splash.instanceMatrix.needsUpdate = true;
+        });
+    }
+    update(0);
+    return { group, update };
+}
+
 // A small island out in the sea: grass inside a rim of sand, or a heap of bare rock
 function buildSeaIsland(radius, seed, rocky) {
     const rand = random(seed);
@@ -840,37 +1008,65 @@ function farLand(x, z, angle, along, across, height, size, seed) {
 }
 
 // ----- The bay: one column of water blocks over each piece of sea floor -----
-// The columns bob, and every few seconds a wave of raised blocks rolls in and breaks white on the beach
+// The columns rise and fall on the swell, and waves of raised blocks roll in from the mouth of the bay, two at a
+// time, growing and whitening on their crests, and break on the beach, where white water runs up the sand and
+// back. The clear water near the beach is a see-through layer at the surface, clearer in the shallows, and
+// thick only where a wave lifts it
 function buildWater(columns) {
     const cols = columns.filter(c => isWater(c.i, c.k)).map(c => ({ ...c, x: c.i * B, z: c.k * B, base: c.top * B, shore: shoreK(c.i) }));
+    const mouth = Math.min(...cols.map(w => w.k));
     const geometry = new THREE.BoxGeometry(B, 1, B).translate(0, 0.5, 0);
-    const mesh = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color: '#d8ecf6', roughness: 0.3 }), cols.length);
-    mesh.receiveShadow = true;
+    const clear = cols.filter(w => clearWater(w.i, w.k));
+    const parts = [[clear.filter(w => w.top >= -2), 0.5], [clear.filter(w => w.top < -2), 0.72], [cols.filter(w => !clearWater(w.i, w.k)), 1]].map(([list, opacity]) => {
+        const material = new THREE.MeshStandardMaterial({ color: '#d8ecf6', roughness: 0.3, transparent: opacity < 1, opacity });
+        const mesh = new THREE.InstancedMesh(geometry, material, list.length);
+        mesh.receiveShadow = true;
+        return { list, mesh, clear: opacity < 1 };
+    });
+    // The white water running up the beach: a flat block on the sand at the top of each column of the bay
+    const edge = [...new Map(cols.filter(w => w.k === w.shore - 1).map(w => [w.i, w])).values()];
+    const swash = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color: COLORS.foam, roughness: 0.5, transparent: true, opacity: 0.85 }), edge.length);
     const deep = color(COLORS.waterDeep), shallow = color(COLORS.waterShallow), foam = color(COLORS.foam);
     const m = new THREE.Matrix4(), c = new THREE.Color();
     function update(t) {
-        const phase = (t / 5) % 1;
-        cols.forEach((w, n) => {
-            const crest = -22 + (w.shore + 22) * easeInOut(phase);
-            const wave = Math.exp(-((w.k - crest) ** 2) / 1.2) * smoothstep(1, 0.85, phase);
-            const nearShore = smoothstep(w.shore - 5, w.shore - 1, w.k);
-            const top = -0.06 + Math.sin(t * 1.7 + w.i * 0.5 + w.k * 0.8) * 0.025 + wave * 0.1;
-            m.makeScale(1, top - w.base, 1).setPosition(w.x, w.base, w.z);
-            mesh.setMatrixAt(n, m);
-            c.copy(deep).lerp(shallow, smoothstep(-5, -1, w.top) * 0.8 + nearShore * 0.2)
-                .lerp(foam, Math.min(wave * nearShore * 0.9 + (w.k === w.shore - 1 ? 0.25 : 0), 1));
-            mesh.setColorAt(n, c);
+        // How far each wave has come, from 0 at the mouth of the bay to 1 on the beach
+        const waves = [0, 0.5].map(offset => (t / 6 + offset) % 1);
+        for (const { list, mesh, clear } of parts) {
+            list.forEach((w, n) => {
+                let wave = 0;
+                waves.forEach((along, o) => {
+                    const crest = mouth + (w.shore - mouth) * along + Math.sin(w.i * 0.17 + o * 4) * 1.2;
+                    wave = Math.max(wave, Math.exp(-((w.k - crest) ** 2) / 2.2) * smoothstep(1, 0.9, along) * (0.45 + 0.55 * along));
+                });
+                const nearShore = smoothstep(w.shore - 6, w.shore - 1, w.k);
+                const top = -0.06 + Math.sin(t * 1.3 + w.i * 0.31 + w.k * 0.55) * 0.04 + wave * 0.26;
+                const base = clear ? Math.min(top - 0.08, -0.16) : w.base;
+                m.makeScale(1, top - base, 1).setPosition(w.x, base, w.z);
+                mesh.setMatrixAt(n, m);
+                c.copy(deep).lerp(shallow, smoothstep(-5, -1, w.top) * 0.8 + nearShore * 0.2)
+                    .lerp(foam, Math.min(wave * wave * (0.35 + nearShore * 0.65) + (w.k === w.shore - 1 ? 0.3 : 0), 1));
+                mesh.setColorAt(n, c);
+            });
+            mesh.instanceMatrix.needsUpdate = true;
+            mesh.instanceColor.needsUpdate = true;
+        }
+        edge.forEach((w, n) => {
+            // Up the sand as a wave breaks, a little further in some places than others, and back down
+            const run = Math.max(...waves.map(along => Math.sin(smoothstep(0.86, 1, along) * Math.PI))) * (0.8 + hash(w.i, 0, 17) * 0.9);
+            m.makeScale(0.98, 0.02, Math.max(run, 0.001)).setPosition(w.x, ground(w.i, w.shore), (w.shore - 0.5 + run / 2) * B);
+            swash.setMatrixAt(n, m);
         });
-        mesh.instanceMatrix.needsUpdate = true;
-        mesh.instanceColor.needsUpdate = true;
+        swash.instanceMatrix.needsUpdate = true;
     }
     update(0);
-    return { mesh, update };
+    return { meshes: [...parts.map(part => part.mesh), swash], update };
 }
 
 // The open sea round the island, out to the horizon: one flat surface drawn as square blocks of water lined
-// up with the island's, each a shade lighter or darker and shimmering, with a path of glitter under the sun.
-// Where the blocks get too small to see, they fade into an even colour
+// up with the island's, each a shade lighter or darker and shimmering, with swell rolling in toward the island,
+// white caps breaking along its crests, and a path of glitter under the sun. Where the blocks get too small to
+// see, they fade into an even colour. It leaves out the island's own blocks, so the clear water of the bay
+// shows the sea floor and not this
 function openSea() {
     const uniforms = { time: { value: 0 }, sunDir: { value: SUN_DIR }, glint: { value: color(COLORS.glow) } };
     const material = new THREE.MeshStandardMaterial({ color: COLORS.waterDeep, roughness: 0.3 });
@@ -884,13 +1080,24 @@ function openSea() {
                 varying vec3 vSea;
                 uniform float time;
                 uniform vec3 sunDir, glint;
-                float seaHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }`)
+                float seaHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+                // islandRadius(), for block (i, k)
+                float islandRadius(vec2 c) {
+                    vec2 d = (c - vec2(${ISLAND.ci.toFixed(1)}, ${ISLAND.ck.toFixed(1)})) / vec2(${ISLAND.ri.toFixed(1)}, ${ISLAND.rk.toFixed(1)});
+                    float a = atan(d.y, d.x);
+                    return length(d) / (1.0 + 0.06 * sin(3.0 * a + 1.0) + 0.05 * sin(5.0 * a + 2.5) + 0.03 * sin(9.0 * a));
+                }`)
             .replace('vec4 diffuseColor = vec4( diffuse, opacity );', `vec4 diffuseColor = vec4( diffuse, opacity );
                 vec2 blockAt = vSea.xz / ${B} + 0.5, cell = floor(blockAt), inBlock = fract(blockAt);
+                if (islandRadius(cell) < 0.9999) discard;
                 float seen = 1.0 - smoothstep(0.25, 0.8, max(fwidth(blockAt.x), fwidth(blockAt.y)));
                 float shade = seaHash(cell), shimmer = sin(time * 1.7 + cell.x * 0.5 + cell.y * 0.8);
                 float edge = min(min(inBlock.x, 1.0 - inBlock.x), min(inBlock.y, 1.0 - inBlock.y));
-                diffuseColor.rgb *= 1.0 + seen * ((shade - 0.5) * 0.06 + shimmer * 0.02 - (1.0 - smoothstep(0.0, 0.06, edge)) * 0.03);`)
+                vec2 cellPos = cell * ${B};
+                float swell = 0.6 * sin(dot(cellPos, vec2(0.28, 0.96)) * 0.9 - time * 1.3) + 0.4 * sin(dot(cellPos, vec2(-0.55, 0.83)) * 1.6 - time * 2.0);
+                float cap = smoothstep(0.78, 0.95, swell) * step(0.5, shade);
+                diffuseColor.rgb *= 1.0 + seen * ((shade - 0.5) * 0.06 + shimmer * 0.02 + swell * 0.08 - (1.0 - smoothstep(0.0, 0.06, edge)) * 0.03);
+                diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), cap * seen * 0.8);`)
             .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
                 vec3 bounce = reflect(normalize(vSea - cameraPosition), vec3(0.0, 1.0, 0.0));
                 float path = pow(max(dot(bounce, sunDir), 0.0), 60.0);
@@ -1949,7 +2156,10 @@ function start() {
     island.add(terrain);
     const water = buildWater(columns);
     const sea = openSea();
-    island.add(water.mesh, sea.mesh);
+    island.add(...water.meshes, sea.mesh);
+    // Under the clear water fish and a turtle; out at sea, dolphins
+    const life = sealife(), pod = dolphins();
+    island.add(...life.meshes, pod.group);
 
     // Us, lying back on two loungers at the top of the beach, looking out to sea under a big umbrella: him on
     // the left, her on the right, holding hands across the gap between the loungers. The umbrella is planted
@@ -2011,6 +2221,7 @@ function start() {
     // Everything else on the island: still things in one mesh, glowing windows and lamps in another
     const decor = new Blocks(), glow = new Blocks();
     islandDetails(decor, columns);
+    seaFloor(decor, columns);
     footprints(decor, [[him, 1], [her, -1]]);
     const palms = [
         palmTree(decor, -9, 2, 11, [-1, 0], 0.3), palmTree(decor, 20, 0, 10, [1, -1], 2.2),
@@ -2311,6 +2522,8 @@ function start() {
         lastClock = clock;
         away = THREE.MathUtils.clamp(away + THREE.MathUtils.clamp(awayTarget - away, -dt / 1.6, dt / 1.6), 0, 1);
         water.update(clock);
+        life.update(clock);
+        pod.update(clock);
         sea.uniforms.time.value = clock;
         foamMaterials.forEach((m, n) => { m.opacity = 0.55 + 0.3 * Math.sin(clock * 1.3 - n * 1.4) - n * 0.15; });
         animatePeople(clock);
