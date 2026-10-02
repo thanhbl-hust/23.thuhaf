@@ -1,9 +1,11 @@
 // ===== OPENING SCENE =====
-// A floating island built entirely from blocks, like a voxel diorama, with the two of us lying on two
-// loungers under a beach umbrella at sunset, holding hands: a bay with a jetty and a boat that spills over the
-// edge as a waterfall, palms, beach huts and a lifeguard's chair along the sand, a cottage with a garden, a
-// campfire, a swing, pines on a hill and a forest, a field of tulips, a pond with ducks and a little bridge, a
-// windmill, and a lighthouse on the rocks, with smaller islands, a hot-air balloon, clouds and gulls around it.
+// An island built entirely from blocks, in a sea of blocks that runs to the horizon, with the two of us lying
+// on two loungers under a beach umbrella at sunset, holding hands, our little dog beside her: a bay with a
+// jetty and a boat, palms, beach huts and a lifeguard's chair along the sand, a cottage with a garden, a
+// campfire, a swing, pines on a hill and a forest, a field of tulips, a pond with ducks and a little bridge,
+// and a windmill. Out at sea are small islands, the lighthouse on its rock, ships big and small, and far-off
+// hills; above, a hot-air balloon, clouds and gulls. Like a photo, it is sharp round us and softer and hazier
+// the further away things are.
 // The camera always looks at the two of us: drag to turn it round or up and down, scroll or pinch to zoom.
 // The figures follow the blocky style of the portfolio's pickleball scene.
 // script.js owns the overlay and its button; this file only draws behind them. If it can't run (no WebGL,
@@ -48,10 +50,12 @@ const COLORS = {
 
 // One block of the island
 const B = 0.35;
-// The sun hangs low beyond the bay, in front of us, just touching the sea; the camera starts behind us looking
-// out at it
+// The open sea's surface, just under the lowest the bay's blocks bob to, and how far below it land is built
+const SEA_Y = -0.09, SEA_FLOOR = -2;
+// The sun is setting beyond the bay, in front of us, already touching the sea; the camera starts behind us
+// looking out at it
 const SUN_AZIMUTH = 0.6;
-const SUN_ELEVATION = -0.17;
+const SUN_ELEVATION = 0.025;
 const SUN_DIR = new THREE.Vector3(-Math.sin(SUN_AZIMUTH), 0, -Math.cos(SUN_AZIMUTH))
     .multiplyScalar(Math.sqrt(1 - SUN_ELEVATION ** 2)).setY(SUN_ELEVATION);
 
@@ -521,9 +525,9 @@ const PALETTE = [];
 for (const [name, id] of Object.entries(ID)) PALETTE[id] = color(COLORS[name]);
 
 class VoxelGrid {
-    // Blocks i0..i1 across, j0..j1 up, k0..k1 front to back
-    constructor(i0, i1, j0, j1, k0, k1) {
-        Object.assign(this, { i0, j0, k0, ni: i1 - i0 + 1, nj: j1 - j0 + 1, nk: k1 - k0 + 1 });
+    // Blocks i0..i1 across, j0..j1 up, k0..k1 front to back, each `size` across
+    constructor(i0, i1, j0, j1, k0, k1, size = B) {
+        Object.assign(this, { i0, j0, k0, size, ni: i1 - i0 + 1, nj: j1 - j0 + 1, nk: k1 - k0 + 1 });
         this.cells = new Uint8Array(this.ni * this.nj * this.nk);
     }
 
@@ -537,10 +541,9 @@ class VoxelGrid {
         this.cells[((i - this.i0) * this.nj + (j - this.j0)) * this.nk + (k - this.k0)] = id;
     }
 
-    // With `undersides: false` the faces looking down are left out too, for an island the camera never goes
-    // below
+    // With `undersides: false` the faces looking down are left out too, for land the camera never goes below
     mesh({ undersides = true } = {}) {
-        const position = [], normal = [], colors = [];
+        const position = [], normal = [], colors = [], s = this.size;
         const faces = FACES.filter(face => undersides || face.n[1] >= 0);
         for (let a = 0; a < this.ni; a++) {
             for (let b = 0; b < this.nj; b++) {
@@ -554,7 +557,7 @@ class VoxelGrid {
                     for (const { n, corners } of faces) {
                         if (this.get(i + n[0], j + n[1], k + n[2])) continue;
                         for (let v = 0; v < 18; v += 3) {
-                            position.push((i - 0.5 + corners[v]) * B, (j + corners[v + 1]) * B, (k - 0.5 + corners[v + 2]) * B);
+                            position.push((i - 0.5 + corners[v]) * s, (j + corners[v + 1]) * s, (k - 0.5 + corners[v + 2]) * s);
                             normal.push(n[0], n[1], n[2]);
                             colors.push(red, green, blue);
                         }
@@ -576,10 +579,12 @@ class VoxelGrid {
 // Columns of blocks: i across, k from the front (the bay, toward the sun) to the back, levels up, all in
 // blocks. We lie on two loungers near the front with the bay before us; behind us the beach rises to grass,
 // a cottage and its garden, a hill of pines and a forest; to the right are beach huts, a field of tulips, a
-// pond and a windmill on its own hill; the lighthouse is on a rocky point at the front left. Underneath, the
-// island narrows in layers of sand, earth and stone, like a chunk lifted out of the ground.
+// pond and a windmill on its own hill; the beach ends in rocks at the front left. The island rises out of a
+// sea that runs to the horizon, so its blocks only go a little way below the water.
 const ISLAND = { ci: 0, ck: 9, ri: 46, rk: 36 };
 const ROCK = { i: -31, k: -13 };
+// The lighthouse's rock, out in the sea beyond the bay (in world units)
+const LIGHTHOUSE = { x: -22, z: -27 };
 const COTTAGE = { i0: -15, i1: -9, k0: 14, k1: 19 };
 const GARDEN = { i0: -19, i1: -6, k0: 12, k1: 22 };
 const HILL = { i: -4, k: 31 };
@@ -625,10 +630,6 @@ function topLevel(i, k) {
     return 2 + hill + mill + bump;
 }
 
-function bottomLevel(i, k) {
-    return -Math.round(4 + 18 * Math.pow(Math.max(0, 1 - islandRadius(i, k)), 0.75) + hash(i, k, 2) * 2.5);
-}
-
 // World height of the ground at a block
 const ground = (i, k) => topLevel(i, k) * B;
 
@@ -650,39 +651,65 @@ function blockId(i, k, j, top) {
 }
 
 function buildIsland() {
-    const grid = new VoxelGrid(-56, 56, -30, 10, -36, 54);
+    const grid = new VoxelGrid(-56, 56, SEA_FLOOR, 10, -36, 54);
     const columns = [];
     for (let i = -55; i <= 55; i++) {
         for (let k = -35; k <= 53; k++) {
             if (!insideIsland(i, k)) continue;
-            const top = topLevel(i, k), bottom = bottomLevel(i, k);
-            for (let j = bottom; j < top; j++) grid.set(i, j, k, blockId(i, k, j, top));
+            const top = topLevel(i, k);
+            // Under the bay the water's own blocks hide the sea floor, so only its depth is kept
+            if (!isWater(i, k)) for (let j = SEA_FLOOR; j < top; j++) grid.set(i, j, k, blockId(i, k, j, top));
             columns.push({ i, k, top });
         }
     }
     return { mesh: grid.mesh({ undersides: false }), columns };
 }
 
-// A small floating island around the big one: grass on top, earth and stone below
-function buildIslet(radius, seed) {
+// A small island out in the sea: grass inside a rim of sand, or a heap of bare rock
+function buildSeaIsland(radius, seed, rocky) {
     const rand = random(seed);
     const n = radius + 1;
-    const grid = new VoxelGrid(-n, n, -radius * 2 - 3, 2, -n, n);
+    const grid = new VoxelGrid(-n, n, SEA_FLOOR, 6, -n, n);
     const tops = [];
     for (let i = -n; i <= n; i++) {
         for (let k = -n; k <= n; k++) {
             const r = Math.hypot(i, k) / (radius * (1 + 0.12 * Math.sin(Math.atan2(k, i) * 3 + seed)));
             if (r > 1) continue;
-            const top = 1 + (r < 0.5 && rand() > 0.6 ? 1 : 0);
-            const bottom = -Math.round(1 + radius * 1.6 * Math.pow(1 - r, 0.8) + rand() * 1.5);
-            for (let j = bottom; j < top; j++) {
+            const top = rocky ? (r < 0.45 ? 4 : r < 0.8 ? 2 + (rand() > 0.4 ? 1 : 0) : 1 + (rand() > 0.6 ? 1 : 0))
+                : r > 0.72 ? 1 : 2 + (r < 0.4 && rand() > 0.6 ? 1 : 0);
+            for (let j = SEA_FLOOR; j < top; j++) {
                 const depth = top - 1 - j;
-                grid.set(i, j, k, depth === 0 ? (rand() > 0.7 ? ID.grassDark : ID.grass) : depth <= 2 ? ID.dirt : rand() > 0.5 ? ID.stone : ID.stoneDark);
+                grid.set(i, j, k, rocky ? (depth === 0 ? ID.rock : rand() > 0.5 ? ID.stone : ID.stoneDark)
+                    : top === 1 ? (depth === 0 ? ID.sand : ID.sandDeep)
+                    : depth === 0 ? (rand() > 0.7 ? ID.grassDark : ID.grass) : depth === 1 ? ID.dirt : ID.sandDeep);
             }
             tops.push({ i, k, top });
         }
     }
-    return { mesh: grid.mesh(), tops };
+    return { mesh: grid.mesh({ undersides: false }), tops };
+}
+
+// Far-off land round the bay in big blocks of `size`: hills wooded at their feet rising to bare peaks, which
+// the haze turns the colour of the sky. It is `along` by `across` blocks either side of its middle at (x, z),
+// laid out along `angle`
+function farLand(x, z, angle, along, across, height, size, seed) {
+    const grid = new VoxelGrid(-along, along, -1, height + 1, -across, across, size);
+    for (let i = -along; i <= along; i++) {
+        for (let k = -across; k <= across; k++) {
+            const u = i / along, v = k / across, shape = 1 - u * u * 0.85 - v * v;
+            if (shape <= 0) continue;
+            const peaks = 0.55 + 0.25 * Math.sin(i * 0.37 + seed) + 0.2 * Math.sin(i * 0.91 + k * 0.5 + seed * 2);
+            const top = Math.max(1, Math.round(height * shape * peaks));
+            for (let j = -1; j < top; j++) {
+                grid.set(i, j, k, j < top - 1 ? ID.dirt : top >= height * 0.62 ? (hash(i, k, 15) > 0.4 ? ID.rock : ID.stone)
+                    : top === 1 ? ID.sand : top >= height * 0.3 ? ID.grassDark : ID.grass);
+            }
+        }
+    }
+    const mesh = grid.mesh({ undersides: false });
+    mesh.position.set(x, 0, z);
+    mesh.rotation.y = angle;
+    return mesh;
 }
 
 // ----- The bay: one column of water blocks over each piece of sea floor -----
@@ -700,7 +727,7 @@ function buildWater(columns) {
             const crest = -22 + (w.shore + 22) * easeInOut(phase);
             const wave = Math.exp(-((w.k - crest) ** 2) / 1.2) * smoothstep(1, 0.85, phase);
             const nearShore = smoothstep(w.shore - 5, w.shore - 1, w.k);
-            const top = -0.06 + Math.sin(t * 1.7 + w.i * 0.5 + w.k * 0.8) * 0.03 + wave * 0.1;
+            const top = -0.06 + Math.sin(t * 1.7 + w.i * 0.5 + w.k * 0.8) * 0.025 + wave * 0.1;
             m.makeScale(1, top - w.base, 1).setPosition(w.x, w.base, w.z);
             mesh.setMatrixAt(n, m);
             c.copy(deep).lerp(shallow, smoothstep(-5, -1, w.top) * 0.8 + nearShore * 0.2)
@@ -711,45 +738,61 @@ function buildWater(columns) {
         mesh.instanceColor.needsUpdate = true;
     }
     update(0);
-    // Where the bay meets the front edge of the island, it pours over as a waterfall
-    const spill = cols.filter(w => w.i >= 3 && w.i <= 8 && !insideIsland(w.i, w.k - 1));
-    return { mesh, update, spill };
+    return { mesh, update };
 }
 
-function waterfall(spill) {
-    const group = new THREE.Group();
-    const curtain = new Blocks();
-    const water = color(COLORS.waterShallow), foam = color(COLORS.foam);
-    for (const w of spill) {
-        const z = (w.k - 0.5) * B - 0.05;
-        for (let s = 0; s < 12; s++) {
-            const shade = `#${water.clone().lerp(foam, 0.15 + s * 0.06).getHexString()}`;
-            const narrow = 1 - s * 0.035;
-            curtain.box(B * narrow, 0.8, 0.12, w.x + (hash(w.i, s, 9) - 0.5) * 0.06, -0.46 - s * 0.8, z - s * 0.025, shade);
+// The open sea round the island, out to the horizon: one flat surface drawn as square blocks of water lined
+// up with the island's, each a shade lighter or darker and shimmering, with a path of glitter under the sun.
+// Where the blocks get too small to see, they fade into an even colour
+function openSea() {
+    const uniforms = { time: { value: 0 }, sunDir: { value: SUN_DIR }, glint: { value: color(COLORS.glow) } };
+    const material = new THREE.MeshStandardMaterial({ color: COLORS.waterDeep, roughness: 0.3 });
+    material.onBeforeCompile = shader => {
+        Object.assign(shader.uniforms, uniforms);
+        shader.vertexShader = shader.vertexShader
+            .replace('#include <common>', '#include <common>\nvarying vec3 vSea;')
+            .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSea = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+        shader.fragmentShader = shader.fragmentShader
+            .replace('#include <common>', `#include <common>
+                varying vec3 vSea;
+                uniform float time;
+                uniform vec3 sunDir, glint;
+                float seaHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }`)
+            .replace('vec4 diffuseColor = vec4( diffuse, opacity );', `vec4 diffuseColor = vec4( diffuse, opacity );
+                vec2 blockAt = vSea.xz / ${B} + 0.5, cell = floor(blockAt), inBlock = fract(blockAt);
+                float seen = 1.0 - smoothstep(0.25, 0.8, max(fwidth(blockAt.x), fwidth(blockAt.y)));
+                float shade = seaHash(cell), shimmer = sin(time * 1.7 + cell.x * 0.5 + cell.y * 0.8);
+                float edge = min(min(inBlock.x, 1.0 - inBlock.x), min(inBlock.y, 1.0 - inBlock.y));
+                diffuseColor.rgb *= 1.0 + seen * ((shade - 0.5) * 0.06 + shimmer * 0.02 - (1.0 - smoothstep(0.0, 0.06, edge)) * 0.03);`)
+            .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+                vec3 bounce = reflect(normalize(vSea - cameraPosition), vec3(0.0, 1.0, 0.0));
+                float path = pow(max(dot(bounce, sunDir), 0.0), 60.0);
+                float twinkle = step(0.55, fract(shade * 13.7 + time * (0.15 + 0.35 * shade)));
+                totalEmissiveRadiance += glint * path * mix(0.12, 0.6, mix(0.5, twinkle, seen));`);
+    };
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400).rotateX(-Math.PI / 2), material);
+    mesh.position.y = SEA_Y;
+    mesh.receiveShadow = true;
+    return { mesh, uniforms };
+}
+
+// White water lapping round a coast: flat blocks on the open sea all along the land, and a broken ring
+// beyond. `land(i, k)` says which blocks are land and `open(i, k)` which are open sea; (x, z) is where block
+// (0, 0) is
+function coastFoam(rings, land, open, i0, i1, k0, k1, x = 0, z = 0) {
+    // Which blocks are land, worked out once for the area and a margin of two round it
+    const nk = k1 - k0 + 5, isLand = new Uint8Array((i1 - i0 + 5) * nk);
+    for (let i = i0 - 2; i <= i1 + 2; i++) for (let k = k0 - 2; k <= k1 + 2; k++) isLand[(i - i0 + 2) * nk + k - k0 + 2] = land(i, k) ? 1 : 0;
+    for (let i = i0; i <= i1; i++) {
+        for (let k = k0; k <= k1; k++) {
+            if (!open(i, k)) continue;
+            let near = 3;
+            for (let a = -2; a <= 2; a++) for (let c = -2; c <= 2; c++) if (isLand[(i + a - i0 + 2) * nk + k + c - k0 + 2]) near = Math.min(near, Math.max(Math.abs(a), Math.abs(c)));
+            if (near > 2 || (near === 2 && hash(i + x, k + z, 13) > 0.55)) continue;
+            const w = B * (0.75 + hash(i + x, k + z, 14) * 0.25);
+            rings[near - 1].box(w, 0.02, w, x + i * B, SEA_Y + 0.012, z + k * B, '#ffffff');
         }
     }
-    const curtainMesh = curtain.mesh(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, transparent: true, opacity: 0.85, depthWrite: false }), { shadow: false });
-    group.add(curtainMesh);
-    // White water tumbling down the curtain
-    const count = 60;
-    const foamCubes = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: '#ffffff' }), count);
-    const rand = random(31);
-    const xs = spill.map(w => w.x), x0 = Math.min(...xs) - B / 2, x1 = Math.max(...xs) + B / 2;
-    const z0 = Math.min(...spill.map(w => (w.k - 0.5) * B)) - 0.13;
-    const drops = Array.from({ length: count }, () => ({ x: x0 + rand() * (x1 - x0), y: -rand() * 9, s: 0.05 + rand() * 0.08, v: 2 + rand() * 1.5 }));
-    group.add(foamCubes);
-    const m = new THREE.Matrix4();
-    function update(dt) {
-        drops.forEach((d, n) => {
-            d.y -= d.v * dt;
-            if (d.y < -9.5) d.y = 0;
-            const size = d.s * (1 - Math.max(0, -d.y - 6) / 4);
-            m.makeScale(size, size, size).setPosition(d.x, d.y - 0.05, z0 + d.y * 0.03);
-            foamCubes.setMatrixAt(n, m);
-        });
-        foamCubes.instanceMatrix.needsUpdate = true;
-    }
-    return { group, update };
 }
 
 // ----- Things on the island, all in blocks -----
@@ -869,6 +912,45 @@ function drinksTable(b, x, z) {
         b.box(0.012, 0.14, 0.012, x + dx - 0.03, 0.7, z + dz, '#f4f4f4');
         b.box(0.09, 0.025, 0.09, x + dx - 0.03, 0.77, z + dz, hex);
     });
+}
+
+// A small dog lying on the sand beside her: ginger, with a cream chest, muzzle and paws, pointed ears and a
+// curled tail, built facing +z. Its head and tail move on their own
+function buildDog() {
+    const dog = new THREE.Group(), ginger = '#d9884a', cream = '#f7ead8', dark = '#2a1d16';
+    // Lying down, the back legs tucked in and the front legs out in front
+    const body = new Blocks();
+    body.box(0.26, 0.17, 0.44, 0, 0.115, 0, ginger, { outline: true });
+    body.box(0.3, 0.15, 0.16, 0, 0.1, -0.15, ginger, { outline: true });
+    body.box(0.2, 0.12, 0.05, 0, 0.12, 0.215, cream);
+    [-1, 1].forEach(side => {
+        body.box(0.08, 0.05, 0.13, side * 0.12, 0.025, -0.07, cream);
+        body.box(0.07, 0.06, 0.2, side * 0.07, 0.03, 0.29, ginger, { outline: true });
+        body.box(0.075, 0.05, 0.07, side * 0.07, 0.025, 0.41, cream);
+    });
+    body.addTo(dog);
+    const head = new THREE.Group(), face = new Blocks();
+    head.position.set(0, 0.2, 0.2);
+    face.box(0.24, 0.2, 0.2, 0, 0.1, 0.05, ginger, { outline: true });
+    face.box(0.13, 0.08, 0.09, 0, 0.04, 0.19, cream, { outline: true });
+    face.box(0.05, 0.035, 0.02, 0, 0.075, 0.24, dark);
+    [-1, 1].forEach(side => {
+        face.box(0.035, 0.04, 0.02, side * 0.062, 0.13, 0.152, dark);
+        face.box(0.012, 0.012, 0.01, side * 0.062 + 0.008, 0.142, 0.163, '#ffffff');
+        face.box(0.07, 0.05, 0.02, side * 0.075, 0.055, 0.151, cream);
+        face.box(0.07, 0.1, 0.05, side * 0.08, 0.24, 0.02, ginger, { outline: true });
+        face.box(0.035, 0.05, 0.05, side * 0.095, 0.31, 0.02, ginger);
+        face.box(0.04, 0.06, 0.01, side * 0.08, 0.235, 0.048, '#f2b8b0');
+    });
+    face.addTo(head);
+    const tail = new THREE.Group(), curl = new Blocks();
+    tail.position.set(0, 0.17, -0.23);
+    curl.box(0.07, 0.07, 0.1, 0, 0.03, -0.04, ginger);
+    curl.box(0.07, 0.07, 0.07, 0, 0.09, -0.06, ginger);
+    curl.box(0.07, 0.07, 0.06, 0, 0.13, -0.02, cream);
+    curl.addTo(tail);
+    dog.add(head, tail);
+    return { dog, head, tail };
 }
 
 // A pair of flip-flops left on the sand
@@ -1041,8 +1123,7 @@ function fenceAndGarden(b) {
     }
 }
 
-function lighthouse(b, glow) {
-    const x = ROCK.i * B, z = ROCK.k * B, y = ground(ROCK.i, ROCK.k);
+function lighthouse(b, glow, x, y, z) {
     for (let n = 0; n < 9; n++) {
         const w = 0.95 - n * 0.035;
         b.box(w, 0.3, w, x, y + n * 0.3 + 0.15, z, n % 2 ? '#ffffff' : '#d9534f');
@@ -1208,10 +1289,6 @@ function islandDetails(b, columns) {
         if (!isWater(i, k) && !isRock(i, k) && k === shoreK(i) && hash(i, k, 8) > 0.75) {
             b.box(0.09, 0.04, 0.11, i * B + (hash(i, k, 9) - 0.5) * 0.2, y + 0.02, k * B, hash(i, k, 10) > 0.5 ? '#fbe4ec' : '#fff4e6');
         }
-        // Loose rocks along the bay's edge
-        if (isWater(i, k) && !insideIsland(i, k - 1) && hash(i, k, 12) > 0.8 && (i < 2 || i > 9)) {
-            b.box(0.3, 0.26, 0.3, i * B, 0.04, k * B, '#8d97a1');
-        }
     }
     // A starfish
     const sx = -3 * B, sz = -3 * B, sy = ground(-3, -3) + 0.015;
@@ -1233,18 +1310,153 @@ function footprints(b, people) {
     }
 }
 
+// ----- Ships out at sea -----
+// Each is built facing +z with its waterline at 0, and leaves a wake of white water
+function wake(b, beam, stern, spread, length) {
+    for (let n = 1; n <= length; n++) {
+        const w = beam * (0.3 + n * 0.08);
+        [-1, 1].forEach(side => b.box(w, 0.04, beam * 0.45, side * (beam * 0.35 + n * spread), 0.02, stern - n * beam * 0.5, '#ffffff'));
+        if (n < length * 0.6) b.box(beam * 0.5, 0.04, beam * 0.45, 0, 0.02, stern - n * beam * 0.5, '#eef7fb');
+    }
+}
+
+// A hull narrowing in steps to its bow at +z, `length` long overall
+function hull(b, length, beam, height, color, below) {
+    const bow = length * 0.2, main = length - bow;
+    b.box(beam, height, main, 0, height / 2 - 0.3, -length / 2 + main / 2, color);
+    b.box(beam + 0.02, 0.5, main + 0.02, 0, -0.1, -length / 2 + main / 2, below);
+    [[0.78, 0.4], [0.52, 0.33], [0.26, 0.27]].reduce((z, [w, part]) => {
+        b.box(beam * w, height, bow * part, 0, height / 2 - 0.3, z + (bow * part) / 2, color);
+        return z + bow * part;
+    }, -length / 2 + main);
+}
+
+// A big container ship: a dark hull stacked with containers of every colour, the bridge and funnel at the stern
+function containerShip() {
+    const b = new Blocks(), L = 34, W = 6, rand = random(81);
+    hull(b, L, W, 2.8, '#2b3a55', '#b8423a');
+    b.box(W + 0.04, 0.1, L * 0.8, 0, 2.5, -L * 0.1, '#e8e8e8');
+    const colours = ['#c8453b', '#2f6fb0', '#e8b93a', '#3f9a5a', '#e07a3a', '#2f9a9a', '#e8e8e8', '#8a4fa8'];
+    for (let row = 0; row < 9; row++) {
+        for (let col = -1; col <= 1; col++) {
+            const high = 1 + Math.floor(rand() * 3);
+            for (let level = 0; level < high; level++) {
+                b.box(1.85, 1.1, 2.15, col * 1.9, 3.1 + level * 1.15, -L / 2 + 7.5 + row * 2.25, colours[Math.floor(rand() * colours.length)]);
+            }
+        }
+    }
+    b.box(W - 0.4, 4.6, 3.6, 0, 4.8, -L / 2 + 3.4, '#f2f2f2');
+    b.box(W - 0.36, 0.5, 3.64, 0, 6.3, -L / 2 + 3.4, '#22303f');
+    b.box(W + 1.2, 0.35, 1.4, 0, 7.25, -L / 2 + 4.4, '#f2f2f2');
+    b.box(1.4, 2.2, 1.4, 0, 8.2, -L / 2 + 2.2, '#e8e8e8');
+    b.box(1.44, 0.45, 1.44, 0, 8.4, -L / 2 + 2.2, '#c8453b');
+    b.box(1.44, 0.3, 1.44, 0, 9.35, -L / 2 + 2.2, '#2b2b2f');
+    wake(b, W, -L / 2, 0.55, 10);
+    [-1, 1].forEach(side => b.box(0.6, 0.06, 2.4, side * (W / 2 + 0.3), 0.03, L / 2 - 2, '#ffffff'));
+    return b;
+}
+
+// A white cruise ship: a long hull with a blue line, decks stepping back with rows of windows, orange
+// lifeboats and a blue funnel
+function cruiseShip() {
+    const b = new Blocks(), L = 30, W = 5;
+    hull(b, L, W, 2.6, '#f4f4f4', '#1f3d6b');
+    b.box(W + 0.04, 0.3, L * 0.8 + 0.04, 0, 0.6, -L * 0.1, '#1f3d6b');
+    for (let deck = 0; deck < 4; deck++) {
+        const z0 = -L / 2 + 1.2 + deck * 1.1, z1 = L * 0.28 - deck * 1.6, w = W - 0.3 - deck * 0.35, y = 2.8 + deck * 1.0;
+        b.box(w, 1.0, z1 - z0, 0, y, (z0 + z1) / 2, '#fbfbfb');
+        b.box(w + 0.04, 0.28, z1 - z0 - 0.4, 0, y + 0.08, (z0 + z1) / 2, '#2a4f7a');
+        b.box(w - 0.4, 0.28, 0.04, 0, y + 0.08, z1 + 0.01, '#2a4f7a');
+    }
+    [-1, 1].forEach(side => {
+        for (let n = 0; n < 6; n++) b.box(0.4, 0.45, 1.1, side * (W / 2 - 0.05), 2.4, -L / 2 + 4 + n * 2.6, '#f08a3a');
+    });
+    b.box(1.8, 2.4, 2.6, 0, 7.5, -L / 2 + 6.5, '#2f6fb0');
+    b.box(1.84, 0.4, 2.64, 0, 7.7, -L / 2 + 6.5, '#ffffff');
+    b.box(1.84, 0.3, 2.64, 0, 8.65, -L / 2 + 6.5, '#22262b');
+    wake(b, W, -L / 2, 0.5, 9);
+    return b;
+}
+
+// A little sailing boat: a white hull with a coloured stripe, a tall mast, the mainsail behind it and a
+// coloured jib in front, stepped like blocks
+function sailboat(stripe, jib) {
+    const b = new Blocks(), white = '#f8f8f6';
+    b.box(0.9, 0.42, 1.8, 0, 0.11, -0.2, white);
+    b.box(0.62, 0.4, 0.5, 0, 0.12, 0.95, white);
+    b.box(0.3, 0.36, 0.35, 0, 0.14, 1.37, white);
+    b.box(0.92, 0.08, 1.82, 0, 0.14, -0.2, stripe);
+    b.box(0.6, 0.06, 0.8, 0, 0.34, -0.5, COLORS.woodLight);
+    b.box(0.07, 3.4, 0.07, 0, 2.0, 0.35, '#e8e8e8');
+    b.box(0.06, 0.06, 1.5, 0, 0.78, -0.42, '#e8e8e8');
+    for (let r = 0; r < 7; r++) {
+        const len = 1.4 * (1 - r / 7);
+        b.box(0.04, 0.42, len, 0, 1.02 + r * 0.42, 0.31 - len / 2, white);
+    }
+    for (let r = 0; r < 5; r++) {
+        const len = 0.9 * (1 - r / 5);
+        b.box(0.04, 0.42, len, 0, 0.62 + r * 0.42, 0.42 + len / 2, jib);
+    }
+    wake(b, 0.9, -1.1, 0.12, 5);
+    return b;
+}
+
+// A fishing boat: a red hull with a white band, a little wheelhouse at the stern, a mast with its boom over
+// the deck, crates and a flag
+function fishingBoat() {
+    const b = new Blocks();
+    hull(b, 3.2, 1.3, 0.75, '#f2f2f2', '#c8453b');
+    b.box(1.32, 0.18, 2.6, 0, 0.12, -0.3, '#c8453b');
+    b.box(1.0, 0.85, 0.95, 0, 0.85, -0.9, '#f8f8f6');
+    b.box(1.04, 0.22, 0.99, 0, 0.98, -0.9, '#2f4f6b');
+    b.box(1.12, 0.1, 1.1, 0, 1.32, -0.9, '#2f6fb0');
+    b.box(0.07, 1.9, 0.07, 0, 1.4, 0.55, COLORS.woodDark);
+    b.box(0.06, 0.06, 1.3, 0, 1.6, 0.0, COLORS.woodDark, { rot: [0.5, 0, 0] });
+    b.box(0.3, 0.2, 0.06, 0.15, 2.25, 0.55, '#ffd166');
+    [[-0.3, 0.2], [0.25, 0.35]].forEach(([x, z]) => b.box(0.32, 0.22, 0.3, x, 0.56, z, '#e07a3a'));
+    wake(b, 1.3, -1.6, 0.14, 5);
+    return b;
+}
+
+// The ships with how they sail: straight across the sea, coming round again, or round and round in a ring.
+// `course(t)` gives where each is at time t and which way it heads
+function fleet() {
+    const across = (z, x0, x1, speed, start) => t => {
+        const span = Math.abs(x1 - x0), along = (((start + t * speed) % span) + span) % span;
+        return [x0 + Math.sign(x1 - x0) * along, z, Math.sign(x1 - x0) * Math.PI / 2];
+    };
+    const ring = (x, z, radius, speed, start) => t => {
+        const a = start + t * speed;
+        return [x + Math.cos(a) * radius, z + Math.sin(a) * radius, speed > 0 ? -a : Math.PI - a];
+    };
+    return [
+        [containerShip(), across(-135, 200, -700, 1.8, 260), 0.06, 0.006],
+        [cruiseShip(), across(-105, -420, 160, 1.5, 230), 0.07, 0.008],
+        [sailboat('#3d8fd1', '#f4a6b8'), ring(-34, -58, 9, 0.04, 0.6), 0.12, 0.05],
+        [sailboat('#e8455a', '#ffd166'), ring(-10, -50, 7, -0.05, 2.1), 0.12, 0.05],
+        [fishingBoat(), ring(-34, -32, 5, 0.03, 4), 0.1, 0.04]
+    ].map(([blocks, course, bob, roll], n) => {
+        const ship = new THREE.Group();
+        ship.rotation.order = 'YXZ';
+        ship.add(blocks.mesh(blockMaterial, { shadow: false }));
+        return { ship, course, bob, roll, phase: n * 1.9 };
+    });
+}
+
 // ----- Around the island -----
-function islets(scene) {
-    const list = [];
-    // Each little island has something on it; one has a heart of red flowers
-    [[-30, -1.5, -21, 6, 1], [29, 2.5, -16, 5, 2], [-11, -5.5, -36, 4, 3], [37, -3, 18, 4, 4]].forEach(([x, y, z, radius, seed], n) => {
-        const { mesh, tops } = buildIslet(radius, seed);
-        const group = new THREE.Group();
-        group.position.set(x, y, z);
-        group.add(mesh);
-        const b = new Blocks();
-        const top = (i, k) => (tops.find(t => t.i === i && t.k === k)?.top ?? 1) * B;
-        const groundAt = (i, k) => top(i, k);
+// Small islands out in the sea, each with something on it: an oak, a heart of red flowers, a pine, a sign, and
+// the lighthouse on its own rock out beyond the bay. Their land goes in `meshes`, their things into the
+// island's blocks, and white water round them into the foam rings
+function seaIslands(meshes, decor, glow, foam) {
+    [[-30, -21, 6, 1], [29, -16, 5, 2], [-11, -36, 4, 3], [37, 18, 4, 4], [LIGHTHOUSE.x, LIGHTHOUSE.z, 6, 5, true]].forEach(([x, z, radius, seed, rocky], n) => {
+        const { mesh, tops } = buildSeaIsland(radius, seed, rocky);
+        mesh.position.set(x, 0, z);
+        meshes.push(mesh);
+        const top = new Map(tops.map(t => [`${t.i},${t.k}`, t.top]));
+        coastFoam(foam, (i, k) => top.has(`${i},${k}`), (i, k) => !top.has(`${i},${k}`), -radius - 3, radius + 3, -radius - 3, radius + 3, x, z);
+        // Boxes placed as if the island were at the middle of the world
+        const b = { box: (w, h, d, bx, by, bz, hex, opts) => decor.box(w, h, d, x + bx, by, z + bz, hex, opts) };
+        const groundAt = (i, k) => (top.get(`${i},${k}`) ?? 1) * B;
         if (n === 0) {
             oakTreeOn(b, groundAt, 0, 1, 6, 41);
             [[-2, -2], [3, -1], [-3, 2]].forEach(([i, k]) => flowerOn(b, groundAt, i, k, '#f7a8c4'));
@@ -1255,16 +1467,15 @@ function islets(scene) {
             }));
         } else if (n === 2) {
             pineOn(b, groundAt, 0, 0);
-        } else {
+        } else if (n === 3) {
             b.box(0.06, 0.6, 0.06, 0, groundAt(0, 0) + 0.3, 0, COLORS.woodDark);
             b.box(0.5, 0.26, 0.04, 0, groundAt(0, 0) + 0.62, 0, COLORS.woodLight);
             [[1, 1], [-1, 2], [2, -1]].forEach(([i, k]) => flowerOn(b, groundAt, i, k, '#ffd166'));
+        } else {
+            const g = { box: (w, h, d, bx, by, bz, hex, opts) => glow.box(w, h, d, x + bx, by, z + bz, hex, opts) };
+            lighthouse(b, g, 0, groundAt(0, 0), 0);
         }
-        group.add(b.mesh());
-        scene.add(group);
-        list.push({ group, y, phase: n * 1.7 });
     });
-    return list;
 }
 
 function flowerOn(b, groundAt, i, k, hex) {
@@ -1318,13 +1529,14 @@ function balloon() {
     return group;
 }
 
-// Clouds of white blocks, a little blue underneath, merged into one mesh that turns slowly round the island
+// Clouds of white blocks high in the sky, a little blue underneath, merged into one mesh that turns slowly
+// round the island
 function clouds() {
     const b = new Blocks();
     const rand = random(51);
     const place = [
-        [-22, 1, -14, 1.0], [22, -3, -17, 1.2], [-21, -7, 14, 1.1], [25, 2, 13, 0.9], [3, -9, -22, 1.3], [-8, 5, 30, 1.0],
-        [-46, -12, 5, 2.2], [43, -10, 30, 2.0], [-54, 6, -40, 3], [59, 3, -48, 3.2], [-14, -16, -54, 2.6], [14, 8, 54, 2.4]
+        [-120, 34, -210, 9], [60, 26, -260, 11], [-260, 42, -90, 12], [210, 30, -170, 10], [-40, 50, -330, 14], [150, 20, -70, 5],
+        [-75, 18, -85, 4], [300, 38, 60, 13], [-300, 30, 140, 12], [80, 44, 300, 14], [-120, 24, 260, 10], [40, 16, 90, 5]
     ];
     for (const [x, y, z, size] of place) {
         const nx = 4 + Math.floor(rand() * 3), nz = 2 + Math.floor(rand() * 2);
@@ -1341,17 +1553,21 @@ function clouds() {
     return b.mesh(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, transparent: true, opacity: 0.94 }), { shadow: false });
 }
 
-// A square sun, like the sun in a block game, with square layers of glow around it
+// A square sun, like the sun in a block game, with square layers of glow around it. It is further off than
+// the edge of the sea, so the sea hides its lower part
 function voxelSun() {
-    const sun = new THREE.Group();
+    const sun = new THREE.Group(), far = 1700, scale = far / 400;
     [[46, '#ffe2a8', 1], [70, '#ffc890', 0.5], [100, '#ffb9a0', 0.25]].forEach(([size, hex, opacity], n) => {
-        const square = new THREE.Mesh(new THREE.PlaneGeometry(size, size),
-            new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity, depthWrite: false, toneMapped: false }));
-        square.position.z = -n * 2;
+        // Blended over the sky without changing its alpha, so it stays out of the tone mapping like the sky
+        const square = new THREE.Mesh(new THREE.PlaneGeometry(size * scale, size * scale), new THREE.MeshBasicMaterial({
+            color: hex, transparent: true, opacity, depthWrite: false, toneMapped: false, blending: THREE.CustomBlending,
+            blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor
+        }));
+        square.position.z = -n * 2 * scale;
         square.renderOrder = -1 - n;
         sun.add(square);
     });
-    sun.position.copy(SUN_DIR).multiplyScalar(400);
+    sun.position.copy(SUN_DIR).multiplyScalar(far);
     sun.lookAt(0, 0, 0);
     return sun;
 }
@@ -1375,19 +1591,32 @@ function seagull() {
     return { bird, wings };
 }
 
+// The colour of the sky in direction d: blue overhead, a band of sunset at the sun's height, pale blue
+// below. The sky's blocks take it, and so does the haze over far things
+const SKY_GLSL = `
+    uniform vec3 sunDir, top, mid, band, glow, low;
+    vec3 skyColor(vec3 d) {
+        vec3 col = mix(mid, top, smoothstep(-0.15, 0.35, d.y));
+        col = mix(low, col, smoothstep(-0.6, -0.32, d.y));
+        float towardSun = max(dot(normalize(d.xz + 1e-5), normalize(sunDir.xz)), 0.0);
+        float inBand = exp(-pow((d.y - sunDir.y) / 0.1, 2.0));
+        col = mix(col, band, inBand * (0.25 + 0.6 * pow(towardSun, 3.0)));
+        return mix(col, glow, pow(max(dot(d, sunDir), 0.0), 10.0) * 0.85);
+    }`;
+const skyUniforms = () => ({
+    sunDir: { value: SUN_DIR }, top: { value: color(COLORS.skyTop) }, mid: { value: color(COLORS.skyMid) },
+    band: { value: color(COLORS.skyBand) }, glow: { value: color(COLORS.skyGlow) }, low: { value: color(COLORS.skyLow) }
+});
+
 // The sky is a huge box round everything (it moves with the camera), each wall tiled with square blocks of
-// colour: blue overhead, a band of sunset at the sun's height, pale blue below, each block a little lighter
-// or darker than its neighbours with a faint join between them, so even the sky is made of blocks
+// the sky's colour, each a little lighter or darker than its neighbours with a faint join between them, so
+// even the sky is made of blocks. It leaves alpha at 0, which tells the lens it needs no tone mapping
 function skyBox() {
     const material = new THREE.ShaderMaterial({
         side: THREE.BackSide,
         depthWrite: false,
         toneMapped: false,
-        uniforms: {
-            sunDir: { value: SUN_DIR }, tiles: { value: 22 },
-            top: { value: color(COLORS.skyTop) }, mid: { value: color(COLORS.skyMid) }, band: { value: color(COLORS.skyBand) },
-            glow: { value: color(COLORS.skyGlow) }, low: { value: color(COLORS.skyLow) }
-        },
+        uniforms: { ...skyUniforms(), tiles: { value: 22 } },
         vertexShader: `
             varying vec3 vLocal;
             void main() {
@@ -1395,18 +1624,10 @@ function skyBox() {
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }`,
         fragmentShader: `
-            uniform vec3 sunDir, top, mid, band, glow, low;
             uniform float tiles;
             varying vec3 vLocal;
             float hash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-            vec3 skyColor(vec3 d) {
-                vec3 col = mix(mid, top, smoothstep(-0.15, 0.35, d.y));
-                col = mix(low, col, smoothstep(-0.6, -0.32, d.y));
-                float towardSun = max(dot(normalize(d.xz + 1e-5), normalize(sunDir.xz)), 0.0);
-                float inBand = exp(-pow((d.y - sunDir.y) / 0.1, 2.0));
-                col = mix(col, band, inBand * (0.25 + 0.6 * pow(towardSun, 3.0)));
-                return mix(col, glow, pow(max(dot(d, sunDir), 0.0), 10.0) * 0.85);
-            }
+            ${SKY_GLSL}
             void main() {
                 // Which wall of the box this is, and where on it (-1..1 across the wall)
                 vec3 a = abs(vLocal);
@@ -1420,14 +1641,116 @@ function skyBox() {
                 vec2 g = fract(f * tiles * 0.5);
                 float edge = min(min(g.x, 1.0 - g.x), min(g.y, 1.0 - g.y));
                 col *= mix(0.955, 1.0, smoothstep(0.0, 0.05, edge));
-                gl_FragColor = vec4(col, 1.0);
-                #include <colorspace_fragment>
+                gl_FragColor = vec4(col, 0.0);
             }`
     });
     return new THREE.Mesh(new THREE.BoxGeometry(1000, 1000, 1000), material);
 }
 
-// Little cubes that rise, drift and fade (fire, smoke) or wander (fireflies, falling earth): one draw call each
+// ----- The lens: depth of field and haze -----
+// The scene is drawn into a buffer first. Then each pixel is blurred more the further its point is from us,
+// so the two of us and what's round us stay sharp and far things go soft (when the camera is pulled back,
+// the sharp part grows with it), and far things fade toward the colour of the sky behind them. Pixels of
+// the sky (alpha 0) already have their final colours; the rest are tone mapped here
+function lens(renderer, small) {
+    const gl = renderer.getContext();
+    const float = renderer.extensions.has('EXT_color_buffer_float');
+    // Multisampled, for smooth edges, if this GPU can do that in the format we draw in
+    const samples = Math.min(4, Math.max(0, ...(gl.getInternalformatParameter(gl.RENDERBUFFER, float ? gl.RGBA16F : gl.RGBA8, gl.SAMPLES) || [0])));
+    const target = new THREE.WebGLRenderTarget(1, 1, {
+        type: float ? THREE.HalfFloatType : THREE.UnsignedByteType, samples, depthTexture: new THREE.DepthTexture(1, 1)
+    });
+    const uniforms = {
+        tColor: { value: target.texture }, tDepth: { value: target.depthTexture }, texel: { value: new THREE.Vector2() },
+        projectionInverse: { value: new THREE.Matrix4() }, cameraToWorld: { value: new THREE.Matrix4() },
+        focus: { value: new THREE.Vector3() }, sharp: { value: 3 }, soft: { value: 30 }, maxBlur: { value: 5 },
+        hazeStart: { value: 30 }, hazeScale: { value: 1 / 550 }, ...skyUniforms()
+    };
+    const material = new THREE.ShaderMaterial({
+        defines: { TAPS: small ? 14 : 20 },
+        uniforms,
+        depthTest: false,
+        depthWrite: false,
+        vertexShader: `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = vec4(position.xy, 0.0, 1.0);
+            }`,
+        fragmentShader: `
+            uniform sampler2D tColor, tDepth;
+            uniform vec2 texel;
+            uniform mat4 projectionInverse, cameraToWorld;
+            uniform vec3 focus;
+            uniform float sharp, soft, maxBlur, hazeStart, hazeScale;
+            varying vec2 vUv;
+            ${SKY_GLSL}
+            vec3 viewAt(vec2 uv, float depth) {
+                vec4 p = projectionInverse * vec4(vec3(uv, depth) * 2.0 - 1.0, 1.0);
+                return p.xyz / p.w;
+            }
+            // How many pixels the blur spreads at a point: none near us, more the further it is from us
+            float blurAt(vec2 uv, float depth) {
+                return depth >= 1.0 ? maxBlur : maxBlur * smoothstep(sharp, soft, distance(viewAt(uv, depth), focus));
+            }
+            void main() {
+                float depth = texture2D(tDepth, vUv).x, blur = blurAt(vUv, depth);
+                vec4 sum = texture2D(tColor, vUv);
+                float total = 1.0;
+                if (blur > 0.5) {
+                    // Points on a spiral out to the edge of the blur, each counted only if its own blur reaches
+                    // this far, so sharp things don't smear onto the soft things beside them
+                    for (int n = 1; n < TAPS; n++) {
+                        float r = sqrt(float(n) / float(TAPS)) * blur, a = float(n) * 2.39996;
+                        vec2 uv = vUv + vec2(cos(a), sin(a)) * r * texel;
+                        float w = smoothstep(r - 1.0, r, blurAt(uv, texture2D(tDepth, uv).x));
+                        sum += texture2D(tColor, uv) * w;
+                        total += w;
+                    }
+                }
+                vec4 col = sum / total;
+                vec3 rgb = mix(col.rgb, toneMapping(col.rgb), col.a);
+                if (depth < 1.0) {
+                    vec3 p = viewAt(vUv, depth);
+                    float haze = 1.0 - exp(-max(length(p) - hazeStart, 0.0) * hazeScale);
+                    rgb = mix(rgb, skyColor(normalize((cameraToWorld * vec4(p, 0.0)).xyz)), haze);
+                }
+                gl_FragColor = vec4(rgb, 1.0);
+                #include <colorspace_fragment>
+            }`
+    });
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+    quad.frustumCulled = false;
+    const screen = new THREE.Scene().add(quad), flat = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    return {
+        setSize(width, height) {
+            target.setSize(width, height);
+            uniforms.texel.value.set(1 / width, 1 / height);
+            uniforms.maxBlur.value = height * 0.0065;
+        },
+        // Draw the scene, sharpest round `at`, with the camera `dist` from it
+        render(scene, camera, at, dist) {
+            camera.updateMatrixWorld();
+            uniforms.projectionInverse.value.copy(camera.projectionMatrixInverse);
+            uniforms.cameraToWorld.value.copy(camera.matrixWorld);
+            uniforms.focus.value.copy(at).applyMatrix4(camera.matrixWorldInverse);
+            uniforms.sharp.value = 2.2 + dist * 0.1;
+            uniforms.soft.value = uniforms.sharp.value + 12 + dist * 1.6;
+            renderer.setRenderTarget(target);
+            renderer.render(scene, camera);
+            renderer.setRenderTarget(null);
+            renderer.render(screen, flat);
+        },
+        dispose() {
+            target.depthTexture.dispose();
+            target.dispose();
+            material.dispose();
+            quad.geometry.dispose();
+        }
+    };
+}
+
+// Little cubes that rise, drift and fade (fire, smoke) or wander (fireflies): one draw call each
 function particles(count, material, reset, step) {
     const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), material, count);
     const rand = random(count * 7 + 3);
@@ -1462,7 +1785,7 @@ function rising(origin, spread, height, speed, size, flicker = 0) {
 function start() {
     let renderer;
     try {
-        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer = new THREE.WebGLRenderer({ powerPreference: 'high-performance' });
     } catch {
         return; // no WebGL here: the painted sky behind the title stays
     }
@@ -1474,6 +1797,7 @@ function start() {
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.setClearColor(COLORS.skyLow);
     host.appendChild(renderer.domElement);
+    const view3d = lens(renderer, small);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
@@ -1497,15 +1821,14 @@ function start() {
     sky.renderOrder = -10;
     scene.add(sky, voxelSun());
 
-    // The island floats a little, up and down; everything on it moves with it
+    // The island and everything on and around it
     const island = new THREE.Group();
     scene.add(island);
     const { mesh: terrain, columns } = buildIsland();
     island.add(terrain);
     const water = buildWater(columns);
-    island.add(water.mesh);
-    const fall = waterfall(water.spill);
-    island.add(fall.group);
+    const sea = openSea();
+    island.add(water.mesh, sea.mesh);
 
     // Us, lying back on two loungers at the top of the beach, looking out to sea under a big umbrella: him on
     // the left, her on the right, holding hands across the gap between the loungers. The umbrella is planted
@@ -1525,8 +1848,13 @@ function start() {
     parasol(set, 1.55, -0.45, 2.65, 1.7, [0.12, 0, 0.38], '#3d8fd1');
     drinksTable(set, -1.72, -0.3);
     flipFlops(set, 1.55, 0.75, '#3d8fd1');
-    flipFlops(set, -1.55, 0.6, '#f4a6b8');
+    flipFlops(set, -1.4, 1.45, '#f4a6b8');
     set.addTo(beach, { receive: true });
+    // Our little dog, lying on the sand by her lounger
+    const pup = buildDog();
+    pup.dog.position.set(-1.78, 0, 0.5);
+    pup.dog.scale.setScalar(1.15);
+    beach.add(pup.dog);
     island.add(beach);
 
     const him = buildPerson(HIM), her = buildPerson(HER);
@@ -1590,7 +1918,6 @@ function start() {
     [[-4, 32, 5], [-8, 34, 4], [0, 35, 4], [-2, 28, 5], [-7, 29, 4], [2, 31, 3]].forEach(([i, k, h]) => pineTree(decor, i, k, h));
     forest(decor, (i, k) => Math.hypot(i - HILL.i, k - HILL.k) < 8 || Math.hypot(i + 24, k - 19) < 5 ||
         (i >= GARDEN.i0 - 3 && i <= GARDEN.i1 + 3 && k <= GARDEN.k1 + 3));
-    lighthouse(decor, glow);
     // Along the beach: a lifeguard's chair to the left, beach huts to the right
     lifeguardChair(decor, -18, -2);
     [[27, '#5fb0e0'], [31, '#f4a6b8'], [35, '#ffd166'], [39, '#7fd1b9']].forEach(([i, hex]) => beachHut(decor, i, 8, hex));
@@ -1600,6 +1927,15 @@ function start() {
     pondLife(decor);
     const millSails = windmill(decor, MILL.i, MILL.k);
     island.add(millSails);
+    // Out at sea: the small islands and the lighthouse, white water round every coast, and far-off hills
+    const foamRings = [new Blocks(), new Blocks()], landMeshes = [];
+    coastFoam(foamRings, (i, k) => insideIsland(i, k) && !isWater(i, k), (i, k) => !insideIsland(i, k), -57, 57, -37, 55);
+    seaIslands(landMeshes, decor, glow, foamRings);
+    landMeshes.push(
+        farLand(-470, -177, 1.2, 26, 10, 6, 7, 1), farLand(97, -520, -0.2, 24, 9, 5, 7, 2), farLand(230, 330, 0.6, 32, 10, 7, 7, 3));
+    island.add(...landMeshes);
+    const foamMaterials = foamRings.map(() => new THREE.MeshBasicMaterial({ color: COLORS.foam, transparent: true, depthWrite: false }));
+    foamRings.forEach((ring, n) => island.add(ring.mesh(foamMaterials[n], { shadow: false })));
     const decorMesh = decor.mesh(blockMaterial, { receive: true });
     island.add(decorMesh, glow.mesh(new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }), { shadow: false }));
 
@@ -1616,7 +1952,7 @@ function start() {
     island.add(swing, branch.mesh());
 
 
-    // Fire, smoke from the fire and the chimney, fireflies, earth falling from under the island
+    // Fire, smoke from the fire and the chimney, fireflies
     const flames = particles(12, new THREE.MeshBasicMaterial({ color: '#ffb347', toneMapped: false }), ...rising(fireAt, 0.16, 0.45, 2.2, 0.09, 0.4));
     const embers = particles(6, new THREE.MeshBasicMaterial({ color: '#ff6a3d', toneMapped: false }), ...rising(fireAt, 0.1, 0.25, 2.6, 0.07, 0.4));
     const smokeMaterial = new THREE.MeshStandardMaterial({ color: '#e9eef2', transparent: true, opacity: 0.75, roughness: 1 });
@@ -1625,19 +1961,15 @@ function start() {
     const fireflies = particles(30, new THREE.MeshBasicMaterial({ color: '#fff3a0', toneMapped: false }),
         (p, rand, n) => Object.assign(p, { x: (-20 + rand() * 30) * B, z: (10 + rand() * 22) * B, y: 0.9 + rand() * 0.9, ph: rand() * 10 }),
         (p, t) => [p.x + Math.sin(t * 0.5 + p.ph) * 0.5, p.y + Math.sin(t * 0.9 + p.ph * 2) * 0.25, p.z + Math.cos(t * 0.4 + p.ph) * 0.5, 0.045 * (0.5 + 0.5 * Math.sin(t * 3 + p.ph))]);
-    const specks = particles(60, new THREE.MeshStandardMaterial({ color: '#b89a74' }),
-        (p, rand, n, first) => Object.assign(p, { x: (rand() - 0.5) * 24, z: -6 + rand() * 20, y: first ? -2 - rand() * 8 : -2, v: 0.12 + rand() * 0.2 }),
-        (p, t, dt, rand) => {
-            p.y -= p.v * dt;
-            if (p.y < -11) Object.assign(p, { y: -2, x: (rand() - 0.5) * 24, z: -6 + rand() * 20 });
-            return [p.x, p.y, p.z, 0.07];
-        });
-    [flames, embers, smoke, chimneySmoke, fireflies, specks].forEach(p => island.add(p.mesh));
+    [flames, embers, smoke, chimneySmoke, fireflies].forEach(p => island.add(p.mesh));
 
-    // Around the island: smaller islands, a balloon, clouds, gulls
-    const smallIslands = islets(scene);
+    // Ships out at sea
+    const ships = fleet();
+    ships.forEach(s => island.add(s.ship));
+
+    // In the sky: a balloon, clouds, gulls
     const hotAir = balloon();
-    hotAir.position.set(20, 7, -25);
+    hotAir.position.set(30, 14, -48);
     scene.add(hotAir);
     const cloudMesh = clouds();
     scene.add(cloudMesh);
@@ -1679,13 +2011,14 @@ function start() {
     // ----- Camera: always on the two of us. Drag to turn round or up and down, scroll or pinch to zoom -----
     const PITCH_MIN = 0.05, PITCH_MAX = 1.45, DIST_MIN = 3.2, DIST_MAX = 72;
     // It starts a little round to her side, so the sun shows over the bay beside the umbrella, not behind it
-    const view = { yaw: SUN_AZIMUTH + 0.3, pitch: 0.36, dist: 9.5 };
+    const view = { yaw: SUN_AZIMUTH + 0.3, pitch: 0.3, dist: 9.5 };
     let zoomed = false, interacted = false, flight = null;
     const velocity = { yaw: 0, pitch: 0 };
     function resize() {
         const width = host.clientWidth || window.innerWidth;
         const height = host.clientHeight || window.innerHeight;
         renderer.setSize(width, height, false);
+        view3d.setSize(...renderer.getDrawingBufferSize(new THREE.Vector2()).toArray());
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         // Further back on narrow (portrait) screens, so there's still some island around us
@@ -1792,6 +2125,10 @@ function start() {
             spawnHeart(handsMeet.clone().add(new THREE.Vector3(0, 0.25, 0)));
             spawnHeart(handsMeet.clone().add(new THREE.Vector3(0.1, 0.6, 0.05)), 0.35);
         }
+        // The dog wags its tail, and looks up at her when we look at each other
+        pup.tail.rotation.y = Math.sin(t * 9) * 0.5;
+        pup.head.rotation.y = 0.15 + look * 0.5 + Math.sin(t * 0.7) * 0.08;
+        pup.head.rotation.x = -look * 0.3 + Math.sin(t * 1.9) * 0.03;
         // Sea breeze in her hair, which lies forward against the cushion so it doesn't poke through it
         her.hairFlow.rotation.x = -0.1 + Math.sin(t * 1.3) * 0.012;
         her.hairFlow.rotation.z = Math.sin(t * 0.8) * 0.02;
@@ -1811,15 +2148,16 @@ function start() {
         const yaw = view.yaw + idleSway + (1 - arrive) * 1.2;
         const pitch = Math.min(view.pitch + (1 - arrive) * 0.45, PITCH_MAX);
         const d = view.dist * (1 + (1 - arrive) * 2);
-        focus.copy(spot).addScaledVector(forward, -0.2).add(island.position).setY(island.position.y + beachY + 0.75);
+        focus.copy(spot).addScaledVector(forward, -0.2).setY(beachY + 0.75);
         camera.position.set(
             focus.x + Math.sin(yaw) * Math.cos(pitch) * d,
             focus.y + Math.sin(pitch) * d,
             focus.z + Math.cos(yaw) * Math.cos(pitch) * d);
         // Stay above the ground when skimming low over the island
         const ci = Math.round(camera.position.x / B), ck = Math.round(camera.position.z / B);
-        if (insideIsland(ci, ck)) camera.position.y = Math.max(camera.position.y, island.position.y + Math.max(topLevel(ci, ck), 0) * B + 0.45);
-        lookAt.copy(focus);
+        camera.position.y = Math.max(camera.position.y, (insideIsland(ci, ck) ? Math.max(topLevel(ci, ck), 0) * B : SEA_Y) + 0.45);
+        // Low down it looks a little above us, so the sea and the sky fill the top of the picture
+        lookAt.copy(focus).setY(focus.y + 1.4 * (1 - smoothstep(0.25, 1, pitch)));
         if (flight) {
             // Down to just behind us, looking out at the sun
             const f = easeInOut(Math.min((performance.now() - flight.start) / 1600, 1));
@@ -1834,19 +2172,23 @@ function start() {
         clock = (performance.now() - startTime) / 1000;
         const dt = Math.min(clock - lastClock, 0.1);
         lastClock = clock;
-        island.position.y = Math.sin(clock * 0.6) * 0.08;
         water.update(clock);
-        fall.update(dt);
+        sea.uniforms.time.value = clock;
+        foamMaterials.forEach((m, n) => { m.opacity = 0.55 + 0.3 * Math.sin(clock * 1.3 - n * 1.4) - n * 0.15; });
         animatePeople(clock);
         updateHearts();
         palms.forEach(p => { p.crown.rotation.z = Math.sin(clock * 0.9 + p.seed) * 0.04; p.crown.rotation.x = Math.sin(clock * 0.7 + p.seed) * 0.03; });
         pier.boat.position.y = -0.04 + Math.sin(clock * 1.5) * 0.03;
         pier.boat.rotation.z = Math.sin(clock * 1.2) * 0.04;
+        ships.forEach(s => {
+            const [x, z, heading] = s.course(clock);
+            s.ship.position.set(x, Math.sin(clock * 0.8 + s.phase) * s.bob, z);
+            s.ship.rotation.set(Math.sin(clock * 0.6 + s.phase) * s.roll * 0.5, heading, Math.sin(clock * 0.7 + s.phase) * s.roll);
+        });
         swing.rotation.z = Math.sin(clock * 1.4) * 0.35;
         millSails.rotation.z = clock * 0.6;
-        [flames, embers, smoke, chimneySmoke, fireflies, specks].forEach(p => p.update(clock, dt));
-        smallIslands.forEach(s => { s.group.position.y = s.y + Math.sin(clock * 0.5 + s.phase) * 0.25; });
-        hotAir.position.y = 7 + Math.sin(clock * 0.25) * 0.8;
+        [flames, embers, smoke, chimneySmoke, fireflies].forEach(p => p.update(clock, dt));
+        hotAir.position.y = 14 + Math.sin(clock * 0.25) * 0.8;
         hotAir.rotation.y = clock * 0.05;
         cloudMesh.rotation.y = clock * 0.004;
         gulls.forEach(g => {
@@ -1857,7 +2199,7 @@ function start() {
         });
         placeCamera(clock);
         sky.position.copy(camera.position);
-        renderer.render(scene, camera);
+        view3d.render(scene, camera, focus, camera.position.distanceTo(focus));
         if (!drawn) {
             drawn = true;
             requestAnimationFrame(() => intro.classList.add('drawn'));
@@ -1867,7 +2209,7 @@ function start() {
 
     window.openingScene = {
         flyAway() {
-            const behind = spot.clone().addScaledVector(forward, -3).add(new THREE.Vector3(0, beachY + 1.5, 0)).add(island.position);
+            const behind = spot.clone().addScaledVector(forward, -3).add(new THREE.Vector3(0, beachY + 1.5, 0));
             flight = {
                 start: performance.now(),
                 from: camera.position.clone(),
@@ -1890,6 +2232,7 @@ function start() {
                 if (o.material) o.material.dispose();
             });
             heartShape.dispose();
+            view3d.dispose();
             renderer.dispose();
             renderer.forceContextLoss();
             renderer.domElement.remove();
