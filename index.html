@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="vi">
+<!-- intro-open: the opening screen covers the page until its button is pressed (script.js) -->
+<html lang="vi" class="intro-open">
 
 <head>
     <meta charset="UTF-8" />
@@ -16,17 +17,35 @@
     <link rel="preconnect" href="https://unpkg.com" crossorigin />
     <link rel="preconnect" href="https://tile.openstreetmap.org" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap"
         rel="stylesheet" />
     <!-- integrity= makes the browser refuse a library file that was changed on the CDN -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
     <link rel="stylesheet" href="style.css">
+    <!-- three.js draws the opening scene (intro.js); start fetching both of its files right away -->
+    <link rel="modulepreload" href="vendor/three/three.core.min.js" />
+    <link rel="modulepreload" href="vendor/three/three.module.min.js" />
 </head>
 
 <body>
-    <!-- One screen, no page scroll: counter pinned on top, then the tabs, then the active view -->
-    <div class="app">
+    <!-- OPENING SCREEN, shown on every visit: the two of us on a beach at sunset (drawn by intro.js),
+         the title, and the button into the page -->
+    <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+        <div class="intro-scene" id="introScene"></div>
+        <div class="intro-text">
+            <h1 class="intro-title" id="introTitle">Our Journey</h1>
+            <p class="intro-sub"><span id="introDays">0</span> days together 💕</p>
+        </div>
+        <div class="intro-actions">
+            <button class="intro-enter" id="introEnter" type="button">Bắt đầu hành trình ✈️</button>
+            <p class="intro-hint">Kéo để xoay · Chạm để thả tim</p>
+        </div>
+    </div>
+
+    <!-- One screen, no page scroll: counter pinned on top, then the tabs, then the active view.
+         inert while the opening screen is up, so nothing behind it can be reached -->
+    <div class="app" inert>
 
         <!-- LOVE COUNTER -->
         <header class="love-counter">
@@ -145,6 +164,7 @@
         integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
     <script src="places.js"></script>
     <script src="script.js"></script>
+    <script type="module" src="intro.js"></script>
 </body>
 
 </html>

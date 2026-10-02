@@ -80,6 +80,152 @@ body::after {
     100% { transform: translate(30px, -110px) scale(1.1, 0.95) }
 }
 
+/* ===== OPENING SCREEN =====
+   Covers the page on every visit: the beach scene drawn by intro.js, the title and the button in.
+   The page is built underneath straight away, but its own entrance animations wait, paused, until then */
+.intro-open .app,
+.intro-open .app * {
+    animation-play-state: paused !important;
+}
+
+.intro {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: max(48px, 9vh) 16px max(28px, 5vh);
+    /* A painted stand-in for the scene while three.js loads, or where it can't run */
+    background: linear-gradient(180deg, #2b6ea3 0%, #86bfe0 30%, #d4ecf4 44%, #f6cfd3 46%, #a9daea 46.5%, #4fa3cc 56%, #5dbbd8 64%, #efe1c6 66%, #e6d4b6 100%);
+    color: #fff;
+    text-align: center;
+    overflow: hidden;
+    /* Dragging turns the scene instead of scrolling or zooming the page */
+    touch-action: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.9s ease 0.45s;
+}
+
+.intro.drawn {
+    cursor: grab;
+}
+
+.intro.drawn:active {
+    cursor: grabbing;
+}
+
+.intro.leaving {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.intro-scene,
+.intro-scene canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* The canvas fades in over its first finished frame instead of popping in */
+.intro-scene canvas {
+    display: block;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+}
+
+.intro.drawn .intro-scene canvas {
+    opacity: 1;
+}
+
+.intro-text,
+.intro-actions {
+    position: relative;
+    pointer-events: none;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.intro.leaving .intro-text,
+.intro.leaving .intro-actions {
+    opacity: 0;
+    transform: translateY(-14px);
+}
+
+.intro-title {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(46px, 10vw, 96px);
+    line-height: 1;
+    text-shadow: 0 6px 30px rgba(16, 64, 110, 0.45);
+    animation: introRise 1.2s 0.5s cubic-bezier(.2, .8, .2, 1) backwards;
+}
+
+.intro-sub {
+    margin-top: 14px;
+    font-size: clamp(16px, 2.4vw, 20px);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    font-variant-numeric: lining-nums;
+    text-shadow: 0 2px 14px rgba(16, 64, 110, 0.55);
+    animation: introRise 1.2s 0.8s cubic-bezier(.2, .8, .2, 1) backwards;
+}
+
+.intro-enter {
+    pointer-events: auto;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(16, 64, 110, 0.35);
+    cursor: pointer;
+    animation: introRise 1s 1.4s cubic-bezier(.2, .8, .2, 1) backwards, introBreathe 2.8s 2.4s ease-in-out infinite;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.intro-enter:hover {
+    background: #fff;
+    transform: translateY(-2px) scale(1.03);
+}
+
+.intro-enter:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+}
+
+/* Only once there is a scene to drag */
+.intro-hint {
+    margin-top: 12px;
+    color: var(--text);
+    font-size: 0.78rem;
+    opacity: 0;
+    transition: opacity 1s ease 1.6s;
+}
+
+.intro.drawn .intro-hint {
+    opacity: 0.75;
+}
+
+@keyframes introRise {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+}
+
+@keyframes introBreathe {
+    50% {
+        box-shadow: 0 10px 30px rgba(16, 64, 110, 0.35), 0 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+}
+
 /* ===== APP LAYOUT =====
    One centered column exactly one screen tall: the counter stays pinned on top, then the tabs,
    and the active view takes the rest (it scrolls inside itself, the page never does). */

@@ -20,7 +20,7 @@ function setDigits(el, text) {
     });
 }
 
-// The day count runs up from 0 when the page opens; until then loveTick leaves it alone
+// The day count runs up from 0 when the page is shown; until then loveTick leaves it alone
 let daysCountingUp = true;
 function countUpDays(target, duration = 1400) {
     const el = document.getElementById('lcDays');
@@ -44,8 +44,45 @@ function loveTick() {
     setDigits(document.getElementById('lcM'), pad2(Math.floor((rem % 3600000) / 60000)));
     setDigits(document.getElementById('lcS'), pad2(Math.floor((rem % 60000) / 1000)));
 }
+
+// ===== OPENING SCREEN =====
+// Every visit opens on the beach scene (drawn by intro.js) with a button into the page. The page below is
+// built straight away, but its own entrance (the count-up, the pins dropping, ...) waits for that button
+const intro = document.getElementById('intro');
+const onPageShown = [];
+let pageShown = !intro;
+function whenPageShown(fn) {
+    if (pageShown) fn();
+    else onPageShown.push(fn);
+}
+
+if (intro) {
+    document.getElementById('introDays').textContent = Math.max(daysTogether(), 0).toLocaleString('vi-VN');
+    document.getElementById('introEnter').addEventListener('click', enterPage);
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && document.body.contains(intro)) enterPage();
+    });
+}
+
+function enterPage() {
+    if (intro.classList.contains('leaving')) return;
+    intro.classList.add('leaving');
+    // The camera flies off toward the sun while the scene fades out over the page
+    window.openingScene?.flyAway();
+    setTimeout(() => {
+        document.documentElement.classList.remove('intro-open');
+        document.querySelector('.app').inert = false;
+        pageShown = true;
+        onPageShown.forEach(fn => fn());
+    }, 700);
+    setTimeout(() => {
+        window.openingScene?.dispose();
+        intro.remove();
+    }, 1500);
+}
+
 loveTick();
-if (daysCountingUp) countUpDays(Math.max(daysTogether(), 0));
+whenPageShown(() => countUpDays(Math.max(daysTogether(), 0)));
 setInterval(loveTick, 1000);
 
 // Tap the counter for a burst of hearts
@@ -649,4 +686,4 @@ function celebrate(message) {
 const todaysMessage = location.hash === '#celebrate'
     ? specialDayMessage() || 'Preview: 300 days together! 🎉'
     : specialDayMessage();
-if (todaysMessage) setTimeout(() => celebrate(todaysMessage), 1600);
+if (todaysMessage) whenPageShown(() => setTimeout(() => celebrate(todaysMessage), 1600));
